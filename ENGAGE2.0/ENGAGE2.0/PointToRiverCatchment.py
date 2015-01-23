@@ -13,14 +13,17 @@ arcpy.CheckOutExtension("Spatial")
 # set environmental workspace
 arcpy.env.workspace = arcpy.GetParameterAsText(0)
 
-# Cell size
-cell_size = arcpy.GetParameterAsText(1)
-
 # Digital Terrain Model
-DTM = arcpy.GetParameterAsText(2)
+DTM = arcpy.GetParameterAsText(1)
 
 # Users will have to choose to use either the catchment boundry or pour point
-pour_point = arcpy.GetParameterAsText(3) 
+pour_point = arcpy.GetParameterAsText(2) 
+
+# Check if used wants to snap the pour point
+snap_pour = arcpy.GetParameterAsText(3)
+
+# Check what distance the user wants to look for the river channel - Maximum distance, in map units, to search for a cell of higher accumulated flow.
+snap_distance = arcpy.GetParameterAsText(4)
 
 # Calculate some stats for the DTM
 # Fill the raster
@@ -40,7 +43,7 @@ def snap_pour_point(pour_point, DTM_flow_direction):
     out_flow_accumulation = FlowAccumulation(DTM_flow_direction)
     arcpy.AddMessage("Calculated flow accumulation")
     arcpy.AddMessage("-----------------------")
-    out_snap_pour = SnapPourPoint(pour_point, out_flow_accumulation, 1)
+    out_snap_pour = SnapPourPoint(pour_point, out_flow_accumulation, snap_distance)
     arcpy.AddMessage("Pour point snapped")
     arcpy.AddMessage("-----------------------")
     out_snap_pour
@@ -57,5 +60,7 @@ def catchment_pour(pour_point, DTM_flow_direction):
     return river_catchment_polygon
 
 # Check if the pour point needs snapping and calculate the river catchment.
-snapped_pour_point = snap_pour_point(pour_point, DTM_flow_direction)
+if snap_pour != 'false':
+    snapped_pour_point = snap_pour_point(pour_point, DTM_flow_direction)
+
 river_catchment_polygon = catchment_pour(snapped_pour_point, DTM_flow_direction)
