@@ -23,6 +23,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ENGAGE2.0.py" />
+    <Compile Include="PointToRiverCatchment.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="ENGAGE.tbx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>
