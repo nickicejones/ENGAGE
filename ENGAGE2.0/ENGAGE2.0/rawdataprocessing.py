@@ -14,9 +14,6 @@ arcpy.CheckOutExtension("Spatial")
 # set environmental workspace
 arcpy.env.workspace = arcpy.GetParameterAsText(0)
 
-# Cell size
-cell_size = arcpy.GetParameterAsText(1)
-
 # Users will have to provide a rivere catchment boundry 
 river_catchment = arcpy.GetParameterAsText(2)
 
