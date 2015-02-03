@@ -15,28 +15,28 @@ arcpy.CheckOutExtension("Spatial")
 arcpy.env.workspace = arcpy.GetParameterAsText(0)
 
 # Users will have to provide a rivere catchment boundry 
-river_catchment = arcpy.GetParameterAsText(2)
+river_catchment = arcpy.GetParameterAsText(1)
 
 # Digital Terrain Model
-DTM = arcpy.GetParameterAsText(3)
+DTM = arcpy.GetParameterAsText(2)
 
 # Land Cover Data
-Land_cover_type = arcpy.GetParameterAsText(4)
-land_cover = arcpy.GetParameterAsText(5)
-natural_england_SPS = arcpy.GetParameterAsText(6) # optional
-roads = arcpy.GetParameterAsText(7) # optional
+Land_cover_type = arcpy.GetParameterAsText(3)
+land_cover = arcpy.GetParameterAsText(4)
+natural_england_SPS = arcpy.GetParameterAsText(5) # optional
+roads = arcpy.GetParameterAsText(6) # optional
 
 # Soil Data
-Soil_type = arcpy.GetParameterAsText(8)
-soil = arcpy.GetParameterAsText(9)
+Soil_type = arcpy.GetParameterAsText(7)
+soil = arcpy.GetParameterAsText(8)
 
 # Soil grain size Data
-soil_parent_material_50 = arcpy.GetParameterAsText(10) # shapefile of UK coverage
+soil_parent_material_50 = arcpy.GetParameterAsText(9) # shapefile of UK coverage
 
 # Soil depth Data
 # Uk soil parent material 
-advanced_superficial_deposit = arcpy.GetParameterAsText(11) # raster of superficial deposit depth
-soil_parent_material_1 = arcpy.GetParameterAsText(12) 
+advanced_superficial_deposit = arcpy.GetParameterAsText(10) # raster of superficial deposit depth
+soil_parent_material_1 = arcpy.GetParameterAsText(11) 
 
 # Calculate some stats for the DTM
 # Fill the raster
