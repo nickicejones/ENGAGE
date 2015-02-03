@@ -8,7 +8,8 @@ arcpy.env.overwriteOutput = True
 
 # check out extensions
 arcpy.CheckOutExtension("Spatial")
-
+arcpy.AddMessage("Spatial analyst extension checked out")
+arcpy.AddMessage("-----------------------")
 # Get input parameters
 # set environmental workspace
 arcpy.env.workspace = arcpy.GetParameterAsText(0)
