@@ -1,7 +1,4 @@
-# Import statements
-import arcpy
-import numpy as np
-#import modules
+# Import Required Modules
 import arcpy
 import numpy as np
 import grainsize_lookup
@@ -10,7 +7,7 @@ from arcpy.sa import *
 # Overwrite pre-existing files
 arcpy.env.overwriteOutput = True
 
-# check out extensions
+# Check out extensions
 arcpy.CheckOutExtension("Spatial")
 
 # Get input parameters
@@ -759,6 +756,24 @@ def grain_size_calculation(soil_parent_material_50, DTM_cell_size, buffer_catchm
         g_pro_7_array[DTM_Clip_np == -9999] = -9999
         g_pro_7_raster = arcpy.NumPyArrayToRaster(g_pro_7_array, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
         g_pro_7_raster.save("MODEL_GS7")
+        
+        #g_pro_8_array = np.empty_like(DTM_Clip_np, dtype = float) 
+        #g_pro_8_array[:] = g_pro_8
+        #g_pro_8_array[DTM_Clip_np == -9999] = -9999
+        #g_pro_8_raster = arcpy.NumPyArrayToRaster(g_pro_8_array, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        #g_pro_8_raster.save("MODEL_GS8")
+    
+        #g_pro_9_array = np.empty_like(DTM_Clip_np, dtype = float) 
+        #g_pro_9_array[:] = g_pro_9
+        #g_pro_9_array[DTM_Clip_np == -9999] = -9999
+        #g_pro_9_raster = arcpy.NumPyArrayToRaster(g_pro_9_array, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        #g_pro_9_raster.save("MODEL_GS9")
+        
+        #g_pro_10_array = np.empty_like(DTM_Clip_np, dtype = float) 
+        #g_pro_10_array[:] = g_pro_10
+        #g_pro_10_array[DTM_Clip_np == -9999] = -9999
+        #g_pro_10_raster = arcpy.NumPyArrayToRaster(g_pro_10_array, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        #g_pro_10_raster.save("MODEL_GS10")
 
         arcpy.AddMessage("Converted grain proportions to arrays")      
 soil_grain_calculation = grain_size_calculation(soil_parent_material_50, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent)

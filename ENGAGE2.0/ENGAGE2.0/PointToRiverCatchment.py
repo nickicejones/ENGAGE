@@ -1,4 +1,4 @@
-#Import Required Modules
+# Import Required Modules
 import arcpy
 import numpy as np
 from arcpy.sa import *
@@ -6,10 +6,11 @@ from arcpy.sa import *
 # Overwrite pre-existing files
 arcpy.env.overwriteOutput = True
 
-# check out extensions
+# Check out extensions
 arcpy.CheckOutExtension("Spatial")
 arcpy.AddMessage("Spatial analyst extension checked out")
 arcpy.AddMessage("-----------------------")
+
 # Get input parameters
 # set environmental workspace
 arcpy.env.workspace = arcpy.GetParameterAsText(0)

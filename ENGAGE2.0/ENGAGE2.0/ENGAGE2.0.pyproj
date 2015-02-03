@@ -23,6 +23,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ENGAGE2.0.py" />
+    <Compile Include="grainsize_lookup.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="rawdataprocessing.py">
       <SubType>Code</SubType>
     </Compile>
