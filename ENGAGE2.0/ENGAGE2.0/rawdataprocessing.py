@@ -50,6 +50,12 @@ DTM_flow_direction = FlowDirection(DTM_fill)
 arcpy.AddMessage("Calculated flow direction")
 arcpy.AddMessage("-----------------------")
 
+# Get the cell size 
+#Get the geoprocessing result object
+DTM_cell_size = arcpy.GetRasterProperties_management(DTM, "CELLSIZEX")
+#Get the elevation standard deviation value from geoprocessing result object
+cell_size = DTM_cell_size.getOutput(0) 
+
 def catchment_correction(river_catchment, cell_size):
  
     river_catchment_raster = arcpy.FeatureToRaster_conversion(river_catchment, "OBJECTID", "MODEL_river_catchment_ras", cell_size)
