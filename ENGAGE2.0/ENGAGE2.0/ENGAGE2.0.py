@@ -41,12 +41,9 @@ precipitation_textfile = arcpy.GetParameterAsText(1)
 model_start_date = arcpy.GetParameterAsText(2)
 # Important temperature regime checks
 region = arcpy.GetParameterAsText(3)
-# The catchment polygon to calculate the latitude of the river catchment
-river_catchment_poly = arcpy.GetParameterAsText(4) # Optional
+
 # Ask the user for the elevation of the precipiation guage (if they would like to use spatial precipitation)
 precipitation_gauge_elevation = float(arcpy.GetParameterAsText(5)) # Optional
-# Location to save discharge and sediment 
-discharge_file_location = arcpy.GetParameterAsText(6) #Optional
 
 # Use Dinfinity flow directions
 use_dinfinity = arcpy.GetParameterAsText(7)
@@ -56,18 +53,22 @@ calculate_sediment = arcpy.GetParameterAsText(8)
 
 # Select the outputs and frequency
 output_runoff = arcpy.GetParameterAsTest(9) # Surface Runoff
-output_runoff_frequency = arcpy.GetParameterAsTest(10) # Surface Runoff
+output_runoff_frequency = arcpy.GetParameterAsTest(10) # Surface Runoff Output Frequency
 
-output_discharge = arcpy.GetParameterAsTest(11) # Surface Runoff
-output_discharge_frequency = arcpy.GetParameterAsTest(12) # Surface Runoff
+output_discharge = arcpy.GetParameterAsTest(11) # Discharge
+output_discharge_frequency = arcpy.GetParameterAsTest(12) # Discharge Output Frequency
 
-output_depth = arcpy.GetParameterAsTest(13) # Surface Runoff
-output_depth_frequency = arcpy.GetParameterAsTest(14) # Surface Runoff
+output_depth = arcpy.GetParameterAsTest(13) # Depth
+output_depth_frequency = arcpy.GetParameterAsTest(14) # Depth Output Frequency
 
-output_spatial_precipitation = arcpy.GetParameterAsText(15) # Surface Runoff
-output_spatial_precipitation_frequency = arcpy.GetParameterAsTest(16) # Surface Runoff
+output_spatial_precipitation = arcpy.GetParameterAsText(15) # Spatial Precipitation 
+output_spatial_precipitation_frequency = arcpy.GetParameterAsTest(16) # Spatial Precipitation Output Frequency
 
+output_sediment_depth = arcpy.GetParameterAsText(17) # Spatial Precipitation 
+output_sediment_depth_frequency = arcpy.GetParameterAsText(18) # Spatial Precipitation 
 
+output_sediment_erosion_deposition = arcpy.GetParameterAsText(19) # Spatial Precipitation 
+output_sediment_erosion_deposition_frequency = arcpy.GetParameterAsText(20) # Spatial Precipitation 
 
 # 7 Grainsizes
 grain_size_1 = 0.0000156  # Clay
