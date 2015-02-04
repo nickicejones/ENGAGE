@@ -43,32 +43,26 @@ model_start_date = arcpy.GetParameterAsText(2)
 region = arcpy.GetParameterAsText(3)
 
 # Ask the user for the elevation of the precipiation guage (if they would like to use spatial precipitation)
-precipitation_gauge_elevation = float(arcpy.GetParameterAsText(5)) # Optional
-
-# Use Dinfinity flow directions
-use_dinfinity = arcpy.GetParameterAsText(7)
+precipitation_gauge_elevation = float(arcpy.GetParameterAsText(4)) # Optional
 
 # Selection of what the model calculates
-calculate_sediment = arcpy.GetParameterAsText(8)
+calculate_sediment = arcpy.GetParameterAsText(5)
 
 # Select the outputs and frequency
-output_runoff = arcpy.GetParameterAsTest(9) # Surface Runoff
-output_runoff_frequency = arcpy.GetParameterAsTest(10) # Surface Runoff Output Frequency
+output_runoff = arcpy.GetParameterAsTest(6) # Surface Runoff
+output_discharge = arcpy.GetParameterAsTest(7) # Discharge
+output_depth = arcpy.GetParameterAsTest(8) # Depth
+output_spatial_precipitation = arcpy.GetParameterAsText(9) # Spatial Precipitation 
+output_sediment_depth = arcpy.GetParameterAsText(10) # Sediment Depth
+output_sediment_erosion_deposition = arcpy.GetParameterAsText(11) # Total erosion / depostion in each cell
 
-output_discharge = arcpy.GetParameterAsTest(11) # Discharge
-output_discharge_frequency = arcpy.GetParameterAsTest(12) # Discharge Output Frequency
+# This is a series of points along the river network at which a value is saved
+input_river_network_points = arcpy.GetParameterAsText(12) 
+output_excel_discharge = arcpy.GetParameterAsText(13) 
+output_excel_sediment = arcpy.GetParameterAsText(14) 
 
-output_depth = arcpy.GetParameterAsTest(13) # Depth
-output_depth_frequency = arcpy.GetParameterAsTest(14) # Depth Output Frequency
-
-output_spatial_precipitation = arcpy.GetParameterAsText(15) # Spatial Precipitation 
-output_spatial_precipitation_frequency = arcpy.GetParameterAsTest(16) # Spatial Precipitation Output Frequency
-
-output_sediment_depth = arcpy.GetParameterAsText(17) # Spatial Precipitation 
-output_sediment_depth_frequency = arcpy.GetParameterAsText(18) # Spatial Precipitation 
-
-output_sediment_erosion_deposition = arcpy.GetParameterAsText(19) # Spatial Precipitation 
-output_sediment_erosion_deposition_frequency = arcpy.GetParameterAsText(20) # Spatial Precipitation 
+# Use Dinfinity flow directions
+use_dinfinity = arcpy.GetParameterAsText(15)
 
 # 7 Grainsizes
 grain_size_1 = 0.0000156  # Clay
