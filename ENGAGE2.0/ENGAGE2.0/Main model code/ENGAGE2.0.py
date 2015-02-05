@@ -113,4 +113,4 @@ CN2_d = cn2number.SCS_CN_Number().get_SCSCN2_numbers(model_input_parameters[1], 
 
 
 ### MAIN MODEL CODE ###
-modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, model_start_date, region, discharge_file_location, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity)
+#modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, model_start_date, region, discharge_file_location, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity)

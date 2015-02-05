@@ -59,5 +59,8 @@
     <Folder Include="Main model code\Sediment\" />
     <Folder Include="Raw data processing\" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Land cover codes.xlsx" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>
