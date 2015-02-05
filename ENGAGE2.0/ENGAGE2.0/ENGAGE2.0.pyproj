@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d3e4578b-7ada-4f45-a40a-d07d8a0e8e69</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>ENGAGE2.0.py</StartupFile>
+    <StartupFile>Main model code\ENGAGE2.0.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,23 +22,42 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ENGAGE2.0.py" />
-    <Compile Include="grainsize_lookup.py">
+    <Compile Include="Main model code\ENGAGE2.0.py" />
+    <Compile Include="Main model code\modelloop.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="landcovertoraster.py">
+    <Compile Include="Main model code\cn2number.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="datapreparation.py">
+    <Compile Include="Main model code\rasterstonumpys.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="createeditablelandcover.py">
+    <Compile Include="Main model code\rastercharacteristics.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="rawdataprocessing.py">
+    <Compile Include="Raw data processing\grainsize_lookup.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="PointToRiverCatchment.py" />
+    <Compile Include="Land cover editing tools\landcovertoraster.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main model code\datapreparation.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Land cover editing tools\createeditablelandcover.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Raw data processing\rawdataprocessing.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Raw data processing\PointToRiverCatchment.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Land cover editing tools\" />
+    <Folder Include="Main model code\" />
+    <Folder Include="Main model code\Hydrology\" />
+    <Folder Include="Main model code\Sediment\" />
+    <Folder Include="Raw data processing\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>
