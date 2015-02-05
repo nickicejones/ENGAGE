@@ -20,23 +20,26 @@ river_catchment = arcpy.GetParameterAsText(1)
 # Digital Terrain Model
 DTM = arcpy.GetParameterAsText(2)
 
+# River network to burn in river channels
+river_network = arcpy.GetParameterAsText(3)
+
 # Land Cover Data
-Land_cover_type = arcpy.GetParameterAsText(3)
-land_cover = arcpy.GetParameterAsText(4)
-natural_england_SPS = arcpy.GetParameterAsText(5) # optional
-roads = arcpy.GetParameterAsText(6) # optional
+Land_cover_type = arcpy.GetParameterAsText(4)
+land_cover = arcpy.GetParameterAsText(5)
+natural_england_SPS = arcpy.GetParameterAsText(6) # optional
+roads = arcpy.GetParameterAsText(7) # optional
 
 # Soil Data
-Soil_type = arcpy.GetParameterAsText(7)
-soil = arcpy.GetParameterAsText(8)
+Soil_type = arcpy.GetParameterAsText(8)
+soil = arcpy.GetParameterAsText(9)
 
 # Soil grain size Data
-soil_parent_material_50 = arcpy.GetParameterAsText(9) # shapefile of UK coverage
+soil_parent_material_50 = arcpy.GetParameterAsText(10) # shapefile of UK coverage
 
 # Soil depth Data
 # Uk soil parent material 
-advanced_superficial_deposit = arcpy.GetParameterAsText(10) # raster of superficial deposit depth
-soil_parent_material_1 = arcpy.GetParameterAsText(11) 
+advanced_superficial_deposit = arcpy.GetParameterAsText(11) # raster of superficial deposit depth
+soil_parent_material_1 = arcpy.GetParameterAsText(12) 
 
 # Calculate some stats for the DTM
 # Fill the raster
@@ -220,6 +223,7 @@ def land_cover_clip_analysis(land_cover, DTM_cell_size, buffer_catchment, buffer
         land_cover_clip_raster = arcpy.FeatureToRaster_conversion(Land_cover_clip, "MODEL_Landcover_LCM", "Landcover", DTM_cell_size)
         arcpy.AddMessage("Land cover converted to raster")
         land_cover_clip_final = arcpy.Clip_management(land_cover, catch_extent, "MODEL_Landcover", river_catchment_polygon, "#","ClippingGeometry")
+
                 
     else:
         # Carry clip the data using the correct type
@@ -238,17 +242,23 @@ def land_cover_clip_analysis(land_cover, DTM_cell_size, buffer_catchment, buffer
                 arcpy.AddMessage("Cell size of land cover converted to same as DTM")
                 #land_cover_clip = arcpy.gp.ExtractByMask_sa(land_cover_raster, river_catchment_polygon, "MODEL_Landcover_LCM2") 
                 land_cover_clip = arcpy.Clip_management(land_cover_raster, catch_extent, "MODEL_Landcover_LCM", river_catchment_polygon, "#", "ClippingGeometry")
-                              
 
+                land_cover_shapefile = arcpy.RasterToPolygon_conversion(land_cover_clip, "MODEL_LCM_shapefile", "NO_SIMPLIFY")
+                arcpy.AddMessage("Land cover converted to shapefile for editing")
+                             
             elif Land_cover_type == "CORINE 2006": 
                 land_cover_raster = arcpy.FeatureToRaster_conversion(land_cover_clip, "grid_code", "LCMSTAGE3", DTM_cell_size)
                 arcpy.AddMessage("Cell size of land cover converted to same as DTM")
                                       
                 land_cover_clip = arcpy.gp.ExtractByMask_sa(land_cover_raster, river_catchment_polygon, "MODEL_Landcover_CORINE")
-                         
+
+                land_cover_shapefile = arcpy.RasterToPolygon_conversion(land_cover_clip, "MODEL_CORINE_shapefile", "NO_SIMPLIFY")
+                arcpy.AddMessage("Land cover converted to shapefile for editing")                        
         else:
             land_cover_clip = arcpy.Clip_management(land_cover, catch_extent, "MODEL_Landcover", river_catchment_polygon, "#","ClippingGeometry")
             arcpy.AddMessage("Land cover clipped")
+
+        
             
         if natural_england_SPS and natural_england_SPS != '#':
 
@@ -417,14 +427,14 @@ def land_cover_clip_analysis(land_cover, DTM_cell_size, buffer_catchment, buffer
                     roads_np = arcpy.RasterToNumPyArray("Model_ROADS", '#','#','#', -9999)
                     LCM_np = arcpy.RasterToNumPyArray("MODEL_Landcover_LCM", '#','#','#', -9999)
              
-                    roads_zero_np = np.zeros_like(DTM_Clip_np, dtype = float) 
+                    roads_zero_np = np.zeros_like(DTM_Clip_np, dtype = int) 
                     np.putmask(roads_zero_np, roads_np > 0, roads_np)
 
-                    natural_england_zero_np = np.zeros_like(DTM_Clip_np, dtype = float)
+                    natural_england_zero_np = np.zeros_like(DTM_Clip_np, dtype = int)
                     np.putmask(natural_england_zero_np, natural_england_SPS_np  > 0, natural_england_SPS_np)
                     natural_england_zero_np[DTM_Clip_np == -9999] = -9999 
                      
-                    combined_land_cover = np.zeros_like(roads_np, dtype = float) 
+                    combined_land_cover = np.zeros_like(roads_np, dtype = int) 
                     combined_land_cover[DTM_Clip_np == -9999] = -9999
             
                     np.putmask(combined_land_cover, combined_land_cover >= 0, natural_england_zero_np) 
@@ -444,11 +454,11 @@ def land_cover_clip_analysis(land_cover, DTM_cell_size, buffer_catchment, buffer
                 natural_england_SPS_np = arcpy.RasterToNumPyArray("Model_NE_SBS", '#','#','#', -9999)
                 LCM_np = arcpy.RasterToNumPyArray("MODEL_Landcover_LCM", '#','#','#', -9999)
 
-                natural_england_zero_np = np.zeros_like(DTM_Clip_np)
+                natural_england_zero_np = np.zeros_like(DTM_Clip_np, dtype = int)
                 np.putmask(natural_england_zero_np, natural_england_SPS_np  > 0, natural_england_SPS_np)
                 natural_england_zero_np[DTM_Clip_np == -9999] = -9999 
                      
-                combined_land_cover = np.zeros_like(DTM_Clip_np) 
+                combined_land_cover = np.zeros_like(DTM_Clip_np, dtype = int) 
                 combined_land_cover[DTM_Clip_np == -9999] = -9999
             
                 np.putmask(combined_land_cover, combined_land_cover >= 0, natural_england_zero_np) 
@@ -466,6 +476,7 @@ land_cover_clipped = land_cover_clip_analysis(land_cover_BNG, DTM_cell_size, buf
 arcpy.AddMessage("Land cover clipped to catchment")
 arcpy.AddMessage("-------------------------")
 arcpy.SetProgressorPosition(50)
+
 
 
 # Clip the soil hydrology to the river catchment
@@ -690,13 +701,13 @@ def grain_size_calculation(soil_parent_material_50, DTM_cell_size, buffer_catchm
     
         arcpy.AddMessage("No spatially distributed information provided. Therefore uniform distributions will be created")
         # 9 proportions of grainsizes that are listed below
-        g_pro_1 = float(arcpy.GetParameterAsText(12)) #0.1
-        g_pro_2 = float(arcpy.GetParameterAsText(13)) #0.35
-        g_pro_3 = float(arcpy.GetParameterAsText(14)) #0.15
-        g_pro_4 = float(arcpy.GetParameterAsText(15)) #0.15
-        g_pro_5 = float(arcpy.GetParameterAsText(16)) #0.15
-        g_pro_6 = float(arcpy.GetParameterAsText(17)) #0.05
-        g_pro_7 = float(arcpy.GetParameterAsText(18)) #0.05
+        g_pro_1 = float(arcpy.GetParameterAsText(13)) #0.1
+        g_pro_2 = float(arcpy.GetParameterAsText(14)) #0.35
+        g_pro_3 = float(arcpy.GetParameterAsText(15)) #0.15
+        g_pro_4 = float(arcpy.GetParameterAsText(16)) #0.15
+        g_pro_5 = float(arcpy.GetParameterAsText(17)) #0.15
+        g_pro_6 = float(arcpy.GetParameterAsText(18)) #0.05
+        g_pro_7 = float(arcpy.GetParameterAsText(19)) #0.05
         
         # Create a list of the proportions
         grain_proportions = [g_pro_1, g_pro_2, g_pro_3, g_pro_4, g_pro_5, g_pro_6, g_pro_7]

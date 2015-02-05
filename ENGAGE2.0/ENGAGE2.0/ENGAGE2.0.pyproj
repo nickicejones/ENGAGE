@@ -26,6 +26,15 @@
     <Compile Include="grainsize_lookup.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="landcovertoraster.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="datapreparation.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="createeditablelandcover.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="rawdataprocessing.py">
       <SubType>Code</SubType>
     </Compile>
