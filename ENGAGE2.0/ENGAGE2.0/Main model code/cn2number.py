@@ -5041,11 +5041,28 @@ class SCS_CN_Number(object):
             }
 
     COMBINE_SCS = { # This first set of values are taken from the Halcrow report
-             # No Data
-            (1, "A"): 36, (1, "B"): 60, (1, "C"): 73, (1, "D"): 79, # Broad leaf woodland
-            (2, "A"): 36, (2, "B"): 60, (2, "C"): 73, (2, "D"): 79, # Coniferous woodland
-            (3, "A"): 74, (3, "B"): 83, (3, "C"): 88, (3, "D"): 90, # Arable and horticulture
-            (4, "A"): 68, (4, "B"): 79, (4, "C"): 86, (4, "D"): 89, # Improved grassland
+             
+            (50, "A"): 45, (50, "B"): 66, (50, "C"): 77, (50, "D"): 83, # Broad leaf woodland - Poor condition
+            (1, "A"): 36, (1, "B"): 60, (1, "C"): 73, (1, "D"): 79, # Broad leaf woodland - Fair condition
+            (51, "A"): 30, (51, "B"): 55, (51, "C"): 70, (51, "D"): 77, # Broad leaf woodland - Good condition
+
+
+            (52, "A"): 45, (52, "B"): 66, (52, "C"): 77, (52, "D"): 83, # Coniferous woodland - Poor condition
+            (2, "A"): 36, (2, "B"): 60, (2, "C"): 73, (2, "D"): 79, # Coniferous woodland - Fair condition
+            (53, "A"): 30, (53, "B"): 55, (53, "C"): 70, (53, "D"): 77, # Coniferous woodland - Good condition
+
+            (73, "A"): 57, (73, "B"): 73, (73, "C"): 82, (73, "D"): 86, # Woods—grass combination (orchard or tree farm).- Poor condition
+            (74, "A"): 43, (74, "B"): 65, (74, "C"): 76, (74, "D"): 82, # Woods—grass combination (orchard or tree farm). - Fair condition
+            (75, "A"): 32, (75, "B"): 58, (75, "C"): 72, (75, "D"): 79, # Woods—grass combination (orchard or tree farm). - Good condition
+
+            (3, "A"): 74, (3, "B"): 83, (3, "C"): 88, (3, "D"): 90, # Arable and horticulture - Good condition
+            (54, "A"): 76, (54, "B"): 85, (54, "C"): 90, (54, "D"): 93, # Arable and horticulture - Poor condition
+            (76, "A"): 77, (76, "B"): 86, (76, "C"): 91, (76, "D"): 94, # Fallow - Bare soil
+
+            (4, "A"): 68, (4, "B"): 79, (4, "C"): 86, (4, "D"): 89, # Improved grassland - Poor condition
+            (55, "A"): 49, (55, "B"): 69, (55, "C"): 79, (55, "D"): 84, # Improved grassland - Fair condition
+            (56, "A"): 39, (56, "B"): 61, (56, "C"): 74, (56, "D"): 80, # Improved grassland - Good condition
+
             (5, "A"): 30, (5, "B"): 58, (5, "C"): 71, (5, "D"): 78, # Rough grassland
             (6, "A"): 39, (6, "B"): 61, (6, "C"): 74, (6, "D"): 80, # Neutral grassland
             (7, "A"): 39, (7, "B"): 61, (7, "C"): 74, (7, "D"): 80, # Calcareous grassland
@@ -5056,6 +5073,8 @@ class SCS_CN_Number(object):
             (14, "A"): 100, (14, "B"): 100, (14, "C"): 100, (14, "D"): 100, # Inland rock (considered to be an impervious value)
             (15, "A"): 100, (15, "B"): 100, (15, "C"): 100, (15, "D"): 100, # Saltwater
             (16, "A"): 100, (16, "B"): 100, (16, "C"): 100, (16, "D"): 100, # Freshwater
+
+            (57, "A"): 59, (57, "B"): 74, (57, "C"): 82, (57, "D"): 86, # Farmsteds - buildings, lanes, driveways and surrounding lots
             (23, "A"): 61, (23, "B"): 75, (23, "C"): 83, (23, "D"): 87, # Suburban
             (22, "A"): 89, (22, "B"): 92, (22, "C"): 94, (22, "D"): 95, # Urban
 
