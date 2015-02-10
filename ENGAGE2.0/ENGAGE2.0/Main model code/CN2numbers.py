@@ -4989,7 +4989,9 @@ class SCS_CN_Number(object):
             (13, "A"): 35, (13, "B"): 56, (13, "C"): 70, (13, "D"): 77, # Montane habitats used - fair brush for now.
 
             # The unclassified
-            (0, "A"): 19, (0, "B"): 61, (0, "C"): 74, (0, "D"): 80,} # Neutral grassland
+            (0, "A"): 19, (0, "B"): 61, (0, "C"): 74, (0, "D"): 80,
+            
+            } # Neutral grassland
 
      # Dict of values for converting Corine (2006) and Soil groups
 
@@ -5038,35 +5040,87 @@ class SCS_CN_Number(object):
             (42, "A"): 100, (42, "B"): 100, (42, "C"): 100, (42, "D"): 100, #COASTAL LAGOONS
             (43, "A"): 100, (43, "B"): 100, (43, "C"): 100, (43, "D"): 100, #ESTUARIES
             (44, "A"): 100, (44, "B"): 100, (44, "C"): 100, (44, "D"): 100, #SEA AND OCEAN
+
+            #WOODLAND CODES
+            (50, "A"): 45, (50, "B"): 66, (50, "C"): 77, (50, "D"): 83, # Broad leaf woodland - Poor condition
+            (45, "A"): 36, (45, "B"): 60, (45, "C"): 73, (45, "D"): 79, # Broad leaf woodland - Fair condition
+            (51, "A"): 30, (51, "B"): 55, (51, "C"): 70, (51, "D"): 77, # Broad leaf woodland - Good condition
+            
+            (52, "A"): 45, (52, "B"): 66, (52, "C"): 77, (52, "D"): 83, # Coniferous woodland - Poor condition
+            (46, "A"): 36, (46, "B"): 60, (46, "C"): 73, (46, "D"): 79, # Coniferous woodland - Fair condition
+            (53, "A"): 30, (53, "B"): 55, (53, "C"): 70, (53, "D"): 77, # Coniferous woodland - Good condition
+
+            (73, "A"): 57, (73, "B"): 73, (73, "C"): 82, (73, "D"): 86, # Woods?grass combination (orchard or tree farm).- Poor condition
+            (74, "A"): 43, (74, "B"): 65, (74, "C"): 76, (74, "D"): 82, # Woods?grass combination (orchard or tree farm). - Fair condition
+            (75, "A"): 32, (75, "B"): 58, (75, "C"): 72, (75, "D"): 79, # Woods?grass combination (orchard or tree farm). - Good condition
+
+            #ARABLE CODES
+            (47, "A"): 74, (47, "B"): 83, (47, "C"): 88, (47, "D"): 90, # Arable and horticulture - Good condition
+            (54, "A"): 76, (54, "B"): 85, (54, "C"): 90, (54, "D"): 93, # Arable and horticulture - Poor condition
+            (76, "A"): 77, (76, "B"): 86, (76, "C"): 91, (76, "D"): 94, # Fallow - Bare soil
+
+            #Grassland CODES
+            (48, "A"): 68, (48, "B"): 79, (4, "C"): 86, (48, "D"): 89, # Improved grassland - Poor condition
+            (55, "A"): 49, (55, "B"): 69, (55, "C"): 79, (55, "D"): 84, # Improved grassland - Fair condition
+            (56, "A"): 39, (56, "B"): 61, (56, "C"): 74, (56, "D"): 80, # Improved grassland - Good condition
+
+             #URBAN CODES
+            (57, "A"): 59, (57, "B"): 74, (57, "C"): 82, (57, "D"): 86, # Farmsteds - buildings, lanes, driveways and surrounding lots
+            (65, "A"): 89, (65, "B"): 65, (22, "C"): 94, (65, "D"): 95, # Commercial and buisness
+            (66, "A"): 81, (66, "B"): 88, (66, "C"): 91, (66, "D"): 93, # Industrial
+
+            #OPEN PARKS / SPACES
+            (58, "A"): 68, (58, "B"): 79, (58, "C"): 86, (58, "D"): 89, # Open spaces (lawns, parks, golfcourses, cemeteries etc) - Poor
+            (59, "A"): 49, (59, "B"): 69, (59, "C"): 79, (59, "D"): 84, # Open spaces (lawns, parks, golfcourses, cemeteries etc) - Fair
+            (60, "A"): 39, (60, "B"): 61, (60, "C"): 74, (60, "D"): 80, # Open spaces (lawns, parks, golfcourses, cemeteries etc) - Good
+            
+            #IMPERVIOUS AREAS
+            (61, "A"): 98, (61, "B"): 98, (61, "C"): 98, (61, "D"): 98, # Paved parking lots, roofs, driveways (Excl right of way)
+            (62, "A"): 83, (62, "B"): 89, (62, "C"): 92, (62, "D"): 93, # Paved streets and roads: open ditches (incl right of way)
+            (63, "A"): 76, (63, "B"): 85, (63, "C"): 89, (63, "D"): 91, # Gravel streets and roads (including right of way)
+            (64, "A"): 72, (64, "B"): 82, (64, "C"): 87, (64, "D"): 89, # Dirt streets and roads (including right of way)
+
+            #RESIDENTIAL
+            (67, "A"): 77, (67, "B"): 85, (67, "C"): 90, (67, "D"): 90, # 1/8 acre or less (town houses) 
+            (68, "A"): 61, (68, "B"): 75, (68, "C"): 83, (68, "D"): 87, # 1/4 acre 
+            (69, "A"): 57, (69, "B"): 72, (69, "C"): 81, (69, "D"): 86, # 1/3 acre
+            (70, "A"): 54, (70, "B"): 70, (70, "C"): 80, (70, "D"): 85, # 1/2 acre
+            (71, "A"): 51, (71, "B"): 68, (71, "C"): 79, (71, "D"): 84, # 1 acre
+            (72, "A"): 46, (72, "B"): 65, (72, "C"): 77, (72, "D"): 82, # 2 acres
+
             }
 
     COMBINE_SCS = { # This first set of values are taken from the Halcrow report
-             
+            
+        
+            #WOODLAND CODES
             (50, "A"): 45, (50, "B"): 66, (50, "C"): 77, (50, "D"): 83, # Broad leaf woodland - Poor condition
             (1, "A"): 36, (1, "B"): 60, (1, "C"): 73, (1, "D"): 79, # Broad leaf woodland - Fair condition
             (51, "A"): 30, (51, "B"): 55, (51, "C"): 70, (51, "D"): 77, # Broad leaf woodland - Good condition
-
-
+            
             (52, "A"): 45, (52, "B"): 66, (52, "C"): 77, (52, "D"): 83, # Coniferous woodland - Poor condition
             (2, "A"): 36, (2, "B"): 60, (2, "C"): 73, (2, "D"): 79, # Coniferous woodland - Fair condition
             (53, "A"): 30, (53, "B"): 55, (53, "C"): 70, (53, "D"): 77, # Coniferous woodland - Good condition
 
-            (73, "A"): 57, (73, "B"): 73, (73, "C"): 82, (73, "D"): 86, # Woods—grass combination (orchard or tree farm).- Poor condition
-            (74, "A"): 43, (74, "B"): 65, (74, "C"): 76, (74, "D"): 82, # Woods—grass combination (orchard or tree farm). - Fair condition
-            (75, "A"): 32, (75, "B"): 58, (75, "C"): 72, (75, "D"): 79, # Woods—grass combination (orchard or tree farm). - Good condition
+            (73, "A"): 57, (73, "B"): 73, (73, "C"): 82, (73, "D"): 86, # Woods?grass combination (orchard or tree farm).- Poor condition
+            (74, "A"): 43, (74, "B"): 65, (74, "C"): 76, (74, "D"): 82, # Woods?grass combination (orchard or tree farm). - Fair condition
+            (75, "A"): 32, (75, "B"): 58, (75, "C"): 72, (75, "D"): 79, # Woods?grass combination (orchard or tree farm). - Good condition
 
+            #ARABLE CODES
             (3, "A"): 74, (3, "B"): 83, (3, "C"): 88, (3, "D"): 90, # Arable and horticulture - Good condition
             (54, "A"): 76, (54, "B"): 85, (54, "C"): 90, (54, "D"): 93, # Arable and horticulture - Poor condition
             (76, "A"): 77, (76, "B"): 86, (76, "C"): 91, (76, "D"): 94, # Fallow - Bare soil
 
+            #Grassland CODES
             (4, "A"): 68, (4, "B"): 79, (4, "C"): 86, (4, "D"): 89, # Improved grassland - Poor condition
             (55, "A"): 49, (55, "B"): 69, (55, "C"): 79, (55, "D"): 84, # Improved grassland - Fair condition
             (56, "A"): 39, (56, "B"): 61, (56, "C"): 74, (56, "D"): 80, # Improved grassland - Good condition
-
             (5, "A"): 30, (5, "B"): 58, (5, "C"): 71, (5, "D"): 78, # Rough grassland
             (6, "A"): 39, (6, "B"): 61, (6, "C"): 74, (6, "D"): 80, # Neutral grassland
             (7, "A"): 39, (7, "B"): 61, (7, "C"): 74, (7, "D"): 80, # Calcareous grassland
             (8, "A"): 39, (8, "B"): 61, (8, "C"): 74, (8, "D"): 80, # Acid grassland (and bracken)
+
+            #MIS CODES
             (10, "A"): 30, (10, "B"): 48, (10, "C"): 65, (10, "D"): 73, # Heather
             (11, "A"): 48, (11, "B"): 67, (11, "C"): 77, (11, "D"): 83, # Heather grassland
             (12, "A"): 85, (12, "B"): 85, (12, "C"): 85, (12, "D"): 85, # Bog (using bespoke value)
@@ -5074,13 +5128,35 @@ class SCS_CN_Number(object):
             (15, "A"): 100, (15, "B"): 100, (15, "C"): 100, (15, "D"): 100, # Saltwater
             (16, "A"): 100, (16, "B"): 100, (16, "C"): 100, (16, "D"): 100, # Freshwater
 
+
+            #URBAN CODES
             (57, "A"): 59, (57, "B"): 74, (57, "C"): 82, (57, "D"): 86, # Farmsteds - buildings, lanes, driveways and surrounding lots
             (23, "A"): 61, (23, "B"): 75, (23, "C"): 83, (23, "D"): 87, # Suburban
             (22, "A"): 89, (22, "B"): 92, (22, "C"): 94, (22, "D"): 95, # Urban
+            (65, "A"): 89, (65, "B"): 65, (22, "C"): 94, (65, "D"): 95, # Commercial and buisness
+            (66, "A"): 81, (66, "B"): 88, (66, "C"): 91, (66, "D"): 93, # Industrial
 
+            #OPEN PARKS / SPACES
+            (58, "A"): 68, (58, "B"): 79, (58, "C"): 86, (58, "D"): 89, # Open spaces (lawns, parks, golfcourses, cemeteries etc) - Poor
+            (59, "A"): 49, (59, "B"): 69, (59, "C"): 79, (59, "D"): 84, # Open spaces (lawns, parks, golfcourses, cemeteries etc) - Fair
+            (60, "A"): 39, (60, "B"): 61, (60, "C"): 74, (60, "D"): 80, # Open spaces (lawns, parks, golfcourses, cemeteries etc) - Good
+            
+            #IMPERVIOUS AREAS
+            (61, "A"): 98, (61, "B"): 98, (61, "C"): 98, (61, "D"): 98, # Paved parking lots, roofs, driveways (Excl right of way)
+            (62, "A"): 83, (62, "B"): 89, (62, "C"): 92, (62, "D"): 93, # Paved streets and roads: open ditches (incl right of way)
+            (63, "A"): 76, (63, "B"): 85, (63, "C"): 89, (63, "D"): 91, # Gravel streets and roads (including right of way)
+            (64, "A"): 72, (64, "B"): 82, (64, "C"): 87, (64, "D"): 89, # Dirt streets and roads (including right of way)
+
+            #RESIDENTIAL
+            (67, "A"): 77, (67, "B"): 85, (67, "C"): 90, (67, "D"): 90, # 1/8 acre or less (town houses) 
+            (68, "A"): 61, (68, "B"): 75, (68, "C"): 83, (68, "D"): 87, # 1/4 acre 
+            (69, "A"): 57, (69, "B"): 72, (69, "C"): 81, (69, "D"): 86, # 1/3 acre
+            (70, "A"): 54, (70, "B"): 70, (70, "C"): 80, (70, "D"): 85, # 1/2 acre
+            (71, "A"): 51, (71, "B"): 68, (71, "C"): 79, (71, "D"): 84, # 1 acre
+            (72, "A"): 46, (72, "B"): 65, (72, "C"): 77, (72, "D"): 82, # 2 acres
+            
             # (0, "N"): 9999, (0, "N"): 9999, (0, "N"): 9999, (0, "N"): 9999,
-               
-               
+                                      
             # Values not covered in Halcrow report:
             # Would this be the same as bog?
             (9, "A"): 85, (9, "B"): 85, (9, "C"): 85, (9, "D"): 85, # Fen, Marsh Swamp - same as bog?

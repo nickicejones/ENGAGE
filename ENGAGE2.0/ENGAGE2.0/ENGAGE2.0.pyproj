@@ -26,7 +26,7 @@
     <Compile Include="Main model code\modelloop.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Main model code\cn2number.py">
+    <Compile Include="Main model code\CN2numbers.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Main model code\rasterstonumpys.py">
