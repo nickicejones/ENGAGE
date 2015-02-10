@@ -40,7 +40,6 @@ soil_parent_material_50 = arcpy.GetParameterAsText(10) # shapefile of UK coverag
 # Uk soil parent material 
 advanced_superficial_deposit = arcpy.GetParameterAsText(11) # raster of superficial deposit depth
 soil_parent_material_1 = arcpy.GetParameterAsText(12) 
-river_network_burn = arcpy.GetParameterAsText(13)
 
 # Calculate some stats for the DTM
 # Fill the raster
@@ -105,8 +104,8 @@ def catchment_correction(river_catchment, cell_size):
 river_catchment_polygon = catchment_correction(river_catchment, cell_size)
 
 # Check if river network provided and clip it to catchment
-if river_network_burn and river_network_burn != '#':
-    river_network_burn_clip = arcpy.Clip_analysis(river_network_burn, river_catchment_polygon, "MODEL_river_network")
+if river_network and river_network != '#':
+    river_network_clip = arcpy.Clip_analysis(river_network, river_catchment_polygon, "MODEL_river_network")
                         
 
 # Check if user is using FAO or Corine
@@ -707,13 +706,13 @@ def grain_size_calculation(soil_parent_material_50, DTM_cell_size, buffer_catchm
     
         arcpy.AddMessage("No spatially distributed information provided. Therefore uniform distributions will be created")
         # 9 proportions of grainsizes that are listed below
-        g_pro_1 = float(arcpy.GetParameterAsText(14)) #0.1
-        g_pro_2 = float(arcpy.GetParameterAsText(15)) #0.35
-        g_pro_3 = float(arcpy.GetParameterAsText(16)) #0.15
-        g_pro_4 = float(arcpy.GetParameterAsText(17)) #0.15
-        g_pro_5 = float(arcpy.GetParameterAsText(18)) #0.15
-        g_pro_6 = float(arcpy.GetParameterAsText(19)) #0.05
-        g_pro_7 = float(arcpy.GetParameterAsText(20)) #0.05
+        g_pro_1 = float(arcpy.GetParameterAsText(13)) #0.1
+        g_pro_2 = float(arcpy.GetParameterAsText(14)) #0.35
+        g_pro_3 = float(arcpy.GetParameterAsText(15)) #0.15
+        g_pro_4 = float(arcpy.GetParameterAsText(16)) #0.15
+        g_pro_5 = float(arcpy.GetParameterAsText(17)) #0.15
+        g_pro_6 = float(arcpy.GetParameterAsText(18)) #0.05
+        g_pro_7 = float(arcpy.GetParameterAsText(19)) #0.05
         
         # Create a list of the proportions
         grain_proportions = [g_pro_1, g_pro_2, g_pro_3, g_pro_4, g_pro_5, g_pro_6, g_pro_7]
