@@ -4976,12 +4976,15 @@ class SCS_CN_Number(object):
             # Would this be the same as bog?
             (9, "A"): 85, (9, "B"): 85, (9, "C"): 85, (9, "D"): 85, # Fen, Marsh Swamp - same as bog?
                
-            # The following are coastal features which are not usually incoporated into SCS curves, the following values are derived from the SCS table
+            # The following are coastal features which are not usually
+            # incoporated into SCS curves, the following values are derived
+            # from the SCS table
             (21, "A"): 85, (21, "B"): 85, (21, "C"): 85, (21, "D"): 85, # Saltmarsh - same as bog?
             (19, "A"): 98, (19, "B"): 98, (19, "C"): 98, (19, "D"): 98, # Littoral rock *This was included in the Halcrow report
                
-            # Are these important - as far as I am concerned sand dunes arent going to be feeding into the river?
-            (17, "A"): 98, (17, "B"): 98, (17, "C"): 98, (17, "D"): 98, # Supra-litoral rock 
+            # Are these important - as far as I am concerned sand dunes arent
+            # going to be feeding into the river?
+            (17, "A"): 98, (17, "B"): 98, (17, "C"): 98, (17, "D"): 98, # Supra-litoral rock
             (18, "A"): 98, (18, "B"): 98, (18, "C"): 98, (18, "D"): 98, # Supra-litoral sediment
             (20, "A"): 98, (20, "B"): 98, (20, "C"): 98, (20, "D"): 98, # Littoral sediment
                
@@ -5051,8 +5054,8 @@ class SCS_CN_Number(object):
             (53, "A"): 30, (53, "B"): 55, (53, "C"): 70, (53, "D"): 77, # Coniferous woodland - Good condition
 
             (73, "A"): 57, (73, "B"): 73, (73, "C"): 82, (73, "D"): 86, # Woods?grass combination (orchard or tree farm).- Poor condition
-            (74, "A"): 43, (74, "B"): 65, (74, "C"): 76, (74, "D"): 82, # Woods?grass combination (orchard or tree farm). - Fair condition
-            (75, "A"): 32, (75, "B"): 58, (75, "C"): 72, (75, "D"): 79, # Woods?grass combination (orchard or tree farm). - Good condition
+            (74, "A"): 43, (74, "B"): 65, (74, "C"): 76, (74, "D"): 82, # Woods?grass combination (orchard or tree farm).  - Fair condition
+            (75, "A"): 32, (75, "B"): 58, (75, "C"): 72, (75, "D"): 79, # Woods?grass combination (orchard or tree farm).  - Good condition
 
             #ARABLE CODES
             (47, "A"): 74, (47, "B"): 83, (47, "C"): 88, (47, "D"): 90, # Arable and horticulture - Good condition
@@ -5081,8 +5084,8 @@ class SCS_CN_Number(object):
             (64, "A"): 72, (64, "B"): 82, (64, "C"): 87, (64, "D"): 89, # Dirt streets and roads (including right of way)
 
             #RESIDENTIAL
-            (67, "A"): 77, (67, "B"): 85, (67, "C"): 90, (67, "D"): 90, # 1/8 acre or less (town houses) 
-            (68, "A"): 61, (68, "B"): 75, (68, "C"): 83, (68, "D"): 87, # 1/4 acre 
+            (67, "A"): 77, (67, "B"): 85, (67, "C"): 90, (67, "D"): 90, # 1/8 acre or less (town houses)
+            (68, "A"): 61, (68, "B"): 75, (68, "C"): 83, (68, "D"): 87, # 1/4 acre
             (69, "A"): 57, (69, "B"): 72, (69, "C"): 81, (69, "D"): 86, # 1/3 acre
             (70, "A"): 54, (70, "B"): 70, (70, "C"): 80, (70, "D"): 85, # 1/2 acre
             (71, "A"): 51, (71, "B"): 68, (71, "C"): 79, (71, "D"): 84, # 1 acre
@@ -5103,8 +5106,8 @@ class SCS_CN_Number(object):
             (53, "A"): 30, (53, "B"): 55, (53, "C"): 70, (53, "D"): 77, # Coniferous woodland - Good condition
 
             (73, "A"): 57, (73, "B"): 73, (73, "C"): 82, (73, "D"): 86, # Woods?grass combination (orchard or tree farm).- Poor condition
-            (74, "A"): 43, (74, "B"): 65, (74, "C"): 76, (74, "D"): 82, # Woods?grass combination (orchard or tree farm). - Fair condition
-            (75, "A"): 32, (75, "B"): 58, (75, "C"): 72, (75, "D"): 79, # Woods?grass combination (orchard or tree farm). - Good condition
+            (74, "A"): 43, (74, "B"): 65, (74, "C"): 76, (74, "D"): 82, # Woods?grass combination (orchard or tree farm).  - Fair condition
+            (75, "A"): 32, (75, "B"): 58, (75, "C"): 72, (75, "D"): 79, # Woods?grass combination (orchard or tree farm).  - Good condition
 
             #ARABLE CODES
             (3, "A"): 74, (3, "B"): 83, (3, "C"): 88, (3, "D"): 90, # Arable and horticulture - Good condition
@@ -5148,8 +5151,8 @@ class SCS_CN_Number(object):
             (64, "A"): 72, (64, "B"): 82, (64, "C"): 87, (64, "D"): 89, # Dirt streets and roads (including right of way)
 
             #RESIDENTIAL
-            (67, "A"): 77, (67, "B"): 85, (67, "C"): 90, (67, "D"): 90, # 1/8 acre or less (town houses) 
-            (68, "A"): 61, (68, "B"): 75, (68, "C"): 83, (68, "D"): 87, # 1/4 acre 
+            (67, "A"): 77, (67, "B"): 85, (67, "C"): 90, (67, "D"): 90, # 1/8 acre or less (town houses)
+            (68, "A"): 61, (68, "B"): 75, (68, "C"): 83, (68, "D"): 87, # 1/4 acre
             (69, "A"): 57, (69, "B"): 72, (69, "C"): 81, (69, "D"): 86, # 1/3 acre
             (70, "A"): 54, (70, "B"): 70, (70, "C"): 80, (70, "D"): 85, # 1/2 acre
             (71, "A"): 51, (71, "B"): 68, (71, "C"): 79, (71, "D"): 84, # 1 acre
@@ -5161,12 +5164,15 @@ class SCS_CN_Number(object):
             # Would this be the same as bog?
             (9, "A"): 85, (9, "B"): 85, (9, "C"): 85, (9, "D"): 85, # Fen, Marsh Swamp - same as bog?
                
-            # The following are coastal features which are not usually incoporated into SCS curves, the following values are derived from the SCS table
+            # The following are coastal features which are not usually
+            # incoporated into SCS curves, the following values are derived
+            # from the SCS table
             (21, "A"): 85, (21, "B"): 85, (21, "C"): 85, (21, "D"): 85, # Saltmarsh - same as bog?
             (19, "A"): 98, (19, "B"): 98, (19, "C"): 98, (19, "D"): 98, # Littoral rock *This was included in the Halcrow report
                
-            # Are these important - as far as I am concerned sand dunes arent going to be feeding into the river?
-            (17, "A"): 98, (17, "B"): 98, (17, "C"): 98, (17, "D"): 98, # Supra-litoral rock 
+            # Are these important - as far as I am concerned sand dunes arent
+            # going to be feeding into the river?
+            (17, "A"): 98, (17, "B"): 98, (17, "C"): 98, (17, "D"): 98, # Supra-litoral rock
             (18, "A"): 98, (18, "B"): 98, (18, "C"): 98, (18, "D"): 98, # Supra-litoral sediment
             (20, "A"): 98, (20, "B"): 98, (20, "C"): 98, (20, "D"): 98, # Littoral sediment
                
@@ -5238,7 +5244,7 @@ class SCS_CN_Number(object):
             arcpy.AddMessage("SCS soil groups calculated for FAO soil data")
             arcpy.AddMessage("-------------------------")
 
-        # Method for calculating the CN2 number from LCM2007 data 
+        # Method for calculating the CN2 number from LCM2007 data
         if land_cover_type == "LCM 2007":
             def get_CN2_numbers(a1, a2):
                 if a1 > 0 and a2 != 'N':
@@ -5254,7 +5260,7 @@ class SCS_CN_Number(object):
             arcpy.AddMessage("CN2 calculated for LCM 2007 land cover data")
             arcpy.AddMessage("-------------------------")
 
-        # Method for calculating the CN2 number from CORINE data 
+        # Method for calculating the CN2 number from CORINE data
         elif land_cover_type == "CORINE 2006":
             def get_CN2_numbers(a1, a2):
                 if a1 > 0 and a2 != 'N':
