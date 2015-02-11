@@ -21,15 +21,15 @@ precipitation_read = open(precipitation_textfile, 'r')
 output_precipitation_read = open(output_precipitation, 'w')
 
 # Iterate through the precipitation file and create a changed value based on user input.
-for precipitation in precipitation_read:
-    precipitation = float(precipitation)
+for precipitation_day in precipitation_read:
+    precipitation_day = float(precipitation_day)
     if scale_direction == 'increase':
-        new_precipitation = precipitation + (precipitation * scale_factor)       
+        new_precipitation = precipitation_day + (precipitation_day * scale_factor)       
         output_precipitation_read.write(str(new_precipitation))
         output_precipitation_read.write('\n')
       
     elif scale_direction == 'decrease':
-        new_precipitation = precipitation - (precipitation * scale_factor)        
+        new_precipitation = precipitation_day - (precipitation_day * scale_factor)        
         output_precipitation_read.write(str(new_precipitation))
         output_precipitation_read.write('\n')
 
