@@ -25,21 +25,40 @@ def check_preprocessing_files():
             raise DoesNotCompute("elevation (DTM)")
 
         # Check and confirm the land cover file / type
-        if arcpy.Exists("MODEL_Landcover_LCM"):
+        if arcpy.Exists("MODEL_Landcover_LCM"):            
             land_cover = "MODEL_Landcover_LCM"
             land_cover_type = 'LCM 2007'
             arcpy.AddMessage("LCM 2007 land cover data detected")
             arcpy.AddMessage("-------------------------")
+
+            if arcpy.Exists("MODEL_Landcover_LCM_Altered"):
+                land_cover = "MODEL_Landcover_LCM_Altered"
+                land_cover_type = 'LCM 2007'
+                arcpy.AddMessage("Altered LCM land cover detected and selected")
+                arcpy.AddMessage("-------------------------")
         elif arcpy.Exists("MODEL_Landcover_CORINE"):
             land_cover = "MODEL_Landcover_CORINE"
             land_cover_type = 'CORINE 2006'
             arcpy.AddMessage("CORINE 2006 land cover data detected")
             arcpy.AddMessage("-------------------------")
+
+            if arcpy.Exists("MODEL_Landcover_CORINE_Altered"):
+                land_cover = "MODEL_Landcover_CORINE_Altered"
+                land_cover_type = 'CORINE 2006'
+                arcpy.AddMessage("Altered CORINE land cover detected and selected")
+                arcpy.AddMessage("-------------------------")
+
         elif arcpy.Exists("MODEL_COMBINE_LC"):
             land_cover = "MODEL_COMBINE_LC"
             land_cover_type = 'COMBINE'
             arcpy.AddMessage("Natural England SPS and LCM 2007 combined land cover data detected")
             arcpy.AddMessage("-------------------------")
+
+            if arcpy.Exists("MODEL_COMBINE_LC_Altered"):
+                land_cover = "MODEL_COMBINE_LC_Altered"
+                land_cover_type = 'COMBINE'
+                arcpy.AddMessage("Altered Natural England SPS and LCM 2007 land cover detected and selected")
+                arcpy.AddMessage("-------------------------")
         else:
             raise DoesNotCompute("land cover data")
 

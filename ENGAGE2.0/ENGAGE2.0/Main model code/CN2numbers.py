@@ -5248,7 +5248,7 @@ class SCS_CN_Number(object):
         if land_cover_type == "LCM 2007":
             def get_CN2_numbers(a1, a2):
                 if a1 > 0 and a2 != 'N':
-                    return self.LCM_SCS[(a1, a2)]  
+                    return self.COMBINE_SCS[(a1, a2)]  
                 else:
                     return -9999
 
