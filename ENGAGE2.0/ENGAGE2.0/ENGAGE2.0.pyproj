@@ -23,7 +23,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Main model code\ENGAGE2.0.py" />
-    <Compile Include="Main model code\Hydrology\hydrology.py">
+    <Compile Include="Main model code\hydrology.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Main model code\modelloop.py">
@@ -32,10 +32,16 @@
     <Compile Include="Main model code\CN2numbers.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Main model code\temperatureregion.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main model code\rasterstonumpys.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Main model code\rastercharacteristics.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main model code\evapotranspiration.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Raw data processing\grainsize_lookup.py">
@@ -67,7 +73,6 @@
   <ItemGroup>
     <Folder Include="Land cover editing tools\" />
     <Folder Include="Main model code\" />
-    <Folder Include="Main model code\Hydrology\" />
     <Folder Include="Main model code\Sediment\" />
     <Folder Include="Raw data processing\" />
   </ItemGroup>

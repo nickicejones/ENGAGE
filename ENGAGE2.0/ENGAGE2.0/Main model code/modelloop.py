@@ -9,14 +9,14 @@ from arcpy.sa import *
 
 ### Import Script Files NJ created ###
 import hydrology
-#import evapotranspiration
+import evapotranspiration
 #import sediment
 import rasterstonumpys
 
 
 class model_loop(object):
         
-    def start_precipition(self, river_catchment_poly, precipitation_textfile, model_start_date, region, discharge_file_location, elevation_raster, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity):
+    def start_precipition(self, river_catchment_poly, precipitation_textfile, model_start_date, region, elevation_raster, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, input_river_network_points, output_excel_discharge, output_excel_sediment):
          
         # First loop parameter
         first_loop = "True"
@@ -26,19 +26,7 @@ class model_loop(object):
         
         # Open the precipitation file
         precipitation_read = open(precipitation_textfile)
-        
-        # Set up sediment loop save location
-        if discharge_file_location and discharge_file_location != "#":
-            sediment_loop_time = discharge_file_location + "/loop_time.csv"
-            daily_sed_loop =  open(sediment_loop_time, 'wb')
-            spamwriter_sed = csv.writer(daily_sed_loop, delimiter=',')
-
-        # Set up the discharge location
-        if discharge_file_location and discharge_file_location != "#":
-            discharge_file_location = discharge_file_location + "/discharge.csv"
-            daily_discharge =  open(discharge_file_location, 'wb')
-            spamwriter = csv.writer(daily_discharge, delimiter=',')
-
+                
         arcpy.AddMessage("Starting Model...")
         for precipitation in precipitation_read:
             start = time.time()
@@ -99,50 +87,42 @@ class model_loop(object):
 
             arcpy.AddMessage("Discharge at the outlet for today is " + str(Q_max))
             arcpy.AddMessage(" ") 
-
-            if discharge_file_location and discharge_file_location != "#":
-                spamwriter.writerow([current_date, Q_max])
-                arcpy.AddMessage("Daily Discharge Written to CSV")
-     
                            
-'''
-            ###SEDIMENT TRANSPORT SECTION OF LOOP###
-            # Calculate d50, d84, Fs
-            d50, d84, Fs = sediment.sedimenttransport().d50_d84_Fs_grain(grain_size_list, grain_pro_temp_list)
+            if calculate_sediment == 'true':
+                ###SEDIMENT TRANSPORT SECTION OF LOOP###
+                # Calculate d50, d84, Fs
+                d50, d84, Fs = sediment.sedimenttransport().d50_d84_Fs_grain(grain_size_list, grain_pro_temp_list)
             
-            # Calculate depth using the recking parameters and the indexs of the cells with a depth greater than the threshold (cell_size / 1000)
-            depth_recking, new_idx = sediment.sedimenttransport().depth_recking(Q_dis, slope, d84, cell_size)
+                # Calculate depth using the recking parameters and the indexs of the cells with a depth greater than the threshold (cell_size / 1000)
+                depth_recking, new_idx = sediment.sedimenttransport().depth_recking(Q_dis, slope, d84, cell_size)
 
-            # Calculate the timestep of the sediment transport using the maximum rate of entrainment in all the cells
-            sediment_time_step_seconds = sediment.sedimenttransport().SedimentEntrainmentQmax(new_idx, slope, depth_recking, Fs, d50, cell_size, grain_size_list, grain_pro_temp_list)
+                # Calculate the timestep of the sediment transport using the maximum rate of entrainment in all the cells
+                sediment_time_step_seconds = sediment.sedimenttransport().SedimentEntrainmentQmax(new_idx, slope, depth_recking, Fs, d50, cell_size, grain_size_list, grain_pro_temp_list)
             
-            if sediment_time_step_seconds >= 86400:
-                sediment_time_step_seconds = 86400
+                if sediment_time_step_seconds >= 86400:
+                    sediment_time_step_seconds = 86400
 
-            ### Piece of code to record the timestep ###
-            arcpy.AddMessage("Sediment timestep for today is  " + str(sediment_time_step_seconds))
+                ### Piece of code to record the timestep ###
+                arcpy.AddMessage("Sediment timestep for today is  " + str(sediment_time_step_seconds))
 
-            #if sediment_loop_time and sediment_loop_time != "#":
-                #spamwriter_sed.writerow([current_date, sediment_time_step_seconds])
-                #arcpy.AddMessage("Daily sediment timestep written to CSV")
+                #if sediment_loop_time and sediment_loop_time != "#":
+                    #spamwriter_sed.writerow([current_date, sediment_time_step_seconds])
+                    #arcpy.AddMessage("Daily sediment timestep written to CSV")
                         
-            # Collect garbage
-            collected = gc.collect()
-            arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
+                # Collect garbage
+                collected = gc.collect()
+                arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
             
             
-            # Save date for various layers
-            save_date = str(current_date.strftime('%d_%m_%Y'))
+                # Save date for various layers
+                save_date = str(current_date.strftime('%d_%m_%Y'))
                          
-            # Calculate sediment transport for each timestep based on the above calculation
-            sediment.sedimenttransport().sediment_loop(sediment_time_step_seconds, grain_size_list, Q_dis, slope, cell_size, flow_direction_np, bottom_left_corner, save_date, grain_pro_temp_list, grain_vol_temp_list, inactive_layer, remaining_soil_pro_temp_list)
+                # Calculate sediment transport for each timestep based on the above calculation
+                sediment.sedimenttransport().sediment_loop(sediment_time_step_seconds, grain_size_list, Q_dis, slope, cell_size, flow_direction_np, bottom_left_corner, save_date, grain_pro_temp_list, grain_vol_temp_list, inactive_layer, remaining_soil_pro_temp_list)
             
 
 
             ### PEICE OF CODE TO CHECK VALUES COMING OUT OF THE ABOVE PROCESS BY CONVERTING THEM TO RASTERS###
-            # Save date for various layers
-            save_date = str(current_date.strftime('%d_%m_%Y'))
-
             #list_of_grain_volumes = {"total_volume": total_volume, "total_change": total_change}
             #list_of_hydrology_numpys = {"CN2_d": CN2_d, "precipitation": precipitation, "slope": slope, "CN2s_d": CN2s_d, "CN1s_d": CN1s_d, "CN3s_d": CN3s_d, "Q_surf": Q_surf, "Scurr": Scurr, "Q_dis": Q_dis}
             #list_of_other_layers = {"active_layer": active_layer, "inactive_layer": inactive_layer}
@@ -156,6 +136,25 @@ class model_loop(object):
             #rasterstonumpys.convert_numpy_to_raster(list_grain_pro, bottom_left_corner, cell_size, save_date)
             #rasterstonumpys.convert_numpy_to_raster(list_of_grain_volumes, bottom_left_corner, cell_size, save_date)
             
+
+            ### Check  what needs to be output from the model ###
+            # Create a format which says what todays date is
+            save_date = str(current_date.strftime('%d_%m_%Y')) 
+
+            def output_check_files(output_file_list):
+                for output_type, output_frequency in output_file_list.iteritems():
+                    if output_frequency == 'Daily':
+                        if output_type == "Runoff": 
+                            rasterstonumpys.convert_numpy_to_raster_single(Q_surf, output_type, bottom_left_corner, cell_size, save_date)
+                            
+                            
+                            
+                            
+                            
+                            #output_runoff, "Discharge": output_discharge, "Depth": output_depth, "Spatial precipitation": output_spatial_precipitation, "Sediment depth": output_sediment_depth, "Sediment eroision/deposition": output_sediment_erosion_deposition
+            # Check the outputs 
+            output_check_files(output_file_list)
+
             ### VARIABLES / PARAMETERS THAT CHANGE AT END OF LOOP ###
             # Scurr becomes Sprev
             Sprev = Scurr
@@ -166,4 +165,23 @@ class model_loop(object):
             day_of_year += 1
             arcpy.AddMessage("Time to complete today is " + str(round(time.time() - start,2)) + "s. Note that on day 1 and every 30 days the timestep will take longer.")
             arcpy.AddMessage("-------------------------") 
-            gc.collect()'''
+            gc.collect()
+
+
+
+            ### UNUSED CODE TO READD LATER ###
+            # Set up sediment loop save location
+            '''if discharge_file_location and discharge_file_location != "#":
+                sediment_loop_time = discharge_file_location + "/loop_time.csv"
+                daily_sed_loop =  open(sediment_loop_time, 'wb')
+                spamwriter_sed = csv.writer(daily_sed_loop, delimiter=',')
+
+            # Set up the discharge location
+            if discharge_file_location and discharge_file_location != "#":
+                discharge_file_location = discharge_file_location + "/discharge.csv"
+                daily_discharge =  open(discharge_file_location, 'wb')
+                spamwriter = csv.writer(daily_discharge, delimiter=',')
+                
+                if discharge_file_location and discharge_file_location != "#":
+                spamwriter.writerow([current_date, Q_max])
+                arcpy.AddMessage("Daily Discharge Written to CSV")'''

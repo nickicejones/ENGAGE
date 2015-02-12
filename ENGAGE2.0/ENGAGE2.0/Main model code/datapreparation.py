@@ -112,11 +112,18 @@ def check_preprocessing_files():
         else:
             raise DoesNotCompute("river soil depth")
 
+        if arcpy.Exists("MODEL_river_catchment"):
+            river_catchment_poly = "MODEL_river_catchment"
+            arcpy.AddMessage("River catchment detected")  
+            arcpy.AddMessage("-------------------------")            
+        else:
+            raise DoesNotCompute("River catchment")
+
     except DoesNotCompute as error:        
         arcpy.AddError("Model data: " + str(error.value) + " from the pre-processing script could not be found at the location you specified") 
            
         
-    return elevation, land_cover, land_cover_type, soil, soil_type, grain_size_1_proportion, grain_size_2_proportion, grain_size_3_proportion, grain_size_4_proportion, grain_size_5_proportion, grain_size_6_proportion, grain_size_7_proportion, river_soil_depth
+    return elevation, land_cover, land_cover_type, soil, soil_type, grain_size_1_proportion, grain_size_2_proportion, grain_size_3_proportion, grain_size_4_proportion, grain_size_5_proportion, grain_size_6_proportion, grain_size_7_proportion, river_soil_depth, river_catchment_poly
 
 # Function to the average number of days rainfall per year based on the input textfile
 def average_days_rainfall(precipitation_textfile):

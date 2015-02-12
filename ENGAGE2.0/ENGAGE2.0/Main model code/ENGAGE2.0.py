@@ -85,7 +85,7 @@ grain_size_list = [grain_size_1, grain_size_2, grain_size_3, grain_size_4, grain
 
 ### INPUTS FROM PREPROCESSING SCRIPT ###
 # Elevation, Land cover, soil, grain size proportions,
-elevation, land_cover, land_cover_type, soil, soil_type, grain_size_1_proportion, grain_size_2_proportion, grain_size_3_proportion, grain_size_4_proportion, grain_size_5_proportion, grain_size_6_proportion, grain_size_7_proportion, river_soil_depth = datapreparation.check_preprocessing_files()
+elevation, land_cover, land_cover_type, soil, soil_type, grain_size_1_proportion, grain_size_2_proportion, grain_size_3_proportion, grain_size_4_proportion, grain_size_5_proportion, grain_size_6_proportion, grain_size_7_proportion, river_soil_depth, river_catchment_poly = datapreparation.check_preprocessing_files()
 arcpy.AddMessage("Model data from pre-processing script succesfully loaded into model")
 
 
@@ -121,4 +121,4 @@ CN2_d = CN2numbers.SCS_CN_Number().get_SCSCN2_numbers(model_input_parameters[1],
 arcpy.AddMessage("Model initiated") 
 
 ### MAIN MODEL CODE ###
-modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, model_start_date, region, discharge_file_location, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity)
+modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, model_start_date, region, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, input_river_network_points, output_excel_discharge, output_excel_sediment)
