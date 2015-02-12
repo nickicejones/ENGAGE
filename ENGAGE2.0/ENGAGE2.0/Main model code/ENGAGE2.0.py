@@ -56,6 +56,12 @@ output_spatial_precipitation = arcpy.GetParameterAsText(9) # Spatial Precipitati
 output_sediment_depth = arcpy.GetParameterAsText(10) # Sediment Depth
 output_sediment_erosion_deposition = arcpy.GetParameterAsText(11) # Total erosion / depostion in each cell
 
+# Create an output frequency list of the different strings
+output_file_list = {"Runoff": output_runoff, "Discharge": output_discharge, "Depth": output_depth, "Spatial precipitation": output_spatial_precipitation, "Sediment depth": output_sediment_depth, "Sediment eroision/deposition": output_sediment_erosion_deposition}
+
+for output, output_frequency in output_file_list:
+    arcpy.AddMessage("You have selected " + str(output_frequency) + " for " + output)
+
 # This is a series of points along the river network at which a value is saved
 input_river_network_points = arcpy.GetParameterAsText(12) 
 output_excel_discharge = arcpy.GetParameterAsText(13) 
@@ -110,7 +116,7 @@ grain_pro_temp_list, grain_vol_temp_list, remaining_soil_pro_temp_list = datapre
 ### CONVERT LANDCOVER AND SOIL DATA TO CN2 NUMBERS ### - CHECKED 12/11/14 NJ
 CN2_d = cn2number.SCS_CN_Number().get_SCSCN2_numbers(model_input_parameters[1], soil_type, model_input_parameters[0], land_cover_type)
 
-
+arcpy.AddMessage("Model initiated") 
 
 ### MAIN MODEL CODE ###
 #modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, model_start_date, region, discharge_file_location, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity)

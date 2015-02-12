@@ -68,7 +68,7 @@ new_dtm_elevation = DTM - maximum_depth
 outCon = Con(IsNull(new_dtm_elevation), DTM, new_dtm_elevation)
 outCon.save("MODEL_DTM_new_fixed")
 
-arcpy.MosaicToNewRaster_management("MODEL_DTM_new_fixed;MODEL_DTM", workspace,"MODEL_DTM", "PROJCS['British_National_Grid',GEOGCS['GCS_OSGB_1936',DATUM['D_OSGB_1936',SPHEROID['Airy_1830',6377563.396,299.3249646]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Transverse_Mercator'],PARAMETER['False_Easting',400000.0],PARAMETER['False_Northing',-100000.0],PARAMETER['Central_Meridian',-2.0],PARAMETER['Scale_Factor',0.9996012717],PARAMETER['Latitude_Of_Origin',49.0],UNIT['Meter',1.0]]","64_BIT", cell_size,"1","FIRST","FIRST")
+arcpy.MosaicToNewRaster_management("MODEL_DTM_new_fixed;MODEL_DTM", workspace,"MODEL_DTM_Channel_Burned", "PROJCS['British_National_Grid',GEOGCS['GCS_OSGB_1936',DATUM['D_OSGB_1936',SPHEROID['Airy_1830',6377563.396,299.3249646]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Transverse_Mercator'],PARAMETER['False_Easting',400000.0],PARAMETER['False_Northing',-100000.0],PARAMETER['Central_Meridian',-2.0],PARAMETER['Scale_Factor',0.9996012717],PARAMETER['Latitude_Of_Origin',49.0],UNIT['Meter',1.0]]","32_BIT_FLOAT", cell_size,"1","FIRST","FIRST")
 
 arcpy.AddMessage("Calculated and saved new model elevation")
 arcpy.AddMessage("-------------------------")

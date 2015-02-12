@@ -18,6 +18,9 @@ def check_preprocessing_files():
         # Check for elevation data
         if arcpy.Exists("MODEL_DTM"):
             elevation = "MODEL_DTM"
+
+            if arcpy.Exists("MODEL_DTM_Channel_Burned"):
+                elevation = "MODEL_DTM_Channel_Burned"
             arcpy.AddMessage("Elevation data detected")
             arcpy.AddMessage("-------------------------")
         else:

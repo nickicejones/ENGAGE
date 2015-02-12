@@ -50,6 +50,9 @@
     <Compile Include="Raw data processing\climatechange.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Raw data processing\addinchannelstructures.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Raw data processing\riverchannelburn.py">
       <SubType>Code</SubType>
     </Compile>
