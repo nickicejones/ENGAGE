@@ -23,6 +23,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Main model code\ENGAGE2.0.py" />
+    <Compile Include="Main model code\Hydrology\hydrology.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main model code\modelloop.py">
       <SubType>Code</SubType>
     </Compile>

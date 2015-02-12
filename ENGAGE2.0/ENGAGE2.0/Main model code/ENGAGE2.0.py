@@ -8,7 +8,7 @@ import datapreparation
 import rastercharacteristics
 import rasterstonumpys
 import modelloop
-import cn2number
+import CN2numbers
 
 ### ENVIRONMENT SETTINGS ###
 # Overwrite pre-existing files
@@ -21,12 +21,14 @@ try:
     if arcpy.CheckExtension("Spatial") == "Available":
         arcpy.CheckOutExtension("Spatial")
         arcpy.AddMessage("Spatial Analyst license checked out")
+        arcpy.AddMessage("-------------------------")
     else:
         # Raise a custom exception       
         raise LicenseError
 
 except LicenseError:
     arcpy.AddMessage("Spatial Analyst license is unavailable")
+    arcpy.AddMessage("-------------------------")
 
 # Set a location to store the numpy array in a physical form
 numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp')
@@ -49,9 +51,9 @@ precipitation_gauge_elevation = float(arcpy.GetParameterAsText(4)) # Optional
 calculate_sediment = arcpy.GetParameterAsText(5)
 
 # Select the outputs and frequency
-output_runoff = arcpy.GetParameterAsTest(6) # Surface Runoff
-output_discharge = arcpy.GetParameterAsTest(7) # Discharge
-output_depth = arcpy.GetParameterAsTest(8) # Depth
+output_runoff = arcpy.GetParameterAsText(6) # Surface Runoff
+output_discharge = arcpy.GetParameterAsText(7) # Discharge
+output_depth = arcpy.GetParameterAsText(8) # Depth
 output_spatial_precipitation = arcpy.GetParameterAsText(9) # Spatial Precipitation 
 output_sediment_depth = arcpy.GetParameterAsText(10) # Sediment Depth
 output_sediment_erosion_deposition = arcpy.GetParameterAsText(11) # Total erosion / depostion in each cell
@@ -59,7 +61,7 @@ output_sediment_erosion_deposition = arcpy.GetParameterAsText(11) # Total erosio
 # Create an output frequency list of the different strings
 output_file_list = {"Runoff": output_runoff, "Discharge": output_discharge, "Depth": output_depth, "Spatial precipitation": output_spatial_precipitation, "Sediment depth": output_sediment_depth, "Sediment eroision/deposition": output_sediment_erosion_deposition}
 
-for output, output_frequency in output_file_list:
+for output, output_frequency in output_file_list.iteritems():
     arcpy.AddMessage("You have selected " + str(output_frequency) + " for " + output)
 
 # This is a series of points along the river network at which a value is saved
@@ -114,9 +116,9 @@ grain_pro_temp_list, grain_vol_temp_list, remaining_soil_pro_temp_list = datapre
 
 
 ### CONVERT LANDCOVER AND SOIL DATA TO CN2 NUMBERS ### - CHECKED 12/11/14 NJ
-CN2_d = cn2number.SCS_CN_Number().get_SCSCN2_numbers(model_input_parameters[1], soil_type, model_input_parameters[0], land_cover_type)
+CN2_d = CN2numbers.SCS_CN_Number().get_SCSCN2_numbers(model_input_parameters[1], soil_type, model_input_parameters[0], land_cover_type)
 
 arcpy.AddMessage("Model initiated") 
 
 ### MAIN MODEL CODE ###
-#modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, model_start_date, region, discharge_file_location, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity)
+modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, model_start_date, region, discharge_file_location, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity)
