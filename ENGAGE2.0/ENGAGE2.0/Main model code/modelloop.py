@@ -16,11 +16,15 @@ import rasterstonumpys
 
 class model_loop(object):
         
-    def start_precipition(self, river_catchment_poly, precipitation_textfile, model_start_date, region, elevation_raster, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, input_river_network_points, output_excel_discharge, output_excel_sediment):
+    def start_precipition(self, river_catchment_poly, precipitation_textfile, model_start_date, region, elevation_raster, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, input_river_network_points, output_excel_discharge, output_excel_sediment, output_format):
          
         # First loop parameter
         first_loop = "True"
-               
+        week_day = 0    
+        month_day = 0
+        year_day = 0
+        
+
         # Set up the model start date
         current_date = datetime.datetime.strptime(model_start_date, '%d/%m/%Y')
         
@@ -139,21 +143,421 @@ class model_loop(object):
 
             ### Check  what needs to be output from the model ###
             # Create a format which says what todays date is
-            save_date = str(current_date.strftime('%d_%m_%Y')) 
+            daily_save_date = str(current_date.strftime('%d_%m_%Y'))
+            monthly_save_date = str(current_date.strftime('%m_%Y'))  
+            year_save_date = str(current_date.strftime('%Y')) 
+            tomorrow = current_date + datetime.timedelta(days=1)
+            tomorrow_day = int(tomorrow.strftime('%d'))
+            tomorrow_month = int(tomorrow.strftime('%m'))
 
-            def output_check_files(output_file_list):
+            if first_loop == 'True':
+                arcpy.AddMessage("First day of operation checking average output rasters")
                 for output_type, output_frequency in output_file_list.iteritems():
-                    if output_frequency == 'Daily':
-                        if output_type == "Runoff": 
-                            rasterstonumpys.convert_numpy_to_raster_single(Q_surf, output_type, bottom_left_corner, cell_size, save_date)
+                    # Check if empty arrays need to be created
+                        if str(output_frequency) != 'No output' and str(output_frequency) != 'Daily':                       
+                            if output_type == "Runoff": 
+                                Q_surf_avg = np.zeros_like(Q_surf)
+                                arcpy.AddMessage(output_type + " raster created")
+                            if output_type == "Discharge": 
+                                Q_dis_avg = np.zeros_like(Q_surf)
+                                arcpy.AddMessage(output_type + " raster created")
+                            if output_type == "Depth": 
+                                depth_avg = np.zeros_like(Q_surf)
+                                arcpy.AddMessage(output_type + " raster created")
+                            if output_type == "Spatial precipitation": 
+                                precipitation_avg = np.zeros_like(Q_surf)
+                                arcpy.AddMessage(output_type + " raster created")
+                            if output_type == "Sediment depth": 
+                                sed_depth_avg = np.zeros_like(Q_surf)
+                                arcpy.AddMessage(output_type + " raster created")
+                            if output_type ==  "Sediment eroision/deposition": 
+                                sed_erosion_deposition_avg = np.zeros_like(Q_surf)
+                                arcpy.AddMessage(output_type + " raster created")
+
+            # Add one onto the weekly/monthly/yearly day counter
+            week_day = week_day + 1
+            month_day = month_day + 1
+            year_day = year_day + 1
+
+            for output_type, output_frequency in output_file_list.iteritems():
+                # What to do if the output is daily
+                if output_frequency == 'Daily':
+                    if output_type == "Runoff": 
+                        rasterstonumpys.convert_numpy_to_raster_single(Q_surf, output_type, bottom_left_corner, cell_size, daily_save_date)
+                    if output_type == "Discharge": 
+                        rasterstonumpys.convert_numpy_to_raster_single(Q_dis, output_type, bottom_left_corner, cell_size, daily_save_date)
+                    if output_type == "Depth": 
+                        rasterstonumpys.convert_numpy_to_raster_single(depth_recking, output_type, bottom_left_corner, cell_size, daily_save_date)
+                    if output_type == "Spatial precipitation": 
+                        rasterstonumpys.convert_numpy_to_raster_single(precipitation, output_type, bottom_left_corner, cell_size, daily_save_date)
+                    if output_type == "Sediment depth": 
+                        rasterstonumpys.convert_numpy_to_raster_single(Q_surf, output_type, bottom_left_corner, cell_size, daily_save_date) # Need to change output
+                    if output_type ==  "Sediment eroision/deposition": 
+                        rasterstonumpys.convert_numpy_to_raster_single(Q_surf, output_type, bottom_left_corner, cell_size, daily_save_date) # Need to change output
+                
+                # What happens if the output is weekly
+                if output_frequency == 'Weekly':                   
+                    if output_type == "Runoff":
+                        arcpy.AddMessage("Runoff added to weekly average")
+                        Q_surf_avg = Q_surf_avg + Q_surf
+
+                    if output_type == "Discharge":
+                        arcpy.AddMessage("Discharge added to weekly average")
+                        Q_dis_avg = Q_dis_avg + Q_dis
+
+                    if output_type == "Depth":
+                        arcpy.AddMessage("Depth added to weekly average")
+                        depth_avg = depth_avg + depth_recking
+
+                    if output_type == "Spatial precipitation":
+                        arcpy.AddMessage("Spatial precipitation added to weekly average")
+                        precipitation_avg = precipitation_avg + precipitation
+
+                    if output_type == "Sediment depth":
+                        arcpy.AddMessage("Sediment depth added to weekly average")
+                        sed_depth_avg = sed_depth_avg + Q_surf # need to change Q_surf
+
+                    if output_type == "Sediment eroision/deposition":
+                        arcpy.AddMessage("Sediment eroision/deposition added to weekly average")
+                        sed_erosion_deposition_avg = sed_erosion_deposition_avg + Q_surf # need to change Q_surf
+
+                    if week_day == 7:
+                        if output_format == 'Daily average':
+                            arcpy.AddMessage("Weekly average selected")
+                            if output_type == "Runoff": 
+                                arcpy.AddMessage("Saving weekly runoff average")
+                                Q_surf_avg = Q_surf_avg / 7
+                                Q_surf_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(Q_surf_avg, output_type, bottom_left_corner, cell_size, monthly_save_date)
+                                Q_surf_avg = np.zeros_like(Q_surf_avg)
+
+                            if output_type == "Discharge": 
+                                arcpy.AddMessage("Saving weekly discharge average")
+                                Q_dis_avg = Q_dis_avg / 7
+                                Q_dis_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(Q_dis_avg, output_type, bottom_left_corner, cell_size, monthly_save_date)
+                                Q_dis_avg = np.zeros_like(Q_dis_avg)
                             
+                            if output_type == "Depth": 
+                                arcpy.AddMessage("Saving weekly depth average")
+                                depth_avg = depth_avg / 7
+                                depth_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(depth_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                depth_avg = np.zeros_like(depth_avg)
+
+                            if output_type == "Spatial precipitation": 
+                                arcpy.AddMessage("Saving weekly spatial precipitation average")
+                                precipitation_avg = precipitation_avg / 7
+                                precipitation_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(precipitation_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                precipitation_avg = np.zeros_like(precipitation_avg)
+
+                            if output_type == "Sediment depth": 
+                                arcpy.AddMessage("Saving weekly sediment depth average")
+                                sed_depth_avg = sed_depth_avg / 7
+                                sed_depth_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(sed_depth_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                sed_depth_avg = np.zeros_like(sed_depth_avg)
+
+                            if output_type ==  "Sediment eroision/deposition": 
+                                arcpy.AddMessage("Saving weekly sediment eroision/deposition average")
+                                sed_erosion_deposition_avg = sed_erosion_deposition_avg / 7
+                                sed_erosion_deposition_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(sed_erosion_deposition_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                sed_erosion_deposition_avg = np.zeros_like(sed_erosion_deposition_avg)
+
+                        elif output_format == 'Total':
+                            arcpy.AddMessage("Weekly total selected")
+                            if output_type == "Runoff": 
+                                arcpy.AddMessage("Saving weekly runoff total")
+                                Q_surf_avg = Q_surf_avg
+                                Q_surf_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(Q_surf_avg, output_type, bottom_left_corner, cell_size, monthly_save_date)
+                                Q_surf_avg = np.zeros_like(Q_surf_avg)
+
+                            if output_type == "Discharge": 
+                                arcpy.AddMessage("Saving weekly discharge total")
+                                Q_dis_avg = Q_dis_avg
+                                Q_dis_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(Q_dis_avg, output_type, bottom_left_corner, cell_size, monthly_save_date)
+                                Q_dis_avg = np.zeros_like(Q_dis_avg)
                             
+                            if output_type == "Depth": 
+                                arcpy.AddMessage("Saving weekly depth total")
+                                depth_avg = depth_avg
+                                depth_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(depth_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                depth_avg = np.zeros_like(depth_avg)
+
+                            if output_type == "Spatial precipitation": 
+                                arcpy.AddMessage("Saving weekly spatial precipitation total")
+                                precipitation_avg = precipitation_avg
+                                precipitation_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(precipitation_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                precipitation_avg = np.zeros_like(precipitation_avg)
+
+                            if output_type == "Sediment depth": 
+                                arcpy.AddMessage("Saving weekly sediment depth total")
+                                sed_depth_avg = sed_depth_avg
+                                sed_depth_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(sed_depth_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                sed_depth_avg = np.zeros_like(sed_depth_avg)
+
+                            if output_type ==  "Sediment eroision/deposition": 
+                                arcpy.AddMessage("Saving weekly sediment eroision/deposition total")
+                                sed_erosion_deposition_avg = sed_erosion_deposition_avg
+                                sed_erosion_deposition_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(sed_erosion_deposition_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                sed_erosion_deposition_avg = np.zeros_like(sed_erosion_deposition_avg)
+
+
+                # What happens if the output is monthly
+                if output_frequency == 'Monthly':
+                    arcpy.AddMessage("Tomorrow will be day " + str(tomorrow_day))                   
+                    if output_type == "Runoff":
+                        arcpy.AddMessage("Runoff added to monthly average")
+                        Q_surf_avg = Q_surf_avg + Q_surf
+
+                    if output_type == "Discharge":
+                        arcpy.AddMessage("Discharge added to monthly average")
+                        Q_dis_avg = Q_dis_avg + Q_dis
+
+                    if output_type == "Depth":
+                        arcpy.AddMessage("Depth added to monthly average")
+                        depth_avg = depth_avg + depth_recking
+
+                    if output_type == "Spatial precipitation":
+                        arcpy.AddMessage("Spatial precipitation added to monthly average")
+                        precipitation_avg = precipitation_avg + precipitation
+
+                    if output_type == "Sediment depth":
+                        arcpy.AddMessage("Sediment depth added to monthly average")
+                        sed_depth_avg = sed_depth_avg + Q_surf # need to change Q_surf
+
+                    if output_type == "Sediment eroision/deposition":
+                        arcpy.AddMessage("Sediment eroision/deposition added to monthly average")
+                        sed_erosion_deposition_avg = sed_erosion_deposition_avg + Q_surf # need to change Q_surf
+                    
+                    if tomorrow_day == 1:
+                        if output_format == 'Daily average':
+                            arcpy.AddMessage("Monthly average selected")
+                            if output_type == "Runoff": 
+                                arcpy.AddMessage("Saving monthly runoff average")
+                                Q_surf_avg = Q_surf_avg / month_day
+                                Q_surf_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(Q_surf_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                Q_surf_avg = np.zeros_like(Q_surf_avg)
+
+                            if output_type == "Discharge": 
+                                arcpy.AddMessage("Saving monthly discharge average")
+                                Q_dis_avg = Q_dis_avg / month_day
+                                Q_dis_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(Q_dis_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                Q_dis_avg = np.zeros_like(Q_dis_avg)
                             
+                            if output_type == "Depth": 
+                                arcpy.AddMessage("Saving monthly depth average")
+                                depth_avg = depth_avg / month_day
+                                depth_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(depth_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                depth_avg = np.zeros_like(depth_avg)
+
+                            if output_type == "Spatial precipitation": 
+                                arcpy.AddMessage("Saving spatial precipitation average")
+                                precipitation_avg = precipitation_avg / month_day
+                                precipitation_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(precipitation_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                precipitation_avg = np.zeros_like(precipitation_avg)
+
+                            if output_type == "Sediment depth": 
+                                arcpy.AddMessage("Saving monthly sediment depth average")
+                                sed_depth_avg = sed_depth_avg / month_day
+                                sed_depth_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(sed_depth_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                sed_depth_avg = np.zeros_like(sed_depth_avg)
+
+                            if output_type ==  "Sediment eroision/deposition": 
+                                arcpy.AddMessage("Saving monthly sediment eroision/deposition average")
+                                sed_erosion_deposition_avg = sed_erosion_deposition_avg / month_day
+                                sed_erosion_deposition_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(sed_erosion_deposition_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                sed_erosion_deposition_avg = np.zeros_like(sed_erosion_deposition_avg)
+                        
+                        elif output_format == 'Total':
+                            arcpy.AddMessage("Monthly total selected")
+                            if output_type == "Runoff": 
+                                arcpy.AddMessage("Saving monthly runoff total")
+                                Q_surf_avg = Q_surf_avg 
+                                Q_surf_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(Q_surf_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                Q_surf_avg = np.zeros_like(Q_surf_avg)
+
+                            if output_type == "Discharge": 
+                                arcpy.AddMessage("Saving monthly discharge total")
+                                Q_dis_avg = Q_dis_avg 
+                                Q_dis_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(Q_dis_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                Q_dis_avg = np.zeros_like(Q_dis_avg)
                             
+                            if output_type == "Depth": 
+                                arcpy.AddMessage("Saving monthly depth total")
+                                depth_avg = depth_avg 
+                                depth_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(depth_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                depth_avg = np.zeros_like(depth_avg)
+
+                            if output_type == "Spatial precipitation": 
+                                arcpy.AddMessage("Saving spatial precipitation total")
+                                precipitation_avg = precipitation_avg 
+                                precipitation_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(precipitation_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                precipitation_avg = np.zeros_like(precipitation_avg)
+
+                            if output_type == "Sediment depth": 
+                                arcpy.AddMessage("Saving monthly sediment depth total")
+                                sed_depth_avg = sed_depth_avg 
+                                sed_depth_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(sed_depth_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                sed_depth_avg = np.zeros_like(sed_depth_avg)
+
+                            if output_type ==  "Sediment eroision/deposition": 
+                                arcpy.AddMessage("Saving monthly sediment eroision/deposition total")
+                                sed_erosion_deposition_avg = sed_erosion_deposition_avg 
+                                sed_erosion_deposition_avg[CN2_d == -9999] = -9999
+                                rasterstonumpys.convert_numpy_to_raster_single(sed_erosion_deposition_avg, output_type, bottom_left_corner, cell_size, save_date)
+                                sed_erosion_deposition_avg = np.zeros_like(sed_erosion_deposition_avg)
+
+
+                    # What happens if the output is yearly
+                    if output_frequency == 'Yearly':
+                        arcpy.AddMessage("Tomorrow will be day " + str(tomorrow_day) + "and month will be " + str(tomorrow_month))                   
+                    
+                        if output_type == "Runoff":
+                            arcpy.AddMessage("Runoff added to yearly average")
+                            Q_surf_avg = Q_surf_avg + Q_surf
+
+                        if output_type == "Discharge":
+                            arcpy.AddMessage("Discharge added to yearly average")
+                            Q_dis_avg = Q_dis_avg + Q_dis
+
+                        if output_type == "Depth":
+                            arcpy.AddMessage("Depth added to yearly average")
+                            depth_avg = depth_avg + depth_recking
+
+                        if output_type == "Spatial precipitation":
+                            arcpy.AddMessage("Spatial precipitation added to yearly average")
+                            precipitation_avg = precipitation_avg + precipitation
+
+                        if output_type == "Sediment depth":
+                            arcpy.AddMessage("Sediment depth added to yearly average")
+                            sed_depth_avg = sed_depth_avg + Q_surf # need to change Q_surf
+
+                        if output_type == "Sediment eroision/deposition":
+                            arcpy.AddMessage("Sediment eroision/deposition added to yearly average")
+                            sed_erosion_deposition_avg = sed_erosion_deposition_avg + Q_surf # need to change Q_surf
+                    
+                        if tomorrow_day == 1 and tomorrow_month == 1:
+                            if output_format == 'Daily average':
+                                arcpy.AddMessage("Yearly average selected")
+                                if output_type == "Runoff": 
+                                    arcpy.AddMessage("Saving Yearly runoff average")
+                                    Q_surf_avg = Q_surf_avg / year_day
+                                    Q_surf_avg[CN2_d == -9999] = -9999
+                                    rasterstonumpys.convert_numpy_to_raster_single(Q_surf_avg, output_type, bottom_left_corner, cell_size, year_save_date)
+                                    Q_surf_avg = np.zeros_like(Q_surf_avg)
+
+                                if output_type == "Discharge": 
+                                    arcpy.AddMessage("Saving Yearly discharge average")
+                                    Q_dis_avg = Q_dis_avg / year_day
+                                    Q_dis_avg[CN2_d == -9999] = -9999
+                                    rasterstonumpys.convert_numpy_to_raster_single(Q_dis_avg, output_type, bottom_left_corner, cell_size, year_save_date)
+                                    Q_dis_avg = np.zeros_like(Q_dis_avg)
                             
-                            #output_runoff, "Discharge": output_discharge, "Depth": output_depth, "Spatial precipitation": output_spatial_precipitation, "Sediment depth": output_sediment_depth, "Sediment eroision/deposition": output_sediment_erosion_deposition
-            # Check the outputs 
-            output_check_files(output_file_list)
+                                if output_type == "Depth": 
+                                    arcpy.AddMessage("Saving Yearly depth average")
+                                    depth_avg = depth_avg / year_day
+                                    depth_avg[CN2_d == -9999] = -9999
+                                    rasterstonumpys.convert_numpy_to_raster_single(depth_avg, output_type, bottom_left_corner, cell_size, year_save_date)
+                                    depth_avg = np.zeros_like(depth_avg)
+
+                                if output_type == "Spatial precipitation": 
+                                    arcpy.AddMessage("Saving spatial precipitation Yearly average")
+                                    precipitation_avg = precipitation_avg / year_day
+                                    precipitation_avg[CN2_d == -9999] = -9999
+                                    rasterstonumpys.convert_numpy_to_raster_single(precipitation_avg, output_type, bottom_left_corner, cell_size, year_save_date)
+                                    precipitation_avg = np.zeros_like(precipitation_avg)
+
+                                if output_type == "Sediment depth": 
+                                    arcpy.AddMessage("Saving Yearly sediment depth average")
+                                    sed_depth_avg = sed_depth_avg / year_day
+                                    sed_depth_avg[CN2_d == -9999] = -9999
+                                    rasterstonumpys.convert_numpy_to_raster_single(sed_depth_avg, output_type, bottom_left_corner, cell_size, year_save_date)
+                                    sed_depth_avg = np.zeros_like(sed_depth_avg)
+
+                                if output_type ==  "Sediment eroision/deposition": 
+                                    arcpy.AddMessage("Saving Yearlysediment eroision/deposition average")
+                                    sed_erosion_deposition_avg = sed_erosion_deposition_avg / year_day
+                                    sed_erosion_deposition_avg[CN2_d == -9999] = -9999
+                                    rasterstonumpys.convert_numpy_to_raster_single(sed_erosion_deposition_avg, output_type, bottom_left_corner, cell_size, year_save_date)
+                                    sed_erosion_deposition_avg = np.zeros_like(sed_erosion_deposition_avg)
+
+                            elif output_format == 'Total':
+                                arcpy.AddMessage("Yearly total selected")
+                                if output_type == "Runoff": 
+                                    arcpy.AddMessage("Saving yearly runoff total")
+                                    Q_surf_avg = Q_surf_avg 
+                                    Q_surf_avg[CN2_d == -9999] = -9999
+                                    rasterstonumpys.convert_numpy_to_raster_single(Q_surf_avg, output_type, bottom_left_corner, cell_size, year_save_date)
+                                    Q_surf_avg = np.zeros_like(Q_surf_avg)
+
+                                if output_type == "Discharge": 
+                                    arcpy.AddMessage("Saving yearly discharge total")
+                                    Q_dis_avg = Q_dis_avg 
+                                    Q_dis_avg[CN2_d == -9999] = -9999
+                                    rasterstonumpys.convert_numpy_to_raster_single(Q_dis_avg, output_type, bottom_left_corner, cell_size, year_save_date)
+                                    Q_dis_avg = np.zeros_like(Q_dis_avg)
+                            
+                                if output_type == "Depth": 
+                                    arcpy.AddMessage("Saving yearly depth total")
+                                    depth_avg = depth_avg 
+                                    depth_avg[CN2_d == -9999] = -9999
+                                    rasterstonumpys.convert_numpy_to_raster_single(depth_avg, output_type, bottom_left_corner, cell_size, year_save_date)
+                                    depth_avg = np.zeros_like(depth_avg)
+
+                                if output_type == "Spatial precipitation": 
+                                    arcpy.AddMessage("Saving yearly precipitation total")
+                                    precipitation_avg = precipitation_avg 
+                                    precipitation_avg[CN2_d == -9999] = -9999
+                                    rasterstonumpys.convert_numpy_to_raster_single(precipitation_avg, output_type, bottom_left_corner, cell_size, year_save_date)
+                                    precipitation_avg = np.zeros_like(precipitation_avg)
+
+                                if output_type == "Sediment depth": 
+                                    arcpy.AddMessage("Saving yearly sediment depth total")
+                                    sed_depth_avg = sed_depth_avg 
+                                    sed_depth_avg[CN2_d == -9999] = -9999
+                                    rasterstonumpys.convert_numpy_to_raster_single(sed_depth_avg, output_type, bottom_left_corner, cell_size, year_save_date)
+                                    sed_depth_avg = np.zeros_like(sed_depth_avg)
+
+                                if output_type ==  "Sediment eroision/deposition": 
+                                    arcpy.AddMessage("Saving yearly sediment eroision/deposition total")
+                                    sed_erosion_deposition_avg = sed_erosion_deposition_avg 
+                                    sed_erosion_deposition_avg[CN2_d == -9999] = -9999
+                                    rasterstonumpys.convert_numpy_to_raster_single(sed_erosion_deposition_avg, output_type, bottom_left_corner, cell_size, year_save_date)
+                                    sed_erosion_deposition_avg = np.zeros_like(sed_erosion_deposition_avg)
+
+            # Counter resets
+            if week_day == 7:
+                week_day = 0
+                arcpy.AddMessage("Week complete resetting output counter")
+
+            if tomorrow_day == 1:
+                month_day = 0
+                arcpy.AddMessage("Month complete resetting output counter")
+            
+            if tomorrow_day == 1 and tomorrow_month == 1:
+                year_day = 0
+                arcpy.AddMessage("Year complete resetting output counter")
+
 
             ### VARIABLES / PARAMETERS THAT CHANGE AT END OF LOOP ###
             # Scurr becomes Sprev
