@@ -1,0 +1,7 @@
+!!Input for baseflow program:
+    10 !NDMIN: minimum number of days for alpha calculation
+    300 !NDMAX: maximum number of days for alpha calculation
+     1 !IPRINT: daily print option (0-no; 1-yes)
+
+!!Daily stream data files
+gauge.prn       baseflow.out

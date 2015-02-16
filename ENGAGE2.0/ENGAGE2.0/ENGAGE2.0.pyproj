@@ -62,6 +62,9 @@
     <Compile Include="Raw data processing\addinchannelstructures.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="baseflowprep.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Raw data processing\riverchannelburn.py">
       <SubType>Code</SubType>
     </Compile>
