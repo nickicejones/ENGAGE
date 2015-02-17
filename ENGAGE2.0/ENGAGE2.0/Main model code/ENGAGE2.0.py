@@ -37,27 +37,29 @@ numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp')
 arcpy.env.workspace = arcpy.GetParameterAsText(0) 
 
 ### MODEL INPUTS ###
-# Textfile with precipitation on each line
+# Textfile with precipitation on each line and textfile with the baseflow on each line
 precipitation_textfile = arcpy.GetParameterAsText(1)
+baseflow_textfile = arcpy.GetParameterAsText(2)
+
 # Date of starting model operation
-model_start_date = arcpy.GetParameterAsText(2)
+model_start_date = arcpy.GetParameterAsText(3)
 # Important temperature regime checks
-region = arcpy.GetParameterAsText(3)
+region = arcpy.GetParameterAsText(4)
 
 # Ask the user for the elevation of the precipiation guage (if they would like to use spatial precipitation)
-precipitation_gauge_elevation = float(arcpy.GetParameterAsText(4)) # Optional
+precipitation_gauge_elevation = float(arcpy.GetParameterAsText(5)) # Optional
 
 # Selection of what the model calculates
-calculate_sediment = arcpy.GetParameterAsText(5)
+calculate_sediment = arcpy.GetParameterAsText(6)
 
 # Select the outputs and frequency
-output_runoff = arcpy.GetParameterAsText(6) # Surface Runoff
-output_discharge = arcpy.GetParameterAsText(7) # Discharge
-output_depth = arcpy.GetParameterAsText(8) # Depth
-output_spatial_precipitation = arcpy.GetParameterAsText(9) # Spatial Precipitation 
-output_sediment_depth = arcpy.GetParameterAsText(10) # Sediment Depth
-output_sediment_erosion_deposition = arcpy.GetParameterAsText(11) # Total erosion / depostion in each cell
-output_format = arcpy.GetParameterAsText(12) # Average or Total
+output_runoff = arcpy.GetParameterAsText(7) # Surface Runoff
+output_discharge = arcpy.GetParameterAsText(8) # Discharge
+output_depth = arcpy.GetParameterAsText(9) # Depth
+output_spatial_precipitation = arcpy.GetParameterAsText(10) # Spatial Precipitation 
+output_sediment_depth = arcpy.GetParameterAsText(11) # Sediment Depth
+output_sediment_erosion_deposition = arcpy.GetParameterAsText(12) # Total erosion / depostion in each cell
+output_format = arcpy.GetParameterAsText(13) # Average or Total
 
 # Create an output frequency list of the different strings
 output_file_list = {"Runoff": output_runoff, "Discharge": output_discharge, "Depth": output_depth, "Spatial precipitation": output_spatial_precipitation, "Sediment depth": output_sediment_depth, "Sediment eroision/deposition": output_sediment_erosion_deposition}
@@ -66,12 +68,11 @@ for output, output_frequency in output_file_list.iteritems():
     arcpy.AddMessage("You have selected " + str(output_frequency) + " for " + output)
 
 # This is a series of points along the river network at which a value is saved
-input_river_network_points = arcpy.GetParameterAsText(13) 
-output_excel_discharge = arcpy.GetParameterAsText(14) 
-output_excel_sediment = arcpy.GetParameterAsText(15) 
+output_excel_discharge = arcpy.GetParameterAsText(15) 
+output_excel_sediment = arcpy.GetParameterAsText(16) 
 
 # Use Dinfinity flow directions
-use_dinfinity = arcpy.GetParameterAsText(16)
+use_dinfinity = arcpy.GetParameterAsText(17)
 
 # 7 Grainsizes
 grain_size_1 = 0.0000156  # Clay
@@ -122,4 +123,4 @@ CN2_d = CN2numbers.SCS_CN_Number().get_SCSCN2_numbers(model_input_parameters[1],
 arcpy.AddMessage("Model initiated") 
 
 ### MAIN MODEL CODE ###
-modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, model_start_date, region, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, input_river_network_points, output_excel_discharge, output_excel_sediment, output_format)
+modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, baseflow_textfile, model_start_date, region, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, output_excel_discharge, output_excel_sediment, output_format)

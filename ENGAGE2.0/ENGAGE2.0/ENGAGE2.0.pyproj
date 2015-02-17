@@ -6,8 +6,7 @@
     <ProjectGuid>d3e4578b-7ada-4f45-a40a-d07d8a0e8e69</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <StartupFile>Main model code\ENGAGE2.0.py</StartupFile>
-    <SearchPath>
-    </SearchPath>
+    <SearchPath>base flow\</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>ENGAGE2.0</Name>
@@ -22,6 +21,10 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="base flow\baseflowprep.py" />
+    <Compile Include="base flow\module1.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main model code\ENGAGE2.0.py" />
     <Compile Include="Main model code\hydrology.py">
       <SubType>Code</SubType>
@@ -62,9 +65,6 @@
     <Compile Include="Raw data processing\addinchannelstructures.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="baseflowprep.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Raw data processing\riverchannelburn.py">
       <SubType>Code</SubType>
     </Compile>
@@ -77,9 +77,12 @@
     <Folder Include="Land cover editing tools\" />
     <Folder Include="Main model code\" />
     <Folder Include="Main model code\Sediment\" />
+    <Folder Include="base flow\" />
     <Folder Include="Raw data processing\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="base flow\bflow.exe" />
+    <Content Include="base flow\file.lst" />
     <Content Include="Land cover codes.xlsx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

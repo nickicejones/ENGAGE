@@ -6,6 +6,7 @@ import gc
 import csv
 import time
 from arcpy.sa import *
+from itertools import izip
 
 ### Import Script Files NJ created ###
 import hydrology
@@ -16,7 +17,7 @@ import rasterstonumpys
 
 class model_loop(object):
         
-    def start_precipition(self, river_catchment_poly, precipitation_textfile, model_start_date, region, elevation_raster, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, input_river_network_points, output_excel_discharge, output_excel_sediment, output_format):
+    def start_precipition(self, river_catchment_poly, precipitation_textfile, baseflow_textfile, model_start_date, region, elevation_raster, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, output_excel_discharge, output_excel_sediment, output_format):
          
         # First loop parameter
         first_loop = "True"
@@ -24,18 +25,49 @@ class model_loop(object):
         month_day = 0
         year_day = 0
         
+        # Set up the discharge location
+        if discharge_file_location and discharge_file_location != "#":
+            discharge_file_location = discharge_file_location + "/discharge.csv"
+            daily_discharge =  open(discharge_file_location, 'wb')
+            spamwriter = csv.writer(daily_discharge, delimiter=',')
 
         # Set up the model start date
         current_date = datetime.datetime.strptime(model_start_date, '%d/%m/%Y')
         
         # Open the precipitation file
         precipitation_read = open(precipitation_textfile)
-                
+        arcpy.AddMessage("Temporary files will be located here" + str(numpy_array_location))
+
+        # Check if the user has provided a baseflow textfile and if so combine the data into a new file
+        if baseflow_textfile and baseflow_textfile != '#':
+           arcpy.AddMessage("Baseflow data detected")
+           baseflow_read = open(baseflow_textfile)
+           combined_precipitation = open(numpy_array_location + "\combined_precipitation.txt", 'w')
+
+           for precipitation, baseflow in izip(precipitation_read, baseflow_read):
+               precipitation = precipitation.strip()
+               baseflow = baseflow.strip()
+               combined_precipitation.write(precipitation + " " + baseflow + "\n")
+           
+           # Close the file 
+           combined_precipitation.close()
+
+           # Open as the standard precipitation
+           precipitation_read = open(numpy_array_location + "\combined_precipitation.txt")
+                        
         arcpy.AddMessage("Starting Model...")
         for precipitation in precipitation_read:
             start = time.time()
             arcpy.AddMessage("Today's date is " + str(current_date))
             day_of_year = int(current_date.strftime('%j'))
+
+            if baseflow_textfile and baseflow_textfile != '#':
+                precipitation_split = precipitation.split()
+                precipitation = precipitation_split[0]
+                arcpy.AddMessage("Today precipitation is " + str(precipitation))
+
+                baseflow = precipitation_split[1]
+                arcpy.AddMessage("Baseflow is " + str(baseflow))
 
             ### RECALULATING THE SLOPE DUE TO ELEVATION CHANGE ###
             if day_of_year == 1 or day_of_year % 30 == 0:
@@ -47,6 +79,12 @@ class model_loop(object):
 
                 else:
                     slope, elevation, flow_direction_np, flow_direction_raster = hydrology.SCSCNQsurf().calculate_slope_fraction_flow_direction_d8(elevation_raster)
+
+                    if baseflow_textfile and baseflow_textfile != '#':
+                        # Calculate flow accumulation
+                        flow_accumulation = FlowAccumulation(flow_direction_raster)
+                        arcpy.AddMessage("Calculated flow accumulation")
+
                 arcpy.AddMessage("-------------------------") 
                 arcpy.AddMessage("New elevation, slope and flow directions calculated")
                 arcpy.AddMessage("-------------------------") 
@@ -76,6 +114,9 @@ class model_loop(object):
             # Calculate surface runoff and then convert to raster
             Q_surf = hydrology.SCSCNQsurf().SurfSCS(precipitation, Scurr, CN2s_d)
             Q_surf_ras = arcpy.NumPyArrayToRaster(Q_surf, bottom_left_corner, cell_size, cell_size, -9999)
+            
+            if baseflow_textfile and baseflow_textfile != '#':  
+                baseflow_raster = hydrology.SCSCNQsurf().BaseflowCalculation(baseflow, flow_accumulation)    
                                     
             # Execute Flow accumulation to work out the discharge.
             Q_dis = ((Q_surf_ras / 1000) / 86400) * (cell_size * cell_size) # convert to metres (by dividing by 1000) and then to seconds by dividing by 86400 and finally to the area of the cell by multiplying by the area of the cell. 
@@ -85,10 +126,14 @@ class model_loop(object):
             else:
                 outFlowAccumulation = FlowAccumulation(flow_direction_raster, Q_dis) 
                  
-            arcpy.AddMessage("Calculated discharge")           
-            Q_dis = arcpy.RasterToNumPyArray(outFlowAccumulation, '#','#','#', -9999)
-            Q_max = np.amax(Q_dis)
+            arcpy.AddMessage("Calculated discharge")   
+            
+            if baseflow_textfile and baseflow_textfile != '#':
+                Q_dis = outFlowAccumulation + baseflow_raster
+                    
+            Q_dis = arcpy.RasterToNumPyArray(Q_dis, '#','#','#', -9999)
 
+            Q_max = np.amax(Q_dis)
             arcpy.AddMessage("Discharge at the outlet for today is " + str(Q_max))
             arcpy.AddMessage(" ") 
                            
@@ -124,8 +169,13 @@ class model_loop(object):
                 # Calculate sediment transport for each timestep based on the above calculation
                 sediment.sedimenttransport().sediment_loop(sediment_time_step_seconds, grain_size_list, Q_dis, slope, cell_size, flow_direction_np, bottom_left_corner, save_date, grain_pro_temp_list, grain_vol_temp_list, inactive_layer, remaining_soil_pro_temp_list)
             
-
-
+            # Save date for various layers
+            #save_date = str(current_date.strftime('%d_%m_%Y'))
+            #outFlowAccumulation.save("Q_surf_dis_" + save_date)
+            #baseflow_raster.save("Baseflow_" + save_date)
+            
+            #total_discharge = outFlowAccumulation + baseflow_raster
+            #total_discharge.save("total_q" + save_date)
             ### PEICE OF CODE TO CHECK VALUES COMING OUT OF THE ABOVE PROCESS BY CONVERTING THEM TO RASTERS###
             #list_of_grain_volumes = {"total_volume": total_volume, "total_change": total_change}
             #list_of_hydrology_numpys = {"CN2_d": CN2_d, "precipitation": precipitation, "slope": slope, "CN2s_d": CN2s_d, "CN1s_d": CN1s_d, "CN3s_d": CN3s_d, "Q_surf": Q_surf, "Scurr": Scurr, "Q_dis": Q_dis}
@@ -149,6 +199,11 @@ class model_loop(object):
             tomorrow = current_date + datetime.timedelta(days=1)
             tomorrow_day = int(tomorrow.strftime('%d'))
             tomorrow_month = int(tomorrow.strftime('%m'))
+
+                            
+            if discharge_file_location and discharge_file_location != "#":
+                spamwriter.writerow([current_date, Q_max])
+                arcpy.AddMessage("Daily Discharge Written to CSV")
 
             if first_loop == 'True':
                 arcpy.AddMessage("First day of operation checking average output rasters")
@@ -580,12 +635,4 @@ class model_loop(object):
                 daily_sed_loop =  open(sediment_loop_time, 'wb')
                 spamwriter_sed = csv.writer(daily_sed_loop, delimiter=',')
 
-            # Set up the discharge location
-            if discharge_file_location and discharge_file_location != "#":
-                discharge_file_location = discharge_file_location + "/discharge.csv"
-                daily_discharge =  open(discharge_file_location, 'wb')
-                spamwriter = csv.writer(daily_discharge, delimiter=',')
-                
-                if discharge_file_location and discharge_file_location != "#":
-                spamwriter.writerow([current_date, Q_max])
-                arcpy.AddMessage("Daily Discharge Written to CSV")'''
+            )'''

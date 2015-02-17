@@ -329,3 +329,19 @@ class SCSCNQsurf(object):
         arcpy.CalculateStatistics_management(sca)
         
         return sca
+
+    def BaseflowCalculation(self, baseflow, flow_accumulation):
+        arcpy.AddMessage("Starting daily baseflow calculation")
+
+        baseflow = float(baseflow)
+        arcpy.AddMessage("Todays calculated baseflow at the outlet is " + str(baseflow))
+
+        # Calculate the cell of highest flow accumulation
+        max_flow_accumulation = arcpy.GetRasterProperties_management(flow_accumulation, "MAXIMUM")
+        max_flow_accumulation = float(max_flow_accumulation.getOutput(0)) 
+        arcpy.AddMessage("The max flow accumulation is " + str(max_flow_accumulation))
+
+        # Calculate the baseflow
+        baseflow_raster = (flow_accumulation / max_flow_accumulation) * baseflow
+ 
+        return baseflow_raster
