@@ -68,11 +68,11 @@ for output, output_frequency in output_file_list.iteritems():
     arcpy.AddMessage("You have selected " + str(output_frequency) + " for " + output)
 
 # This is a series of points along the river network at which a value is saved
-output_excel_discharge = arcpy.GetParameterAsText(15) 
-output_excel_sediment = arcpy.GetParameterAsText(16) 
+output_excel_discharge = arcpy.GetParameterAsText(14) 
+output_excel_sediment = arcpy.GetParameterAsText(15) 
 
 # Use Dinfinity flow directions
-use_dinfinity = arcpy.GetParameterAsText(17)
+use_dinfinity = arcpy.GetParameterAsText(16)
 
 # 7 Grainsizes
 grain_size_1 = 0.0000156  # Clay

@@ -17,7 +17,7 @@ import rasterstonumpys
 
 class model_loop(object):
         
-    def start_precipition(self, river_catchment_poly, precipitation_textfile, baseflow_textfile, model_start_date, region, elevation_raster, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, output_excel_discharge, output_excel_sediment, output_format):
+    def start_precipition(self, river_catchment_poly, precipitation_textfile, baseflow_textfile, model_start_date, region, elevation_raster, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, discharge_file_location, output_excel_sediment, output_format):
          
         # First loop parameter
         first_loop = "True"
