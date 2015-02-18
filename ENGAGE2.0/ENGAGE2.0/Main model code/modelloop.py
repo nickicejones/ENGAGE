@@ -25,12 +25,18 @@ class model_loop(object):
         month_day = 0
         year_day = 0
         
-        # Set up the discharge location
+        # Set up the discharge location which outputs the value at the bottom of the catchment every day.
         if discharge_file_location and discharge_file_location != "#":
             discharge_file_location = discharge_file_location + "/discharge.csv"
             daily_discharge =  open(discharge_file_location, 'wb')
-            spamwriter = csv.writer(daily_discharge, delimiter=',')
+            discharge_spamwriter = csv.writer(daily_discharge, delimiter=',')
 
+        # Set up the save location for sediment leaving the bottom of the system
+        if output_excel_sediment and output_excel_sediment != "#":
+            output_excel_sediment = output_excel_sedimentn + "/discharge.csv"
+            daily_sediment =  open(output_excel_sediment, 'wb')
+            sediment_spamwriter = csv.writer(daily_sediment, delimiter=',')
+        
         # Set up the model start date
         current_date = datetime.datetime.strptime(model_start_date, '%d/%m/%Y')
         
@@ -70,7 +76,7 @@ class model_loop(object):
                 arcpy.AddMessage("Baseflow is " + str(baseflow))
 
             ### RECALULATING THE SLOPE DUE TO ELEVATION CHANGE ###
-            if day_of_year == 1 or day_of_year % 30 == 0:
+            if first_loop == "True" or day_of_year % 30 == 0:
                 arcpy.AddMessage("-------------------------") 
                 arcpy.AddMessage("It is time to recalculate the elevation, slope and flow directions")
                 arcpy.AddMessage("-------------------------") 
@@ -191,6 +197,7 @@ class model_loop(object):
             #rasterstonumpys.convert_numpy_to_raster(list_of_grain_volumes, bottom_left_corner, cell_size, save_date)
             
 
+
             ### Check  what needs to be output from the model ###
             # Create a format which says what todays date is
             daily_save_date = str(current_date.strftime('%d_%m_%Y'))
@@ -200,10 +207,17 @@ class model_loop(object):
             tomorrow_day = int(tomorrow.strftime('%d'))
             tomorrow_month = int(tomorrow.strftime('%m'))
 
-                            
+            # If the user has selected to output the daily discharge value at the bottom of the catchment write that value to the excel               
             if discharge_file_location and discharge_file_location != "#":
-                spamwriter.writerow([current_date, Q_max])
+                discharge_spamwriter.writerow([current_date, Q_max])
                 arcpy.AddMessage("Daily Discharge Written to CSV")
+
+
+            if output_excel_sediment and output_excel_sediment != "#":
+                sediment_spamwriter.writerow([current_date, Q_max])
+                arcpy.AddMessage("Daily Discharge Written to CSV")
+
+
 
             if first_loop == 'True':
                 arcpy.AddMessage("First day of operation checking average output rasters")
