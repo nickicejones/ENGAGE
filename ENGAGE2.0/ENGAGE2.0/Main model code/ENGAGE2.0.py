@@ -2,6 +2,7 @@
 import arcpy
 import numpy
 import tempfile
+import gc
 
 ### Import Script Files NJ created ###
 import datapreparation
@@ -27,7 +28,7 @@ try:
         raise LicenseError
 
 except LicenseError:
-    arcpy.AddMessage("Spatial Analyst license is unavailable")
+    arcpy.AddMessage("Spatial Analyst license is unavailable, the model requires Spatial Analyst to operate")
     arcpy.AddMessage("-------------------------")
 
 # Set a location to store the numpy array in a physical form
@@ -120,7 +121,11 @@ grain_pro_temp_list, grain_vol_temp_list, remaining_soil_pro_temp_list = datapre
 ### CONVERT LANDCOVER AND SOIL DATA TO CN2 NUMBERS ### - CHECKED 12/11/14 NJ
 CN2_d = CN2numbers.SCS_CN_Number().get_SCSCN2_numbers(model_input_parameters[1], soil_type, model_input_parameters[0], land_cover_type)
 
+# Collect garbage
+del active_layer, model_input_parameters, grain_size_proportions 
+collected = gc.collect()
+arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
+            
 arcpy.AddMessage("Model initiated") 
-
 ### MAIN MODEL CODE ###
 modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, baseflow_textfile, model_start_date, region, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, output_excel_discharge, output_excel_sediment, output_format)

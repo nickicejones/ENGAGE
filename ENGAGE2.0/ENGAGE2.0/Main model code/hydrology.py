@@ -331,6 +331,7 @@ class SCSCNQsurf(object):
         return sca
 
     def BaseflowCalculation(self, baseflow, flow_accumulation):
+
         arcpy.AddMessage("Starting daily baseflow calculation")
 
         baseflow = float(baseflow)

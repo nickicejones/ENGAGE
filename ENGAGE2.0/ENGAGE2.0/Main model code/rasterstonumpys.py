@@ -1,13 +1,16 @@
 # import statments
 import arcpy
+import csv
+import numpy as np
 
 # Simple function to convert rasters to numpys
 def convert_raster_to_numpy(list_of_rasters):
     list_of_numpy_arrays = []
     for raster in list_of_rasters:
         arcpy.AddMessage("Converting " + str(raster) + " raster to numpy array")
-        numpy = arcpy.RasterToNumPyArray(raster, '#', '#', '#', -9999)        
-        list_of_numpy_arrays.append(numpy)
+        numpy_raster = arcpy.RasterToNumPyArray(raster, '#', '#', '#', -9999)   
+        list_of_numpy_arrays.append(numpy_raster)
+
             
     arcpy.AddMessage("-------------------------")
     arcpy.AddMessage("Successfully converted rasters to numpy arrays")
@@ -36,3 +39,33 @@ def convert_numpy_to_raster_single(numpy, output_type, bottom_left_corner, cell_
     arcpy.AddMessage("-------------------------")
     arcpy.AddMessage("Successfully converted numpy arrays to rasters")
     arcpy.AddMessage("-------------------------")
+
+def save_discharge_or_sediment_csv(output_excel_discharge, output_excel_sediment):
+    # Set up the discharge location which outputs the value at the bottom of the catchment every day.
+    if output_excel_discharge and output_excel_discharge != "#":
+        output_excel_discharge = output_excel_discharge + "/discharge.csv"
+        daily_discharge =  open(output_excel_discharge, 'wb')
+        discharge_spamwriter = csv.writer(daily_discharge, delimiter=',')
+    else:
+        discharge_spamwriter = "#"
+
+    # Set up the save location for sediment leaving the bottom of the system
+    if output_excel_sediment and output_excel_sediment != "#":
+        output_excel_sediment = output_excel_sedimentn + "/discharge.csv"
+        daily_sediment =  open(output_excel_sediment, 'wb')
+        sediment_spamwriter = csv.writer(daily_sediment, delimiter=',')
+
+    else:
+        sediment_spamwriter = "#"
+
+    return discharge_spamwriter, sediment_spamwriter
+
+def output_discharge_csv(current_date, discharge_spamwriter, Q_max):
+    if discharge_spamwriter and discharge_spamwriter != "#":
+        discharge_spamwriter.writerow([current_date, Q_max])
+        arcpy.AddMessage("Daily Discharge Written to CSV")
+
+def output_sediment_csv(current_date, sediment_spamwriter, Sed_max):
+    if sediment_spamwriter and sediment_spamwriter != "#":
+        sediment_spamwriter.writerow([current_date, Sed_max])
+        arcpy.AddMessage("Daily Discharge Written to CSV")
