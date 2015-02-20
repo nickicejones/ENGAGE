@@ -35,6 +35,9 @@
     <Compile Include="Main model code\CN2numbers.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Main model code\module1.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main model code\sediment.py">
       <SubType>Code</SubType>
     </Compile>

@@ -112,9 +112,9 @@ model_input_parameters = rasterstonumpys.convert_raster_to_numpy(model_input_par
 
 ### CALCULATE ACTIVE LAYER DEPTH/REMAINING SOIL DEPTH, AVERAGE NUMBER OF DAYS PRECIPITATION PER YEAR, STARTING GRAIN SIZE VOLUMES, TEMPORARY FILE LOCATIONS ###
 active_layer, inactive_layer = datapreparation.calculate_active_layer(model_input_parameters[2], cell_size)
-grain_size_volumes = datapreparation.get_grain_volumes(grain_size_proportions, active_layer) # Only in the active layer
+active_layer_volumes, inactive_layer_volumes = datapreparation.get_grain_volumes(grain_size_proportions, active_layer, inactive_layer) 
 day_pcp_yr = datapreparation.average_days_rainfall(precipitation_textfile)
-grain_pro_temp_list, grain_vol_temp_list, remaining_soil_pro_temp_list = datapreparation.temporary_file_locations(numpy_array_location, grain_size_proportions, grain_size_volumes)
+active_layer_pro_temp_list, active_layer_vol_temp_list, inactive_layer_pro_temp_list, inactive_layer_vol_temp_list = datapreparation.temporary_file_locations(numpy_array_location, grain_size_proportions, active_layer_volumes, inactive_layer_volumes)
 
 
 
@@ -122,10 +122,10 @@ grain_pro_temp_list, grain_vol_temp_list, remaining_soil_pro_temp_list = datapre
 CN2_d = CN2numbers.SCS_CN_Number().get_SCSCN2_numbers(model_input_parameters[1], soil_type, model_input_parameters[0], land_cover_type)
 
 # Collect garbage
-del active_layer, model_input_parameters, grain_size_proportions 
+del active_layer, model_input_parameters, grain_size_proportions, active_layer_volumes, inactive_layer_volumes 
 collected = gc.collect()
 arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
             
 arcpy.AddMessage("Model initiated") 
 ### MAIN MODEL CODE ###
-modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, baseflow_textfile, model_start_date, region, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, output_excel_discharge, output_excel_sediment, output_format)
+modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, baseflow_textfile, model_start_date, region, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, active_layer_pro_temp_list, active_layer_vol_temp_list, inactive_layer_pro_temp_list, inactive_layer_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, output_excel_discharge, output_excel_sediment, output_format)

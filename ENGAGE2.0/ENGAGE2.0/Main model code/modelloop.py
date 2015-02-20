@@ -17,7 +17,7 @@ import rasterstonumpys
 
 class model_loop(object):
         
-    def start_precipition(self, river_catchment_poly, precipitation_textfile, baseflow_textfile, model_start_date, region, elevation_raster, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, remaining_soil_pro_temp_list, grain_pro_temp_list, grain_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, output_excel_discharge, output_excel_sediment, output_format):
+    def start_precipition(self, river_catchment_poly, precipitation_textfile, baseflow_textfile, model_start_date, region, elevation_raster, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, active_layer_pro_temp_list, active_layer_vol_temp_list, inactive_layer_pro_temp_list, inactive_layer_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, output_excel_discharge, output_excel_sediment, output_format):
          
         # First loop parameter
         first_loop = "True"
@@ -149,17 +149,18 @@ class model_loop(object):
             tomorrow_day = int(tomorrow.strftime('%d'))
             tomorrow_month = int(tomorrow.strftime('%m'))
 
+            
 
             ###SEDIMENT TRANSPORT SECTION OF LOOP###                         
             if calculate_sediment == 'true':               
                 # Calculate d50, d84, Fs
-                d50, d84, Fs = sediment.sedimenttransport().d50_d84_Fs_grain(grain_size_list, grain_pro_temp_list)
+                d50, d84, Fs = sediment.sedimenttransport().d50_d84_Fs_grain(grain_size_list, active_layer_pro_temp_list)
             
                 # Calculate depth using the recking parameters and the indexs of the cells with a depth greater than the threshold (cell_size / 1000)
                 depth_recking, new_idx = sediment.sedimenttransport().depth_recking(Q_dis, slope, d84, cell_size)
 
                 # Calculate the timestep of the sediment transport using the maximum rate of entrainment in all the cells
-                sediment_time_step_seconds = sediment.sedimenttransport().SedimentEntrainmentQmax(new_idx, slope, depth_recking, Fs, d50, cell_size, grain_size_list, grain_pro_temp_list)
+                sediment_time_step_seconds = sediment.sedimenttransport().SedimentEntrainmentQmax(new_idx, slope, depth_recking, Fs, d50, cell_size, grain_size_list, active_layer_pro_temp_list)
             
                 if sediment_time_step_seconds >= 86400:
                     sediment_time_step_seconds = 86400
@@ -175,7 +176,7 @@ class model_loop(object):
             
                          
                 # Calculate sediment transport for each timestep based on the above calculation
-                sediment.sedimenttransport().sediment_loop(sediment_time_step_seconds, grain_size_list, Q_dis, slope, cell_size, flow_direction_np, bottom_left_corner, daily_save_date, grain_pro_temp_list, grain_vol_temp_list, inactive_layer, remaining_soil_pro_temp_list)
+                sediment.sedimenttransport().sediment_loop(sediment_time_step_seconds, grain_size_list, Q_dis, slope, cell_size, flow_direction_np, bottom_left_corner, daily_save_date, active_layer_pro_temp_list, active_layer_vol_temp_list, inactive_layer, inactive_layer_pro_temp_list, inactive_layer_vol_temp_list)
                 Sed_max = " "
 
 

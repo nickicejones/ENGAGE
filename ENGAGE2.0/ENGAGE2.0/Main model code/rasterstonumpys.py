@@ -18,7 +18,7 @@ def convert_raster_to_numpy(list_of_rasters):
 
     return list_of_numpy_arrays
 
-def convert_numpy_to_raster(list_of_numpys, bottom_left_corner, cell_size, save_date):
+def convert_numpy_to_raster_dict(list_of_numpys, bottom_left_corner, cell_size, save_date):
     
     for name, numpy in list_of_numpys.iteritems():
         arcpy.AddMessage("Converting " + str(name) + " numpy array to raster")
@@ -29,6 +29,21 @@ def convert_numpy_to_raster(list_of_numpys, bottom_left_corner, cell_size, save_
     arcpy.AddMessage("-------------------------")
     arcpy.AddMessage("Successfully converted numpy arrays to rasters")
     arcpy.AddMessage("-------------------------")
+
+def convert_numpy_to_raster_list(list_of_numpys, bottom_left_corner, cell_size, save_date):
+    
+    number = 1
+    for name in list_of_numpys:
+
+        arcpy.AddMessage("Converting numpy array to raster")
+        raster = arcpy.NumPyArrayToRaster(name, bottom_left_corner, cell_size, cell_size, -9999)
+        raster.save("testing" + str(number) + "_" + str(save_date))        
+        del name, raster
+        number += 1    
+    arcpy.AddMessage("-------------------------")
+    arcpy.AddMessage("Successfully converted numpy arrays to rasters")
+    arcpy.AddMessage("-------------------------")
+
 
 def convert_numpy_to_raster_single(numpy, output_type, bottom_left_corner, cell_size, save_date):
     arcpy.AddMessage("Converting " + str(output_type) + " numpy array to raster")

@@ -13,17 +13,17 @@ class sedimenttransport(object):
     """description of class"""
 
     # Combined function to calculate the d50, d84, Fs of the input grainsizes
-    def d50_d84_Fs_grain(self, grain_size_list, grain_pro_temp_list):
+    def d50_d84_Fs_grain(self, grain_size_list, active_layer_pro_temp_list):
 
         start = time.time()
 
-        grain_size_1_proportion = np.load(grain_pro_temp_list[0])
-        grain_size_2_proportion = np.load(grain_pro_temp_list[1])
-        grain_size_3_proportion = np.load(grain_pro_temp_list[2])
-        grain_size_4_proportion = np.load(grain_pro_temp_list[3])
-        grain_size_5_proportion = np.load(grain_pro_temp_list[4])      
-        grain_size_6_proportion = np.load(grain_pro_temp_list[5])
-        grain_size_7_proportion = np.load(grain_pro_temp_list[6])
+        grain_size_1_proportion = np.load(active_layer_pro_temp_list[0])
+        grain_size_2_proportion = np.load(active_layer_pro_temp_list[1])
+        grain_size_3_proportion = np.load(active_layer_pro_temp_list[2])
+        grain_size_4_proportion = np.load(active_layer_pro_temp_list[3])
+        grain_size_5_proportion = np.load(active_layer_pro_temp_list[4])      
+        grain_size_6_proportion = np.load(active_layer_pro_temp_list[5])
+        grain_size_7_proportion = np.load(active_layer_pro_temp_list[6])
 
         # load grain size proportions
         grain_size_proportions = [grain_size_1_proportion, grain_size_2_proportion, grain_size_3_proportion, grain_size_4_proportion, grain_size_5_proportion, grain_size_6_proportion, grain_size_7_proportion]
@@ -135,8 +135,8 @@ class sedimenttransport(object):
 
         ### GET THE INDICES OF CELLS WITH CELLS GREATER THAN THE DEPTH THRESHOLD ###
         # Calculate the depth threshold
-        depth_threshold = cell_size / 1000
-        #depth_threshold = 0.000001
+        #depth_threshold = cell_size / 1000
+        depth_threshold = 0.0
 
         # Create the empty arrays for putting the masked data into
         depth_mask = np.zeros_like(depth_recking, dtype = float)
@@ -157,17 +157,17 @@ class sedimenttransport(object):
         return depth_recking, new_idx
 
     # Calculate the sediment entrainment for the grainsizes and then use that to calculate the sediment timestep - checked 04/07/14
-    def SedimentEntrainmentQmax(self, new_idx, slope, depth_recking, Fs, d50, cell_size, grain_size_list, grain_pro_temp_list):
+    def SedimentEntrainmentQmax(self, new_idx, slope, depth_recking, Fs, d50, cell_size, grain_size_list, active_layer_pro_temp_list):
         
         start = time.time()
 
-        grain_size_1_proportion = np.load(grain_pro_temp_list[0])
-        grain_size_2_proportion = np.load(grain_pro_temp_list[1])
-        grain_size_3_proportion = np.load(grain_pro_temp_list[2])
-        grain_size_4_proportion = np.load(grain_pro_temp_list[3])
-        grain_size_5_proportion = np.load(grain_pro_temp_list[4])      
-        grain_size_6_proportion = np.load(grain_pro_temp_list[5])
-        grain_size_7_proportion = np.load(grain_pro_temp_list[6])
+        grain_size_1_proportion = np.load(active_layer_pro_temp_list[0])
+        grain_size_2_proportion = np.load(active_layer_pro_temp_list[1])
+        grain_size_3_proportion = np.load(active_layer_pro_temp_list[2])
+        grain_size_4_proportion = np.load(active_layer_pro_temp_list[3])
+        grain_size_5_proportion = np.load(active_layer_pro_temp_list[4])      
+        grain_size_6_proportion = np.load(active_layer_pro_temp_list[5])
+        grain_size_7_proportion = np.load(active_layer_pro_temp_list[6])
 
         # load grain size proportions
         grain_size_proportions = [grain_size_1_proportion, grain_size_2_proportion, grain_size_3_proportion, grain_size_4_proportion, grain_size_5_proportion, grain_size_6_proportion, grain_size_7_proportion]
@@ -248,7 +248,63 @@ class sedimenttransport(object):
                           
         return sediment_time_step_seconds
 
-    def sediment_loop(self, sediment_time_step_seconds, grain_size_list, Q_dis, slope, cell_size, flow_direction_np, bottom_left_corner, save_date, grain_pro_temp_list, grain_vol_temp_list, inactive_layer, remaining_soil_pro_temp_list):
+    def active_layer_depth(self, active_layer, inactive_layer, new_idx, active_layer_pro_temp_list, active_layer_vol_temp_list, inactive_layer_pro_temp_list, inactive_layer_vol_temp_list, cell_size, iteration_counter):
+            
+        # Calculate the lower and upper limits for the volume of the active layer
+        al_upper_volume_limit = float(0.3 * cell_size * cell_size)
+        arcpy.AddMessage("Upper active layer limit set at " + str(al_upper_volume_limit))
+        al_lower_volume_limit = float(0.05 * cell_size * cell_size) 
+        arcpy.AddMessage("Lower active layer limit set at " + str(al_lower_volume_limit))
+         
+        # Count the grainsizes as the model works through them
+        grain_size_counter = 1    
+         
+        # Set up some empty arrays to hold the new values 
+        new_active_layer_total = np.zeros_like(active_layer)
+        new_inactive_layer_total = np.zeros_like(inactive_layer)
+                                       
+        for active_layer_proportion_temp, active_layer_volume_temp, inactive_layer_proproportion_temp, inactive_layer_volume_temp in izip(active_layer_pro_temp_list, active_layer_vol_temp_list, inactive_layer_pro_temp_list, inactive_layer_vol_temp_list):
+            # Locad the arrays from the disk
+            active_layer_proportion = np.load(active_layer_proportion_temp)
+            active_layer_volume = np.load(active_layer_volume_temp)
+            inactive_layer_proproportion = np.load(inactive_layer_proproportion_temp)
+            inactive_layer_volume = np.load(inactive_layer_volume_temp)
+                                
+            
+            # Check the depth of the active layer is not to large or too small
+            for i, j in new_idx: # Iterate through the cells transporting sediment
+                    
+                if float(active_layer[i, j]) >= al_upper_volume_limit: # check to see if the volume in that cell is greater than 30m3
+                    arcpy.AddMessage(" ") 
+                    arcpy.AddMessage("The cell " + str(i) + " " + str(j) + " depth is " + str(active_layer[i, j]) + "m3 which is over " + str(al_upper_volume_limit) + " recalculating active layer depth....") 
+                                          
+                    # Calculate the amount that needs to be added to the remaining soil volume that from the active layer
+                    arcpy.AddMessage("The previous volume of grain size " + str(grain_size_counter) + " in the inactive layer is " + str(inactive_layer_volume[i, j]))
+                    inactive_layer_volume[i, j] = (20 * active_layer_proportion[i, j]) + inactive_layer_volume[i, j] # add 20cm proportion of that grainsize to the active layer
+                    arcpy.AddMessage("The new volume of grain size " + str(grain_size_counter) + " in the inactive layer is " + str(inactive_layer_volume[i, j]))
+                    
+                    # Take 20cm3 off the total active layer volume and then work out the new volumes in the active layer
+                    arcpy.AddMessage("Previous grainsize volume " + str(grain_size_counter) + " in the active layer is " + str(active_layer_volume[i, j]))  
+                    active_layer_volume[i, j] = (active_layer[i, j] - 20) * active_layer_proportion[i, j]                         
+                    arcpy.AddMessage("New grainsize volume " + str(grain_size_counter) + " in the active layer is " + str(active_layer_volume[i, j]))  
+                                                                                    
+                    np.save(inactive_layer_volume_temp, inactive_layer_volume)
+                    np.save(active_layer_volume_temp, active_layer_volume)
+                    arcpy.AddMessage("Change to volume saved to disk")
+            
+            # Add the new calculated volumes to a running total array
+            new_active_layer_total += active_layer_volume
+            new_inactive_layer_total += inactive_layer_volume
+
+            # Increment the grainsize by 1 for the next round of calculations
+            grain_size_counter = grain_size_counter + 1
+            
+        new_active_layer_total[active_layer == -9999] = -9999
+        new_inactive_layer_total[inactive_layer == -9999] = -9999
+
+        return new_active_layer_total, new_inactive_layer_total
+                                                     
+    def sediment_loop(self, sediment_time_step_seconds, grain_size_list, Q_dis, slope, cell_size, flow_direction_np, bottom_left_corner, save_date, active_layer_pro_temp_list, active_layer_vol_temp_list, inactive_layer, inactive_layer_pro_temp_list, inactive_layer_vol_temp_list):
                 
         def sediment_entrainment_calculation(new_idx, slope, depth_recking, Fs, d50, grain_size, grain_proportion, grain_volume, cell_size):
 
@@ -329,140 +385,7 @@ class sedimenttransport(object):
             sediment_entrainment_in[slope == -9999] = -9999
 
             return sediment_entrainment_in
-
-        def active_layer_depth(active_layer, inactive_layer, new_idx, grain_pro_temp_list, grain_vol_temp_list, remaining_soil_pro_temp_list, cell_size, iteration_counter):
-                                 
-            for grain_proportion_temp, grain_volume_temp, remaining_soil_pro_temp in izip(grain_pro_temp_list, grain_vol_temp_list, remaining_soil_pro_temp_list):
-                grain_proportion = np.load(grain_proportion_temp)
-                grain_volume = np.load(grain_volume_temp)
-                remaining_soil_pro = np.load(remaining_soil_pro_temp)
-
-                upper_volume_limit = 0.3 * cell_size * cell_size
-
-                lower_volume_limit = 0.05 * cell_size * cell_size 
-
-                grain_size_counter = 1
-
-                # Check the depth of the active layer is not to large or too small
-                for i, j in new_idx: # Iterate through the cells transporting sediment
-                    if active_layer[i, j] >= upper_volume_limit: # check to see if the volume in that cell is greater than 30m3
-                        arcpy.AddMessage("The cell " + str(i) + " " + str(j) + " depth is over " + str(upper_volume_limit) + " recalculating depth....") 
-                        arcpy.AddMessage(" ") 
-                             
-                        # Calculate the volume of grainsize in the remaining soil
-                        remaining_soil_grainsize_volume = inactive_layer[i, j] * remaining_soil_pro[i, j]
-                        arcpy.AddMessage("The volume of grain size " + str(grain_size_counter) + " not in the active layer is " + str(remaining_soil_grainsize_volume))
                         
-                        # Calculate the amount that needs to be added to the remaining soil volume that from the active layer
-                        new_remaining_soil_grainsize_volume = (20 * grain_proportion[i, j]) + remaining_soil_grainsize_volume # add 20cm proportion of that grainsize to the active layer
-                        arcpy.AddMessage("The new volume of grain size " + str(grain_size_counter) + " not in the active layer is " + str(new_remaining_soil_grainsize_volume))
-                        arcpy.AddMessage(" ") 
-
-                        # Add the new volume to a list
-                        remaining_soil_grainsize_volumes_list.append(new_remaining_soil_grainsize_volume)
-                        
-                        # Keep a total of the total volume of the remaining soil volume
-                        total_remaining_soil_volume = total_remaining_soil_volume + new_remaining_soil_grainsize_volume                         
-                        arcpy.AddMessage("Total soil volume not in the active layer is " + str(total_remaining_soil_volume))
-                        arcpy.AddMessage(" ") 
-
-                        # Take 20cm3 off the total active layer volume and then work out the new volumes in the active layer
-                        grain_volume[i, j] = (active_layer[i, j] - 20) * grain_proportion[i, j] 
-                        
-                        arcpy.AddMessage("New grain volume " + str(grain_volume[i, j]))  
-                        arcpy.AddMessage(" ")                                               
-                        np.save(grain_volume_temp, grain_volume)
-                        grain_size_counter += 1
-                  
-                    elif active_layer[i, j] < lower_limit and inactive_layer[i, j] > 0: # check to see if the volume in that cell is greater than 5m3
-                                            
-                        arcpy.AddMessage("The cell " + str(i) + " " + str(j) + " depth is " + str(active_layer[i, j]) + " which is under " + str(lower_volume_limit) + " recalculating depth....") 
-                        arcpy.AddMessage(" ") 
-                        total_soil_removed_from_remaining = 0.0
-                        total_active_soil_volume = 0.0   
-                        total_remaining_soil_volume = remaining_soil_volume[i, j]          
-                        remaining_soil_volumes_list = []
-                    
-                        # The volume of the grainsize left in the active layer is
-                        arcpy.AddMessage("Current active layer volume of grain size " + str(grain_size_counter) + " is " + str(grain_volume[i, j]))
-                        
-                        if remaining_soil_volume[i, j] >= 20:
-                            # Calculate the volume that needs to be added to this grainsize 
-                            active_layer_volume_added = 20 * remaining_soil_pro[i, j]
-                            grain_volume[i, j] = active_layer_volume_added + grain_volume[i, j]                      
-                            arcpy.AddMessage("New active layer soil " + str(grain_volume[i, j]))
-                            np.save(grain_volume_temp, grain_volume)
-
-                            # take 20cm3 off the total remaining volume and then work out the new proportions in the remaining soil volume
-                            new_remaining_soil_volume = (20 * remaining_soil_pro[i, j]) 
-                            total_soil_removed_from_remaining = total_soil_removed_from_remaining + new_remaining_soil_volume
-                            arcpy.AddMessage("Soil volume of grain size being removed from below the active layer " + str(grain_size_counter) + " is " + str(new_remaining_soil_volume))
-
-                        elif remaining_soil_volume[i, j] < 20:
-                            # Calculate the volume that needs to be added to this grainsize 
-                            active_layer_volume_added = remaining_soil_volume[i, j] * remaining_soil_pro[i, j]
-                            grain_volume[i, j] = active_layer_volume_added + grain_volume[i, j]                      
-                            arcpy.AddMessage("New active layer soil " + str(grain_volume[i, j]))
-                            np.save(grain_volume_temp, grain_volume)
-
-                            # take off the total remaining volume and then work out the new proportions in the remaining soil volume
-                            new_remaining_soil_volume = (remaining_soil_volume[i, j] * remaining_soil_pro[i, j]) 
-                            total_soil_removed_from_remaining = total_soil_removed_from_remaining + new_remaining_soil_volume
-                            arcpy.AddMessage("Soil volume of grain size being removed from below the active layer" + str(grain_size_counter) + " is " + str(new_remaining_soil_volume))
-
-                        else:
-                            arcpy.AddMessage("No soil in this cell to top up active layer")
-                                                                                 
-                        total_active_soil_volume = total_active_soil_volume + grain_volume[i, j]                                             
-                        arcpy.AddMessage("Total soil volume in the active layer is " + str(total_active_soil_volume))                        
-                        
-                                                                                        
-                        # Increment the counter by one
-                        grain_size_counter += 1
-
-                    for grain_proportion_temp, grain_volume_temp in izip(grain_pro_temp_list, grain_vol_temp_list):
-                        grain_proportion = np.load(grain_proportion_temp)
-                        grain_volume = np.load(grain_volume_temp)
-
-                        grain_proportion[i, j] = total_active_soil_volume / grain_volume[i, j]
-                        np.save(grain_proportion_temp, grain_proportion)      
-                        
-                    # Take amount off the total in the remaining soil
-                    remaining_soil_volume[i, j] = remaining_soil_volume[i, j] - total_soil_removed_from_remaining
-                    arcpy.AddMessage("Total soil volume not in the active layer is " + str(remaining_soil_volume[i, j]))
-                    arcpy.AddMessage(" ")
-
-                    # Add 20cm3 to the remaining soil volume
-                    remaining_soil_volume[i, j] = total_remaining_soil_volume
-                    total_volume_active_layer[i, j] = total_volume_active_layer[i, j] - 20
-
-                    for remaining_soil_pro_temp, remaining_soil_vol in izip (remaining_soil_pro_temp_list, remaining_soil_grainsize_volumes_list):
-                        remaining_soil_pro = np.load(remaining_soil_pro_temp)
-                        remaining_soil_pro[i, j] = remaining_soil_vol / total_remaining_soil_volume
-                        np.save(remaining_soil_pro_temp, remaining_soil_pro)
-
-            # grain size volumes counter
-            counter_proportion = 1
-
-            for grain_proportion_temp in remaining_soil_pro_temp_list:
-                grain_proportion = np.load(grain_proportion_temp)                               
-                
-                
-                arcpy.AddMessage("Saved proportions in remaining soil to disk " + str(counter_proportion)) 
-                
-                grain_proportion[slope == -9999] = -9999 
-
-                list_grain_pro = {"g_pro_remain"  + str(counter_proportion) + "_" + str(iteration_counter): grain_proportion}
-                rasterstonumpys.convert_numpy_to_raster(list_grain_pro, bottom_left_corner, cell_size, save_date)
-            
-
-                counter_proportion += 1
-                if counter_proportion == 8:
-                    counter_proportion = 1
-
-            list_grain_vol = {"total_remaining_soil_volume" + str(counter_proportion) + "_" + str(iteration_counter): remaining_soil_volume, "total_remaining_active_layer": total_volume_active_layer}
-            rasterstonumpys.convert_numpy_to_raster(list_grain_vol, bottom_left_corner, cell_size, save_date)
-        
         total_change = np.zeros_like(slope, dtype = float)
 
         counter_transport = 1
@@ -480,13 +403,13 @@ class sedimenttransport(object):
             total_volume = np.zeros_like(slope, dtype = float)
 
             # Calculate the d50, d84, Fs for this timestep
-            d50, d84, Fs = self.d50_d84_Fs_grain(grain_size_list, grain_pro_temp_list)
+            d50, d84, Fs = self.d50_d84_Fs_grain(grain_size_list, active_layer_pro_temp_list)
 
             # Calcualte the depth recking and index of active cells in this timestep
             depth_recking, new_idx = self.depth_recking(Q_dis, slope, d84, cell_size)
             
             # Iterate through the grain sizes and proportions calculating the transport
-            for grain_size, grain_proportion_temp, grain_volume_temp in izip(grain_size_list, grain_pro_temp_list, grain_vol_temp_list):
+            for grain_size, grain_proportion_temp, grain_volume_temp in izip(grain_size_list, active_layer_pro_temp_list, active_layer_vol_temp_list):
                 
                 grain_proportion = np.load(grain_proportion_temp)
                 grain_volume = np.load(grain_volume_temp)
@@ -521,9 +444,6 @@ class sedimenttransport(object):
 
                 arcpy.AddMessage("Calculated sediment transport for grain size " + str(counter_transport))
 
-                #list_of_numpys_in_loop = {"sed_out_" + str(counter_transport) + "_" + str(iteration_counter): sediment_entrainment_out, "sed_in_" + str(counter_transport) + "_" + str(iteration_counter): sediment_entrainment_in, "sed_change" + str(counter_transport) + "_" + str(iteration_counter): sediment_change, "g_vol" + str(counter_transport) + "_" + str(iteration_counter): new_grain_volume}
-                #asterstonumpys.convert_numpy_to_raster(list_of_numpys_in_loop, bottom_left_corner, cell_size, save_date)
-                
                 # Increase the grain counter by 1 until it reaches 7
                 counter_transport +=1
                 if counter_transport == 8:
@@ -534,13 +454,10 @@ class sedimenttransport(object):
             collected = gc.collect()
             arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
 
-            list_of_numpys_in_while = {"total_volume_" + str(iteration_counter): total_volume, "total_change_"+ str(iteration_counter): total_change}   
-            rasterstonumpys.convert_numpy_to_raster(list_of_numpys_in_while, bottom_left_corner, cell_size, save_date)
-            
             # grain size volumes counter
             counter_proportion = 1
 
-            for grain_proportion_temp, grain_volume_temp in izip(grain_pro_temp_list, grain_vol_temp_list):
+            for grain_proportion_temp, grain_volume_temp in izip(active_layer_pro_temp_list, active_layer_vol_temp_list):
                 grain_volume = np.load(grain_volume_temp)                               
                 grain_proportion = grain_volume / total_volume
                 
@@ -548,9 +465,6 @@ class sedimenttransport(object):
                 
                 grain_proportion[slope == -9999] = -9999 
                 np.save(grain_proportion_temp, grain_proportion) 
-                
-                #list_grain_pro = {"g_pro" + "_"  + str(counter_proportion) + "_" + str(iteration_counter): grain_proportion}
-                #rasterstonumpys.convert_numpy_to_raster(list_grain_pro, bottom_left_corner, cell_size, save_date)
                 
                 del grain_volume, grain_proportion
 
@@ -562,22 +476,18 @@ class sedimenttransport(object):
             collected = gc.collect()
             arcpy.AddMessage("Garbage collector: collected %d objects." % (collected))      
                                    
-            active_layer_depth(total_volume, inactive_layer, new_idx, grain_pro_temp_list, grain_vol_temp_list,  remaining_soil_pro_temp_list, cell_size, iteration_counter)
+            active_layer, inactive_layer = self.active_layer_depth(total_volume, inactive_layer, new_idx, active_layer_pro_temp_list, active_layer_vol_temp_list,  inactive_layer_pro_temp_list, inactive_layer_vol_temp_list, cell_size, iteration_counter)
 
-                
-            #list_grain_volumes = {"grain_vol_1": grain_size_volumes[0], "grain_vol_2": grain_size_volumes[1], "grain_vol_3": grain_size_volumes[2], "grain_vol_4": grain_size_volumes[3], "grain_vol_5": grain_size_volumes[4], "grain_vol_6": grain_size_volumes[5], "grain_vol_7": grain_size_volumes[6]}
-            #list_grain_pro = {"grain_pro_1" + "_" + str(iteration_counter): grain_pro_temp_list[0], "grain_pro_2"  + "_" + str(iteration_counter): grain_pro_temp_list[1], "grain_pro_3" + "_" + str(iteration_counter): grain_pro_temp_list[2], "grain_pro_4" + "_" + str(iteration_counter): grain_pro_temp_list[3], "grain_pro_5" + "_" + str(iteration_counter): grain_pro_temp_list[4], "grain_pro_6" + "_" + str(iteration_counter): grain_pro_temp_list[5], "grain_pro_7" + "_" + str(iteration_counter): grain_pro_temp_list[6]}
-            
-            #rasterstonumpys.convert_numpy_to_raster(list_grain_volumes, bottom_left_corner, cell_size, save_date)
-            #rasterstonumpys.convert_numpy_to_raster(list_grain_pro, bottom_left_corner, cell_size, save_date)
-                                              
             # Increment the timestep ready for the next loop
             total_time += sediment_time_step_seconds
             total_change[slope == -9999] = -9999
             total_volume[slope == -9999] = -9999
 
-
-
             iteration_counter += 1
 
+
+
+            ### Section to save rasters while testing model ###
+            rasterstonumpys.convert_numpy_to_raster_single(active_layer, "active_layer", bottom_left_corner, cell_size, "0")
+            rasterstonumpys.convert_numpy_to_raster_single(inactive_layer, "inactive_layer", bottom_left_corner, cell_size, "0")
         
