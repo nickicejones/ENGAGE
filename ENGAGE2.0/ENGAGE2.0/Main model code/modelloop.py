@@ -157,14 +157,15 @@ class model_loop(object):
                 d50, d84, Fs = sediment.sedimenttransport().d50_d84_Fs_grain(grain_size_list, active_layer_pro_temp_list)
             
                 # Calculate depth using the recking parameters and the indexs of the cells with a depth greater than the threshold (cell_size / 1000)
-                depth_recking, new_idx = sediment.sedimenttransport().depth_recking(Q_dis, slope, d84, cell_size)
+                depth_recking = sediment.sedimenttransport().depth_recking(Q_dis, slope, d84, cell_size)
 
                 # Calculate the timestep of the sediment transport using the maximum rate of entrainment in all the cells
-                sediment_time_step_seconds = sediment.sedimenttransport().SedimentEntrainmentQmax(new_idx, slope, depth_recking, Fs, d50, cell_size, grain_size_list, active_layer_pro_temp_list)
+                sediment_time_step_seconds = sediment.sedimenttransport().SedimentEntrainmentQmax(slope, depth_recking, Fs, d50, cell_size, grain_size_list, active_layer_pro_temp_list)
             
                 if sediment_time_step_seconds >= 86400:
                     sediment_time_step_seconds = 86400
 
+                sediment_time_step_seconds = 86400
                 ### Piece of code to record the timestep ###
                 arcpy.AddMessage("Sediment timestep for today is  " + str(sediment_time_step_seconds))
                 
@@ -186,9 +187,7 @@ class model_loop(object):
 
             
 
-            
-
-
+          
 
             if first_loop == 'True':
                 arcpy.AddMessage("First day of operation checking average output rasters")

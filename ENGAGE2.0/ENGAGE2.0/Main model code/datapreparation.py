@@ -158,10 +158,16 @@ def convert_date_day_year(current_date):
 # Function to calculate the locations that have an active layer
 def calculate_active_layer(river_soil_depth, cell_size):
     
+    arcpy.AddMessage("Calculating active layer and inactive layer depths")
     # Locate areas which need an active layer (everywhere else should be 0.0)
     active_layer = np.zeros_like(river_soil_depth, dtype = float)
-    np.putmask(active_layer, river_soil_depth > 0, 0.35)
-     
+
+    B = (river_soil_depth >= 0.35)
+    active_layer[B] = 0.35
+    
+    B = ~B & (river_soil_depth > 0)
+    active_layer[B] = river_soil_depth[B]
+    
     # Calculate the remaining soil depth at that location
     inactive_layer = river_soil_depth - active_layer
 
@@ -177,6 +183,7 @@ def calculate_active_layer(river_soil_depth, cell_size):
 
     arcpy.AddMessage("Calculated active layer and remaining soil depth in the river channel") 
     arcpy.AddMessage("-------------------------") 
+
     return active_layer, inactive_layer
 
 # Function to calculation the default grain size volumes in m2

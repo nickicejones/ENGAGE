@@ -3,6 +3,7 @@ import arcpy
 import numpy
 import tempfile
 import gc
+import time
 
 ### Import Script Files NJ created ###
 import datapreparation
@@ -16,6 +17,9 @@ import CN2numbers
 arcpy.env.overwriteOutput = True
 arcpy.env.compression = "NONE"
 arcpy.AddMessage(" ") 
+
+# Start the timer for the model preparation
+start = time.time()
 
 # Check out the ArcGIS Spatial Analyst extension license
 try:
@@ -121,11 +125,25 @@ active_layer_pro_temp_list, active_layer_vol_temp_list, inactive_layer_pro_temp_
 ### CONVERT LANDCOVER AND SOIL DATA TO CN2 NUMBERS ### - CHECKED 12/11/14 NJ
 CN2_d = CN2numbers.SCS_CN_Number().get_SCSCN2_numbers(model_input_parameters[1], soil_type, model_input_parameters[0], land_cover_type)
 
+ 
+
 # Collect garbage
 del active_layer, model_input_parameters, grain_size_proportions, active_layer_volumes, inactive_layer_volumes 
 collected = gc.collect()
 arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
-            
+arcpy.AddMessage("-------------------------")
+
+arcpy.AddMessage("Time to complete model preparation is " + str(round(time.time() - start,2)) + "s. ")
+arcpy.AddMessage("-------------------------")
+         
 arcpy.AddMessage("Model initiated") 
+
 ### MAIN MODEL CODE ###
 modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, baseflow_textfile, model_start_date, region, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, active_layer_pro_temp_list, active_layer_vol_temp_list, inactive_layer_pro_temp_list, inactive_layer_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, output_excel_discharge, output_excel_sediment, output_format)
+
+
+
+'''
+### Section to save rasters while testing model ###
+rasterstonumpys.convert_numpy_to_raster_single(active_layer, "active_layer", bottom_left_corner, cell_size, "0")
+rasterstonumpys.convert_numpy_to_raster_single(inactive_layer, "inactive_layer", bottom_left_corner, cell_size, "0") '''
