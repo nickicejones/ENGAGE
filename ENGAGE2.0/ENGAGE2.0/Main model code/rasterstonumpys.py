@@ -44,7 +44,6 @@ def convert_numpy_to_raster_list(list_of_numpys, bottom_left_corner, cell_size, 
     arcpy.AddMessage("Successfully converted numpy arrays to rasters")
     arcpy.AddMessage("-------------------------")
 
-
 def convert_numpy_to_raster_single(numpy, output_type, bottom_left_corner, cell_size, save_date):
     arcpy.AddMessage("Converting " + str(output_type) + " numpy array to raster")
     raster = arcpy.NumPyArrayToRaster(numpy, bottom_left_corner, cell_size, cell_size, -9999)

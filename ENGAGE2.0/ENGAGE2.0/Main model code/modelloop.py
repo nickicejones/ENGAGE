@@ -109,8 +109,8 @@ class model_loop(object):
             Scurr = hydrology.SCSCNQsurf().RententionParameter(precipitation, CN1s_d, CN2_d, CN2s_d, ETo, Sprev, Q_surf, first_loop)
             
             # Calculate surface runoff and then convert to raster
-            Q_surf = hydrology.SCSCNQsurf().SurfSCS(precipitation, Scurr, CN2s_d)
-            Q_surf = arcpy.NumPyArrayToRaster(Q_surf, bottom_left_corner, cell_size, cell_size, -9999)
+            Q_surf_np = hydrology.SCSCNQsurf().SurfSCS(precipitation, Scurr, CN2s_d)
+            Q_surf = arcpy.NumPyArrayToRaster(Q_surf_np, bottom_left_corner, cell_size, cell_size, -9999)
             
             if baseflow_textfile and baseflow_textfile != '#':  
                 baseflow_raster = hydrology.SCSCNQsurf().BaseflowCalculation(baseflow, flow_accumulation)    
@@ -222,7 +222,7 @@ class model_loop(object):
                 # What to do if the output is daily
                 if output_frequency == 'Daily':
                     if output_type == "Runoff": 
-                        rasterstonumpys.convert_numpy_to_raster_single(Q_surf, output_type, bottom_left_corner, cell_size, daily_save_date)
+                        rasterstonumpys.convert_numpy_to_raster_single(Q_surf_np, output_type, bottom_left_corner, cell_size, daily_save_date)
                     if output_type == "Discharge": 
                         rasterstonumpys.convert_numpy_to_raster_single(Q_dis, output_type, bottom_left_corner, cell_size, daily_save_date)
                     if output_type == "Depth": 
