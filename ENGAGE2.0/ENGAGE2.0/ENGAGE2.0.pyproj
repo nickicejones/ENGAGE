@@ -71,6 +71,9 @@
     <Compile Include="Raw data processing\addinchannelstructures.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Raw data processing\mergerasters.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Raw data processing\riverchannelburn.py">
       <SubType>Code</SubType>
     </Compile>
@@ -86,6 +89,7 @@
     <Folder Include="Raw data processing\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="base flow\baseflow.f" />
     <Content Include="base flow\bflow.exe" />
     <Content Include="base flow\file.lst" />
     <Content Include="Land cover codes.xlsx" />
