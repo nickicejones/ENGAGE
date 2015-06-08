@@ -11,57 +11,65 @@ class DoesNotCompute(Exception):
     def __str__(self):
         return repr(self.value)
 
+def output_raster_types(output_surface_runoff, output_discharge, output_water_depth, output_spatial_precipitation
+                        , output_sediment_depth, output_net_sediment_transport):
+    # Create an output frequency dict of the different strings and print back the selections
+    output_file_dict = {"Surface runoff": output_surface_runoff, "Discharge": output_discharge, "Water depth": output_water_depth, 
+                        "Spatial precipitation": output_spatial_precipitation, "Sediment depth": output_sediment_depth, "Net sediment": output_net_sediment_transport}
+
+    for output, output_frequency in output_file_dict.iteritems():
+        arcpy.AddMessage("You have selected " + str(output_frequency) + " for " + output)
+
+    return output_file_dict
+
+
 # Function to check if the data exists in the preprocessing geodatabase
 def check_preprocessing_files():
     arcpy.AddMessage("-------------------------")
     try:
         # Check for elevation data
         if arcpy.Exists("MODEL_DTM"):
-            elevation = "MODEL_DTM"
+            DTM = "MODEL_DTM"
 
             if arcpy.Exists("MODEL_DTM_Channel_Burned"):
-                elevation = "MODEL_DTM_Channel_Burned"
+                DTM = "MODEL_DTM_Channel_Burned"
             arcpy.AddMessage("Elevation data detected")
-            arcpy.AddMessage("-------------------------")
+                        
         else:
             # Raise a custom exception
-            raise DoesNotCompute("elevation (DTM)")
+            raise DoesNotCompute("Digital terrain model (DTM)")
 
         # Check and confirm the land cover file / type
         if arcpy.Exists("MODEL_Landcover_LCM"):            
             land_cover = "MODEL_Landcover_LCM"
             land_cover_type = 'LCM 2007'
             arcpy.AddMessage("LCM 2007 land cover data detected")
-            arcpy.AddMessage("-------------------------")
-
+            
             if arcpy.Exists("MODEL_Landcover_LCM_Altered"):
                 land_cover = "MODEL_Landcover_LCM_Altered"
                 land_cover_type = 'LCM 2007'
                 arcpy.AddMessage("Altered LCM land cover detected and selected")
-                arcpy.AddMessage("-------------------------")
+                
         elif arcpy.Exists("MODEL_Landcover_CORINE"):
             land_cover = "MODEL_Landcover_CORINE"
             land_cover_type = 'CORINE 2006'
             arcpy.AddMessage("CORINE 2006 land cover data detected")
-            arcpy.AddMessage("-------------------------")
-
+            
             if arcpy.Exists("MODEL_Landcover_CORINE_Altered"):
                 land_cover = "MODEL_Landcover_CORINE_Altered"
                 land_cover_type = 'CORINE 2006'
                 arcpy.AddMessage("Altered CORINE land cover detected and selected")
-                arcpy.AddMessage("-------------------------")
-
+                
         elif arcpy.Exists("MODEL_COMBINE_LC"):
             land_cover = "MODEL_COMBINE_LC"
             land_cover_type = 'COMBINE'
             arcpy.AddMessage("Natural England SPS and LCM 2007 combined land cover data detected")
-            arcpy.AddMessage("-------------------------")
-
+            
             if arcpy.Exists("MODEL_COMBINE_LC_Altered"):
                 land_cover = "MODEL_COMBINE_LC_Altered"
                 land_cover_type = 'COMBINE'
                 arcpy.AddMessage("Altered Natural England SPS and LCM 2007 land cover detected and selected")
-                arcpy.AddMessage("-------------------------")
+                
         else:
             raise DoesNotCompute("land cover data")
 
@@ -70,84 +78,61 @@ def check_preprocessing_files():
             soil = "MODEL_Soil_HOST"
             soil_type = "HOST"
             arcpy.AddMessage("HOST soil data detected")
-            arcpy.AddMessage("-------------------------")
+            
         elif arcpy.Exists("MODEL_Soil_FAO"):
             soil = "MODEL_Soil_FAO"
             soil_type = "FAO"
             arcpy.AddMessage("FAO soil data detected")
-            arcpy.AddMessage("-------------------------")
+            
         else:
             raise DoesNotCompute("soil data")
 
         # Check and confirm the grainsize proportions    
         if arcpy.Exists("MODEL_GS1"):
-            grain_size_1_proportion = "MODEL_GS1"
+            GS_1_P = "MODEL_GS1"
             
         if arcpy.Exists("MODEL_GS2"):
-            grain_size_2_proportion = "MODEL_GS2"
+            GS_2_P = "MODEL_GS2"
 
         if arcpy.Exists("MODEL_GS3"):
-            grain_size_3_proportion = "MODEL_GS3"
+            GS_3_P = "MODEL_GS3"
 
         if arcpy.Exists("MODEL_GS4"):
-            grain_size_4_proportion = "MODEL_GS4"
+            GS_4_P = "MODEL_GS4"
 
         if arcpy.Exists("MODEL_GS5"):
-            grain_size_5_proportion = "MODEL_GS5"
+            GS_5_P = "MODEL_GS5"
 
         if arcpy.Exists("MODEL_GS6"):
-            grain_size_6_proportion = "MODEL_GS6"
+            GS_6_P = "MODEL_GS6"
 
         if arcpy.Exists("MODEL_GS7"):
-            grain_size_7_proportion = "MODEL_GS7"
+            GS_7_P = "MODEL_GS7"
             arcpy.AddMessage("Grain size proportions data detected")
-            arcpy.AddMessage("-------------------------")            
+                        
         else:
             raise DoesNotCompute("grain size proportions")  
 
         if arcpy.Exists("MODEL_river_soil_depth"):
             river_soil_depth = "MODEL_river_soil_depth"
             arcpy.AddMessage("River soil depth data detected")  
-            arcpy.AddMessage("-------------------------")            
+                       
         else:
             raise DoesNotCompute("river soil depth")
 
         if arcpy.Exists("MODEL_river_catchment"):
-            river_catchment_poly = "MODEL_river_catchment"
+            river_catchment = "MODEL_river_catchment"
             arcpy.AddMessage("River catchment detected")  
-            arcpy.AddMessage("-------------------------")            
+                      
         else:
             raise DoesNotCompute("River catchment")
 
+        arcpy.AddMessage("-------------------------")  
     except DoesNotCompute as error:        
         arcpy.AddError("Model data: " + str(error.value) + " from the pre-processing script could not be found at the location you specified") 
            
         
-    return elevation, land_cover, land_cover_type, soil, soil_type, grain_size_1_proportion, grain_size_2_proportion, grain_size_3_proportion, grain_size_4_proportion, grain_size_5_proportion, grain_size_6_proportion, grain_size_7_proportion, river_soil_depth, river_catchment_poly
-
-# Function to the average number of days rainfall per year based on the input textfile
-def average_days_rainfall(precipitation_textfile):
-    total_number_days = 0
-    total_day_precip = 0
-
-    # Open the precipitation file
-    precip_read = open(precipitation_textfile)
-
-    for precip in precip_read:
-        total_number_days += 1
-        if float(precip) >= 0.1:
-            total_day_precip += 1
-        if total_number_days == 1456 or total_number_days == 2913:
-            total_number_days += 1
-    
-    years_of_sim = total_number_days / 364.25
-    day_pcp_yr = total_day_precip / years_of_sim
-          
-    arcpy.AddMessage("Average number of days precipitation per year is " + str(day_pcp_yr))
-    arcpy.AddMessage("-------------------------")  
-    precip_read.close()
-
-    return day_pcp_yr
+    return DTM, land_cover, land_cover_type, soil, soil_type, GS_1_P, GS_2_P, GS_3_P, GS_4_P, GS_5_P, GS_6_P, GS_7_P, river_soil_depth, river_catchment
 
 # Function to convert the date into a day of the year
 def convert_date_day_year(current_date):
@@ -162,8 +147,8 @@ def calculate_active_layer(river_soil_depth, cell_size):
     # Locate areas which need an active layer (everywhere else should be 0.0)
     active_layer = np.zeros_like(river_soil_depth, dtype = float)
 
-    B = (river_soil_depth >= 0.35)
-    active_layer[B] = 0.35
+    B = (river_soil_depth >= 0.2)
+    active_layer[B] = 0.2
     
     B = ~B & (river_soil_depth > 0)
     active_layer[B] = river_soil_depth[B]
@@ -181,7 +166,7 @@ def calculate_active_layer(river_soil_depth, cell_size):
     inactive_layer[river_soil_depth == -9999] = -9999
     active_layer[river_soil_depth == -9999] = -9999
 
-    arcpy.AddMessage("Calculated active layer and remaining soil depth in the river channel") 
+    arcpy.AddMessage("Calculated active and inactive layer in the river channel") 
     arcpy.AddMessage("-------------------------") 
 
     return active_layer, inactive_layer
@@ -190,26 +175,26 @@ def calculate_active_layer(river_soil_depth, cell_size):
 def get_grain_volumes(grain_size_proportions, active_layer, inactive_layer):
         
     # List to store grain size volumes
-    active_layer_volumes =[]
-    inactive_layer_volumes =[]
+    active_layer_GS_volumes =[]
+    inactive_layer_GS_volumes =[]
 
     # Iterate through the list of grain size volumes for the active layer
     for proportion in grain_size_proportions:
         volume = np.zeros_like(proportion, dtype = float)
         volume = active_layer * proportion
         volume[active_layer == -9999] = -9999
-        active_layer_volumes.append(volume)
+        active_layer_GS_volumes.append(volume)
 
     # Iterate through the list of grain size volumes for the inactive layer
     for proportion in grain_size_proportions:
         volume = np.zeros_like(proportion, dtype = float)
         volume = inactive_layer * proportion
         volume[active_layer == -9999] = -9999
-        inactive_layer_volumes.append(volume)
+        inactive_layer_GS_volumes.append(volume)
 
     arcpy.AddMessage("Calculated starting grain size volumes") 
     arcpy.AddMessage("-------------------------") 
-    return active_layer_volumes, inactive_layer_volumes
+    return active_layer_GS_volumes, inactive_layer_GS_volumes
 
 # Function to create and store the temporary file locations on the harddrive of the computer
 def temporary_file_locations(numpy_array_location, grain_size_proportions, grain_size_volumes, inactive_volumes):
@@ -299,3 +284,27 @@ def temporary_file_locations(numpy_array_location, grain_size_proportions, grain
     arcpy.AddMessage("Saved inactive layer volumes to disk")
 
     return grain_pro_temp_list, grain_vol_temp_list, remaining_soil_pro_temp_list, remaining_soil_vol_temp_list
+
+# Function to the average number of days rainfall per year based on the input textfile
+def average_days_rainfall(precipitation_textfile):
+    total_number_days = 0
+    total_day_precip = 0
+
+    # Open the precipitation file
+    precip_read = open(precipitation_textfile)
+
+    for precip in precip_read:
+        total_number_days += 1
+        if float(precip) >= 0.1:
+            total_day_precip += 1
+        if total_number_days == 1456 or total_number_days == 2913:
+            total_number_days += 1
+    
+    years_of_sim = total_number_days / 364.25
+    day_pcp_yr = total_day_precip / years_of_sim
+          
+    arcpy.AddMessage("Average number of days precipitation per year is " + str(day_pcp_yr))
+    arcpy.AddMessage("-------------------------")  
+    precip_read.close()
+
+    return day_pcp_yr

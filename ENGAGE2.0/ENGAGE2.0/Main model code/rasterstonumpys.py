@@ -4,15 +4,14 @@ import csv
 import numpy as np
 
 # Simple function to convert rasters to numpys
-def convert_raster_to_numpy(list_of_rasters):
+def convert_raster_to_numpy(list_of_rasters):   
     list_of_numpy_arrays = []
     for raster in list_of_rasters:
         arcpy.AddMessage("Converting " + str(raster) + " raster to numpy array")
         numpy_raster = arcpy.RasterToNumPyArray(raster, '#', '#', '#', -9999)   
         list_of_numpy_arrays.append(numpy_raster)
 
-            
-    arcpy.AddMessage("-------------------------")
+    arcpy.AddMessage("-------------------------")          
     arcpy.AddMessage("Successfully converted rasters to numpy arrays")
     arcpy.AddMessage("-------------------------")
 
