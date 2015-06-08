@@ -3,6 +3,7 @@ import arcpy
 import numpy as np
 import datetime
 import time
+from itertools import izip
 
 # Class to handle the cases where the data is not found
 class DoesNotCompute(Exception):
@@ -143,7 +144,6 @@ def convert_date_day_year(current_date):
 # Function to calculate the locations that have an active layer
 def calculate_active_layer(river_soil_depth, cell_size):
     
-    arcpy.AddMessage("Calculating active layer and inactive layer depths")
     # Locate areas which need an active layer (everywhere else should be 0.0)
     active_layer = np.zeros_like(river_soil_depth, dtype = float)
 
@@ -166,124 +166,35 @@ def calculate_active_layer(river_soil_depth, cell_size):
     inactive_layer[river_soil_depth == -9999] = -9999
     active_layer[river_soil_depth == -9999] = -9999
 
-    arcpy.AddMessage("Calculated active and inactive layer in the river channel") 
+    arcpy.AddMessage("Calculated active and inactive layer volumes in the river channel") 
     arcpy.AddMessage("-------------------------") 
 
     return active_layer, inactive_layer
 
 # Function to calculation the default grain size volumes in m2
-def get_grain_volumes(grain_size_proportions, active_layer, inactive_layer):
+def get_grain_volumes(GS_P_list, active_layer, inactive_layer):
         
     # List to store grain size volumes
     active_layer_GS_volumes =[]
     inactive_layer_GS_volumes =[]
 
     # Iterate through the list of grain size volumes for the active layer
-    for proportion in grain_size_proportions:
+    for proportion in GS_P_list:
         volume = np.zeros_like(proportion, dtype = float)
         volume = active_layer * proportion
         volume[active_layer == -9999] = -9999
         active_layer_GS_volumes.append(volume)
 
     # Iterate through the list of grain size volumes for the inactive layer
-    for proportion in grain_size_proportions:
+    for proportion in GS_P_list:
         volume = np.zeros_like(proportion, dtype = float)
         volume = inactive_layer * proportion
         volume[active_layer == -9999] = -9999
         inactive_layer_GS_volumes.append(volume)
 
-    arcpy.AddMessage("Calculated starting grain size volumes") 
+    arcpy.AddMessage("Calculated starting volumes for each of the 7 grain sizes in the active and inactive layers") 
     arcpy.AddMessage("-------------------------") 
     return active_layer_GS_volumes, inactive_layer_GS_volumes
-
-# Function to create and store the temporary file locations on the harddrive of the computer
-def temporary_file_locations(numpy_array_location, grain_size_proportions, grain_size_volumes, inactive_volumes):
-
-    # create temporary file location for grain_proportions
-    grain_pro_temp_1 = numpy_array_location + '\grain_pro_1.npy'
-    grain_pro_temp_2 = numpy_array_location + '\grain_pro_2.npy'
-    grain_pro_temp_3 = numpy_array_location + '\grain_pro_3.npy'
-    grain_pro_temp_4 = numpy_array_location + '\grain_pro_4.npy'
-    grain_pro_temp_5 = numpy_array_location + '\grain_pro_5.npy'
-    grain_pro_temp_6 = numpy_array_location + '\grain_pro_6.npy'
-    grain_pro_temp_7 = numpy_array_location + '\grain_pro_7.npy'
-    
-    grain_pro_temp_list = [grain_pro_temp_1, grain_pro_temp_2, grain_pro_temp_3, grain_pro_temp_4, grain_pro_temp_5, grain_pro_temp_6, grain_pro_temp_7]
-
-    remaining_soil_grain_pro_temp_1 = numpy_array_location + '\grain_rpro_1.npy'
-    remaining_soil_grain_pro_temp_2 = numpy_array_location + '\grain_rpro_2.npy'
-    remaining_soil_grain_pro_temp_3 = numpy_array_location + '\grain_rpro_3.npy'
-    remaining_soil_grain_pro_temp_4 = numpy_array_location + '\grain_rpro_4.npy'
-    remaining_soil_grain_pro_temp_5 = numpy_array_location + '\grain_rpro_5.npy'
-    remaining_soil_grain_pro_temp_6 = numpy_array_location + '\grain_rpro_6.npy'
-    remaining_soil_grain_pro_temp_7 = numpy_array_location + '\grain_rpro_7.npy'
-
-    remaining_soil_pro_temp_list = [remaining_soil_grain_pro_temp_1, remaining_soil_grain_pro_temp_2, remaining_soil_grain_pro_temp_3, remaining_soil_grain_pro_temp_4, remaining_soil_grain_pro_temp_5, remaining_soil_grain_pro_temp_6, remaining_soil_grain_pro_temp_7]
-
-    # create temproary file locations for the grain volumes
-    grain_vol_temp_1 = numpy_array_location + '\grain_vol_temp_1.npy'
-    grain_vol_temp_2 = numpy_array_location + '\grain_vol_temp_2.npy'
-    grain_vol_temp_3 = numpy_array_location + '\grain_vol_temp_3.npy'
-    grain_vol_temp_4 = numpy_array_location + '\grain_vol_temp_4.npy'
-    grain_vol_temp_5 = numpy_array_location + '\grain_vol_temp_5.npy'
-    grain_vol_temp_6 = numpy_array_location + '\grain_vol_temp_6.npy'
-    grain_vol_temp_7 = numpy_array_location + '\grain_vol_temp_7.npy'
-
-    grain_vol_temp_list = [grain_vol_temp_1, grain_vol_temp_2, grain_vol_temp_3, grain_vol_temp_4, grain_vol_temp_5, grain_vol_temp_6, grain_vol_temp_7]
-
-    # create temporary file locations for the inactive layer grain volumes
-    remaining_soil_grain_vol_temp_1 = numpy_array_location + '\grain_rvol_temp_1.npy'
-    remaining_soil_grain_vol_temp_2 = numpy_array_location + '\grain_rvol_temp_2.npy'
-    remaining_soil_grain_vol_temp_3 = numpy_array_location + '\grain_rvol_temp_3.npy'
-    remaining_soil_grain_vol_temp_4 = numpy_array_location + '\grain_rvol_temp_4.npy'
-    remaining_soil_grain_vol_temp_5 = numpy_array_location + '\grain_rvol_temp_5.npy'
-    remaining_soil_grain_vol_temp_6 = numpy_array_location + '\grain_rvol_temp_6.npy'
-    remaining_soil_grain_vol_temp_7 = numpy_array_location + '\grain_rvol_temp_7.npy'
-
-    remaining_soil_vol_temp_list = [remaining_soil_grain_vol_temp_1, remaining_soil_grain_vol_temp_2, remaining_soil_grain_vol_temp_3, remaining_soil_grain_vol_temp_4, remaining_soil_grain_vol_temp_5, remaining_soil_grain_vol_temp_6, remaining_soil_grain_vol_temp_7]
-
-    # Save the proportion arrays to disk
-    np.save(grain_pro_temp_list[0], grain_size_proportions[0])
-    np.save(grain_pro_temp_list[1], grain_size_proportions[1])
-    np.save(grain_pro_temp_list[2], grain_size_proportions[2])
-    np.save(grain_pro_temp_list[3], grain_size_proportions[3])
-    np.save(grain_pro_temp_list[4], grain_size_proportions[4])
-    np.save(grain_pro_temp_list[5], grain_size_proportions[5])
-    np.save(grain_pro_temp_list[6], grain_size_proportions[6])
-    arcpy.AddMessage("Saved proportions in active layer to disk")
-
-    # Save the remaining soil proportion arrays to disk
-    np.save(remaining_soil_pro_temp_list[0], grain_size_proportions[0])
-    np.save(remaining_soil_pro_temp_list[1], grain_size_proportions[1])
-    np.save(remaining_soil_pro_temp_list[2], grain_size_proportions[2])
-    np.save(remaining_soil_pro_temp_list[3], grain_size_proportions[3])
-    np.save(remaining_soil_pro_temp_list[4], grain_size_proportions[4])
-    np.save(remaining_soil_pro_temp_list[5], grain_size_proportions[5])
-    np.save(remaining_soil_pro_temp_list[6], grain_size_proportions[6])
-    arcpy.AddMessage("Saved proportions in inactive layer to disk")
-
-    # Save the grain volumes arrays to disk
-    np.save(grain_vol_temp_list[0], grain_size_volumes[0])
-    np.save(grain_vol_temp_list[1], grain_size_volumes[1])
-    np.save(grain_vol_temp_list[2], grain_size_volumes[2])
-    np.save(grain_vol_temp_list[3], grain_size_volumes[3])
-    np.save(grain_vol_temp_list[4], grain_size_volumes[4])
-    np.save(grain_vol_temp_list[5], grain_size_volumes[5])
-    np.save(grain_vol_temp_list[6], grain_size_volumes[6])
-    arcpy.AddMessage("Saved active layer volumes to disk")
-
-    # Save the inactive grain volumes arrays to disk
-    np.save(remaining_soil_vol_temp_list[0], inactive_volumes[0])
-    np.save(remaining_soil_vol_temp_list[1], inactive_volumes[1])
-    np.save(remaining_soil_vol_temp_list[2], inactive_volumes[2])
-    np.save(remaining_soil_vol_temp_list[3], inactive_volumes[3])
-    np.save(remaining_soil_vol_temp_list[4], inactive_volumes[4])
-    np.save(remaining_soil_vol_temp_list[5], inactive_volumes[5])
-    np.save(remaining_soil_vol_temp_list[6], inactive_volumes[6])
-
-    arcpy.AddMessage("Saved inactive layer volumes to disk")
-
-    return grain_pro_temp_list, grain_vol_temp_list, remaining_soil_pro_temp_list, remaining_soil_vol_temp_list
 
 # Function to the average number of days rainfall per year based on the input textfile
 def average_days_rainfall(precipitation_textfile):
@@ -308,3 +219,130 @@ def average_days_rainfall(precipitation_textfile):
     precip_read.close()
 
     return day_pcp_yr
+
+# Function to create and store the temporary file locations on the harddrive of the computer
+def temporary_file_locations(numpy_array_location, GS_P_list, active_layer_GS_volumes, inactive_layer_GS_volumes):
+
+    # Create temporary file location for grain size proportions in the active layer
+    AL_GS_1_P_temp = numpy_array_location + '\AL_GS_1_P_temp.npy'
+    AL_GS_2_P_temp = numpy_array_location + '\AL_GS_2_P_temp.npy'
+    AL_GS_3_P_temp = numpy_array_location + '\AL_GS_3_P_temp.npy'
+    AL_GS_4_P_temp = numpy_array_location + '\AL_GS_4_P_temp.npy'
+    AL_GS_5_P_temp = numpy_array_location + '\AL_GS_5_P_temp.npy'
+    AL_GS_6_P_temp = numpy_array_location + '\AL_GS_6_P_temp.npy'
+    AL_GS_7_P_temp = numpy_array_location + '\AL_GS_7_P_temp.npy'
+    
+    active_layer_GS_P_temp = [AL_GS_1_P_temp, AL_GS_2_P_temp, AL_GS_3_P_temp, AL_GS_4_P_temp, AL_GS_5_P_temp, AL_GS_6_P_temp, AL_GS_7_P_temp]
+
+    # Create temporary file location for grain size proportions in the inactive layer
+    IL_GS_1_P_temp = numpy_array_location + '\IL_GS_1_P_temp.npy'
+    IL_GS_2_P_temp = numpy_array_location + '\IL_GS_2_P_temp.npy'
+    IL_GS_3_P_temp = numpy_array_location + '\IL_GS_3_P_temp.npy'
+    IL_GS_4_P_temp = numpy_array_location + '\IL_GS_4_P_temp.npy'
+    IL_GS_5_P_temp = numpy_array_location + '\IL_GS_5_P_temp.npy'
+    IL_GS_6_P_temp = numpy_array_location + '\IL_GS_6_P_temp.npy'
+    IL_GS_7_P_temp = numpy_array_location + '\IL_GS_7_P_temp.npy'
+
+    inactive_layer_GS_P_temp = [IL_GS_1_P_temp, IL_GS_2_P_temp, IL_GS_3_P_temp, IL_GS_4_P_temp, IL_GS_5_P_temp, IL_GS_6_P_temp, IL_GS_7_P_temp]
+
+    # Create temporary file location for grain size volumes in the active layer
+    AL_GS_1_V_temp = numpy_array_location + '\AL_GS_1_V_temp.npy'
+    AL_GS_2_V_temp = numpy_array_location + '\AL_GS_2_V_temp.npy'
+    AL_GS_3_V_temp = numpy_array_location + '\AL_GS_3_V_temp.npy'
+    AL_GS_4_V_temp = numpy_array_location + '\AL_GS_4_V_temp.npy'
+    AL_GS_5_V_temp = numpy_array_location + '\AL_GS_5_V_temp.npy'
+    AL_GS_6_V_temp = numpy_array_location + '\AL_GS_6_V_temp.npy'
+    AL_GS_7_V_temp = numpy_array_location + '\AL_GS_7_V_temp.npy'
+    
+    active_layer_GS_V_temp = [AL_GS_1_V_temp, AL_GS_2_V_temp, AL_GS_3_V_temp, AL_GS_4_V_temp, AL_GS_5_V_temp, AL_GS_6_V_temp, AL_GS_7_V_temp]
+
+    # Create temporary file location for grain size volumes in the inactive layer
+    IL_GS_1_V_temp = numpy_array_location + '\IL_GS_1_V_temp.npy'
+    IL_GS_2_V_temp = numpy_array_location + '\IL_GS_2_V_temp.npy'
+    IL_GS_3_V_temp = numpy_array_location + '\IL_GS_3_V_temp.npy'
+    IL_GS_4_V_temp = numpy_array_location + '\IL_GS_4_V_temp.npy'
+    IL_GS_5_V_temp = numpy_array_location + '\IL_GS_5_V_temp.npy'
+    IL_GS_6_V_temp = numpy_array_location + '\IL_GS_6_V_temp.npy'
+    IL_GS_7_V_temp = numpy_array_location + '\IL_GS_7_V_temp.npy'
+
+    inactive_layer_GS_V_temp = [IL_GS_1_V_temp, IL_GS_2_V_temp, IL_GS_3_V_temp, IL_GS_4_V_temp, IL_GS_5_V_temp, IL_GS_6_V_temp, IL_GS_7_V_temp]
+
+    # Save the proportion arrays to disk
+    np.save(active_layer_GS_P_temp[0], GS_P_list[0])
+    np.save(active_layer_GS_P_temp[1], GS_P_list[1])
+    np.save(active_layer_GS_P_temp[2], GS_P_list[2])
+    np.save(active_layer_GS_P_temp[3], GS_P_list[3])
+    np.save(active_layer_GS_P_temp[4], GS_P_list[4])
+    np.save(active_layer_GS_P_temp[5], GS_P_list[5])
+    np.save(active_layer_GS_P_temp[6], GS_P_list[6])
+    arcpy.AddMessage("Saved proportions in active layer to disk")
+
+    # Save the remaining soil proportion arrays to disk
+    np.save(inactive_layer_GS_P_temp[0], GS_P_list[0])
+    np.save(inactive_layer_GS_P_temp[1], GS_P_list[1])
+    np.save(inactive_layer_GS_P_temp[2], GS_P_list[2])
+    np.save(inactive_layer_GS_P_temp[3], GS_P_list[3])
+    np.save(inactive_layer_GS_P_temp[4], GS_P_list[4])
+    np.save(inactive_layer_GS_P_temp[5], GS_P_list[5])
+    np.save(inactive_layer_GS_P_temp[6], GS_P_list[6])
+    arcpy.AddMessage("Saved proportions in inactive layer to disk")
+
+    # Save the grain volumes arrays to disk
+    np.save(active_layer_GS_V_temp[0], active_layer_GS_volumes[0])
+    np.save(active_layer_GS_V_temp[1], active_layer_GS_volumes[1])
+    np.save(active_layer_GS_V_temp[2], active_layer_GS_volumes[2])
+    np.save(active_layer_GS_V_temp[3], active_layer_GS_volumes[3])
+    np.save(active_layer_GS_V_temp[4], active_layer_GS_volumes[4])
+    np.save(active_layer_GS_V_temp[5], active_layer_GS_volumes[5])
+    np.save(active_layer_GS_V_temp[6], active_layer_GS_volumes[6])
+    arcpy.AddMessage("Saved active layer volumes to disk")
+
+    # Save the inactive grain volumes arrays to disk
+    np.save(inactive_layer_GS_V_temp[0], inactive_layer_GS_volumes[0])
+    np.save(inactive_layer_GS_V_temp[1], inactive_layer_GS_volumes[1])
+    np.save(inactive_layer_GS_V_temp[2], inactive_layer_GS_volumes[2])
+    np.save(inactive_layer_GS_V_temp[3], inactive_layer_GS_volumes[3])
+    np.save(inactive_layer_GS_V_temp[4], inactive_layer_GS_volumes[4])
+    np.save(inactive_layer_GS_V_temp[5], inactive_layer_GS_volumes[5])
+    np.save(inactive_layer_GS_V_temp[6], inactive_layer_GS_volumes[6])
+    arcpy.AddMessage("Saved inactive layer volumes to disk")
+    arcpy.AddMessage("-------------------------") 
+
+    return active_layer_GS_P_temp, active_layer_GS_V_temp, inactive_layer_GS_P_temp, inactive_layer_GS_V_temp
+
+def combined_precipitation(numpy_array_location, precipitation_textfile, baseflow_textfile):
+    # Check if the user has provided a baseflow textfile and if so combine the data into a new file
+    if baseflow_textfile and baseflow_textfile != '#':
+        
+        arcpy.AddMessage("Baseflow data detected")
+        baseflow_read = open(baseflow_textfile)
+        precipitation_read = open(precipitation_textfile)
+
+        combined_precipitation_read = open(numpy_array_location + "\combined_precipitation.txt", 'w')
+
+        for precipitation, baseflow in izip(precipitation_read, baseflow_read):
+            precipitation = precipitation.strip()
+            baseflow = baseflow.strip()
+            combined_precipitation_read.write(precipitation + " " + baseflow + "\n")
+
+        arcpy.AddMessage("Combined baseflow and precipitation")
+        arcpy.AddMessage("-------------------------")    
+               
+        # Close the textfiles
+        baseflow_read.close()
+        precipitation_read.close()
+        combined_precipitation_read.close()
+        baseflow_provided ='true'
+        precipitation_textfile = numpy_array_location + "\combined_precipitation.txt"
+
+    else:
+        arcpy.AddMessage("No baseflow data detected")
+        baseflow_provided = 'false'
+        precipitation_textfile = precipitation_textfile
+
+    return precipitation_textfile, baseflow_provided
+
+
+
+
+                        

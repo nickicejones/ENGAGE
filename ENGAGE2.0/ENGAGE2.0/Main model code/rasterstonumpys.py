@@ -1,4 +1,4 @@
-# import statments
+# Import statments
 import arcpy
 import csv
 import numpy as np
@@ -64,7 +64,7 @@ def save_discharge_or_sediment_csv(output_excel_discharge, output_excel_sediment
 
     # Set up the save location for sediment leaving the bottom of the system
     if output_excel_sediment and output_excel_sediment != "#":
-        output_excel_sediment = output_excel_sedimentn + "/discharge.csv"
+        output_excel_sediment = output_excel_sediment + "/discharge.csv"
         daily_sediment =  open(output_excel_sediment, 'wb')
         sediment_spamwriter = csv.writer(daily_sediment, delimiter=',')
 

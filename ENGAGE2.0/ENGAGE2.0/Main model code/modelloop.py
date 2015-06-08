@@ -1,4 +1,7 @@
-# import statements
+###### MODEL LOOP DESCRIPTION #####
+# The purpose of this 
+
+# Import statements
 import arcpy
 import datetime
 import numpy as np
@@ -16,86 +19,51 @@ import rasterstonumpys
 
 
 class model_loop(object):
+  
+    def __init__(self, model_start_date, cell_size, bottom_left_corner, calculate_sediment, use_dinfinity):
+        self.first_loop = "true"
+        self.current_date = datetime.datetime.strptime(model_start_date, '%d/%m/%Y')       
+        self.cell_size = cell_size
+        self.bottom_left_corner = bottom_left_corner
+        self.calculate_sediment = calculate_sediment 
+        self.use_dinfinity = use_dinfinity
+        self.week_day = 0    
+        self.month_day = 0
+        self.year_day = 0
+        self.day_of_year = 0
         
-    def start_precipition(self, river_catchment_poly, precipitation_textfile, baseflow_textfile, model_start_date, region, elevation_raster, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, active_layer_pro_temp_list, active_layer_vol_temp_list, inactive_layer_pro_temp_list, inactive_layer_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, output_excel_discharge, output_excel_sediment, output_format):
-         
-        # First loop parameter
-        first_loop = "True"
-        week_day = 0    
-        month_day = 0
-        year_day = 0
-        
+    def start_precipition(self, river_catchment, DTM, region, precipitation_textfile, 
+                          baseflow_provided, day_pcp_yr, precipitation_gauge_elevation, 
+                          CN2_d, GS_list, active_layer, inactive_layer, 
+                          active_layer_GS_P_temp, active_layer_V_temp, 
+                          inactive_layer_GS_P_temp, inactive_layer_V_temp, 
+                          numpy_array_location, output_file_dict, output_format, 
+                          output_excel_discharge, output_excel_sediment):
+                          
         # Check to see if the user wants to output discharge / sediment loss from the system
         discharge_spamwriter, sediment_spamwriter = rasterstonumpys.save_discharge_or_sediment_csv(output_excel_discharge, output_excel_sediment)
         
-        # Set up the model start date
-        current_date = datetime.datetime.strptime(model_start_date, '%d/%m/%Y')
-        
         # Open the precipitation file
         precipitation_read = open(precipitation_textfile)
-        arcpy.AddMessage("Temporary files will be located here" + str(numpy_array_location))
-
-        # Check if the user has provided a baseflow textfile and if so combine the data into a new file
-        if baseflow_textfile and baseflow_textfile != '#':
-           arcpy.AddMessage("Baseflow data detected")
-           baseflow_read = open(baseflow_textfile)
-           combined_precipitation = open(numpy_array_location + "\combined_precipitation.txt", 'w')
-
-           for precipitation, baseflow in izip(precipitation_read, baseflow_read):
-               precipitation = precipitation.strip()
-               baseflow = baseflow.strip()
-               combined_precipitation.write(precipitation + " " + baseflow + "\n")
-           
-           # Close the file 
-           combined_precipitation.close()
-
-           # Open as the standard precipitation
-           precipitation_read = open(numpy_array_location + "\combined_precipitation.txt")
-                        
+        
+        ##### Daily loop start #####     
         arcpy.AddMessage("Starting Model...")
         for precipitation in precipitation_read:
             start = time.time()
-            arcpy.AddMessage("Today's date is " + str(current_date))
-            day_of_year = int(current_date.strftime('%j'))
+            arcpy.AddMessage("Today's date is " + str(self.current_date))
+            self.day_of_year = int(self.current_date.strftime('%j'))
+            
+            
+            ### CHECK TO SEE IF BASEFLOW NEEDS TO BE SEPERATED ###
+            precipitation, baseflow = hydrology.SCSCNQsurf().check_baseflow(precipitation, baseflow_provided)
+            
 
-            if baseflow_textfile and baseflow_textfile != '#':
-                precipitation_split = precipitation.split()
-                precipitation = precipitation_split[0]
-                arcpy.AddMessage("Today precipitation is " + str(precipitation))
-
-                baseflow = precipitation_split[1]
-                arcpy.AddMessage("Baseflow is " + str(baseflow))
-
-            ### RECALULATING THE SLOPE DUE TO ELEVATION CHANGE ###
-            if first_loop == "True" or day_of_year % 30 == 0:
-                arcpy.AddMessage("-------------------------") 
-                arcpy.AddMessage("It is time to recalculate the elevation, slope and flow directions")
-                arcpy.AddMessage("-------------------------") 
-                if use_dinfinity == 'true':
-                    slope, elevation, flow_direction_np, flow_direction_raster, ang = hydrology.SCSCNQsurf().calculate_slope_fraction_flow_direction_dinf(elevation_raster, numpy_array_location)
-
-                else:
-                    slope, elevation, flow_direction_np, flow_direction_raster = hydrology.SCSCNQsurf().calculate_slope_fraction_flow_direction_d8(elevation_raster)
-
-                    if baseflow_textfile and baseflow_textfile != '#':
-                        # Calculate flow accumulation
-                        flow_accumulation = FlowAccumulation(flow_direction_raster)
-                        arcpy.AddMessage("Calculated flow accumulation")
-
-                arcpy.AddMessage("-------------------------") 
-                arcpy.AddMessage("New elevation, slope and flow directions calculated")
-                arcpy.AddMessage("-------------------------") 
-
-                # Calculate CN1_numbers and CN3_numbers adjusted for antecedent conditions
-                CN2s_d, CN1s_d, CN3s_d = hydrology.SCSCNQsurf().combineSCSCN(CN2_d, slope)
-
-            if first_loop == "True":
-                # Set a 0 value for Sprev
-                Sprev = np.zeros_like(elevation)
-                         
+            ### CHECK TO SEE IF THE SLOPE NEEDS TO BE CALCULATED ###          
+            slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d = hydrology.SCSCNQsurf().check_slope_flow_directions(self.first_loop, self.use_dinfinity, self.day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location)
+                                     
             ### HYDROLOGY SECTION OF LOOP###
             # Calculate the daily precipitation in each grid cell
-            precipitation = hydrology.SCSCNQsurf().spatial_uniform_spatial_precip(precipitation, elevation, day_pcp_yr, precipitation_gauge_elevation)
+            precipitation = hydrology.SCSCNQsurf().spatial_uniform_spatial_precip(precipitation, DTM, day_pcp_yr, precipitation_gauge_elevation)
             
             # Calculate the surface runoff in each grid cell (Not fatoring in antecedent conditions
             Q_surf = hydrology.SCSCNQsurf().OldQsurf(precipitation, CN2s_d)    
@@ -105,6 +73,11 @@ class model_loop(object):
             latitude = evapotranspiration.Evapotranspiration().UKlatituderadians(region, river_catchment_poly)
             ETo = evapotranspiration.Evapotranspiration().ReferenceEvapotranspiration(latitude, day_of_year, max_temp, min_temp, mean_temp) # need to define lat
             
+            # Check if this is the first loop of the models operation
+            if self.first_loop == "true":
+                # Set a 0 value for Sprev
+                Sprev = np.zeros_like(DTM)
+
             # Calculate the retention parameter (Antecedent Conditions and Evapotranspiration
             Scurr = hydrology.SCSCNQsurf().RententionParameter(precipitation, CN1s_d, CN2_d, CN2s_d, ETo, Sprev, Q_surf, first_loop)
             

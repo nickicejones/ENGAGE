@@ -66,6 +66,14 @@
 # active_layer_GS_volumes - list containing the volumes of each of the grainsizes in the active layer
 # inactive_layer_GS_volumes - list containing the volumes of each of the grainsizes in the inactive layer 
 # day_pcp_yr - average number of days precipitation falling in the river catchment
+# active_layer_GS_P_temp - list of temporary locations on the computer to store the active layer grain size proportions
+# active_layer_V_temp - list of temporary locations on the computer to store the active layer grain size volumes
+# inactive_layer_GS_P_temp - list of  temporary locations on the computer to store the inactive layer grain size proportions
+# inactive_layer_V_temp - list of temporary location ons the computer to store the inactive layer grain size volumes
+# CN2_d - Curve number 2 for that soil hydrology type and land cover (this is at 5% slope)
+
+
+
 
 #---------------------------------------------------------------------#
 ##### START OF MODEL CODE #####
@@ -139,8 +147,8 @@ output_net_sediment_transport = "Daily"         # Total erosion / depostion in e
 output_format = "Total"                      # Average or total for the above
 
 # This is a output that is saved at the pour point (mouth of the river)
-output_excel_discharge = "D:\Boydd at Bitton\Discharge.csv"
-output_excel_sediment = "D:\Boydd at Bitton\Sediment_yield.csv"
+output_excel_discharge = r"D:\Boydd at Bitton"
+output_excel_sediment = r"D:\Boydd at Bitton"
 
 # Use Dinfinity flow directions
 use_dinfinity = "false"
@@ -224,32 +232,30 @@ active_layer, inactive_layer = datapreparation.calculate_active_layer(model_inpu
 active_layer_GS_volumes, inactive_layer_GS_volumes = datapreparation.get_grain_volumes(GS_P_list, active_layer, inactive_layer) 
 # Calculating the number of days precipitation in the catchment per year
 day_pcp_yr = datapreparation.average_days_rainfall(precipitation_textfile)
-active_layer_pro_temp_list, active_layer_vol_temp_list, inactive_layer_pro_temp_list, inactive_layer_vol_temp_list = datapreparation.temporary_file_locations(numpy_array_location, grain_size_proportions, active_layer_volumes, inactive_layer_volumes)
-
-
-
-'''### CONVERT LANDCOVER AND SOIL DATA TO CN2 NUMBERS ### - CHECKED 12/11/14 NJ
-CN2_d = CN2numbers.SCS_CN_Number().get_SCSCN2_numbers(model_input_parameters[1], soil_type, model_input_parameters[0], land_cover_type)
-
- 
-
-# Collect garbage
-del active_layer, model_input_parameters, grain_size_proportions, active_layer_volumes, inactive_layer_volumes 
-collected = gc.collect()
-arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
+# Create temporary locations to store numpy arrays on the computers hardrive
+arcpy.AddMessage("Temporary files will be located here " + str(numpy_array_location))
 arcpy.AddMessage("-------------------------")
+active_layer_GS_P_temp, active_layer_V_temp, inactive_layer_GS_P_temp, inactive_layer_V_temp = datapreparation.temporary_file_locations(numpy_array_location, GS_P_list, active_layer_GS_volumes, inactive_layer_GS_volumes)
+# Combine baseflow if provided
+precipitation_textfile, baseflow_provided = datapreparation.combined_precipitation(numpy_array_location, precipitation_textfile, baseflow_textfile)
 
+
+### CONVERT LANDCOVER AND SOIL DATA TO CN2 NUMBERS ### - CHECKED 12/11/14 NJ
+CN2_d = CN2numbers.SCS_CN_Number().get_SCSCN2_numbers(model_inputs_list[1], soil_type, model_inputs_list[0], land_cover_type)
 arcpy.AddMessage("Time to complete model preparation is " + str(round(time.time() - start,2)) + "s. ")
 arcpy.AddMessage("-------------------------")
          
-arcpy.AddMessage("Model initiated") 
+
 
 ### MAIN MODEL CODE ###
-modelloop.model_loop().start_precipition(river_catchment_poly, precipitation_textfile, baseflow_textfile, model_start_date, region, elevation, CN2_d, day_pcp_yr, precipitation_gauge_elevation, cell_size, bottom_left_corner, grain_size_list, inactive_layer, active_layer_pro_temp_list, active_layer_vol_temp_list, inactive_layer_pro_temp_list, inactive_layer_vol_temp_list, numpy_array_location, use_dinfinity, calculate_sediment, output_file_list, output_excel_discharge, output_excel_sediment, output_format)'''
-
-
-
-'''
-### Section to save rasters while testing model ###
-rasterstonumpys.convert_numpy_to_raster_single(active_layer, "active_layer", bottom_left_corner, cell_size, "0")
-rasterstonumpys.convert_numpy_to_raster_single(inactive_layer, "inactive_layer", bottom_left_corner, cell_size, "0") '''
+arcpy.AddMessage("Model initiated") 
+modelloop.model_loop(model_start_date, cell_size, bottom_left_corner, 
+                     calculate_sediment, use_dinfinity).start_precipition(river_catchment, DTM, region, 
+                                                                          precipitation_textfile, baseflow_provided, day_pcp_yr, precipitation_gauge_elevation, 
+                                                                          CN2_d, GS_list, active_layer, inactive_layer, 
+                                                                          active_layer_GS_P_temp, active_layer_V_temp, 
+                                                                          inactive_layer_GS_P_temp, inactive_layer_V_temp, 
+                                                                          numpy_array_location, 
+                                                                          output_file_dict, output_format, 
+                                                                          output_excel_discharge, output_excel_sediment)
+                                                                                           

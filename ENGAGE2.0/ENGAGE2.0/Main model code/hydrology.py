@@ -12,33 +12,81 @@ from arcpy.sa import *
 # daily hydrology.
 class SCSCNQsurf(object):
 
+    def check_baseflow(self, precipitation, baseflow_provided):
+        if baseflow_provided == 'true': 
+            precipitation_split = precipitation.split()
+            precipitation = precipitation_split[0]
+            arcpy.AddMessage("Today precipitation is " + str(precipitation))
+
+            baseflow = precipitation_split[1]
+            arcpy.AddMessage("Baseflow is " + str(baseflow))
+            arcpy.AddMessage("-------------------------") 
+
+        else:
+            baseflow = 0
+            precipitation = precipitation
+            arcpy.AddMessage("Today precipitation is " + str(precipitation))
+            
+        return precipitation, baseflow
+    def check_slope_flow_directions(self, first_loop, use_dinfinity, day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location):
+        
+        if first_loop == "true" or self.day_of_year % 30 == 0:            
+            arcpy.AddMessage("Recalculating elevation, slope and flow directions")
+            arcpy.AddMessage("-------------------------") 
+            if use_dinfinity == 'true':
+                slope, DTM, flow_direction_np, flow_direction_raster, ang = SCSCNQsurf().calculate_slope_fraction_flow_direction_dinf(DTM, numpy_array_location)
+
+            else:
+                slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation = SCSCNQsurf().calculate_slope_fraction_flow_direction_d8(DTM, baseflow_provided)
+                                 
+            arcpy.AddMessage("New elevation, slope and flow directions calculated")
+            arcpy.AddMessage("-------------------------") 
+
+            # Calculate CN1_numbers and CN3_numbers adjusted for antecedent conditions
+            CN2s_d, CN1s_d, CN3s_d = SCSCNQsurf().combineSCSCN(CN2_d, slope)
+        else:
+            arcpy.AddMessage("Elevation, slope and flow directions do not need to be recalculated")
+            
+        return slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d  
+            
     # Function to convert the slope from a degrees to a fraction d8 methodology
-    def calculate_slope_fraction_flow_direction_d8(self, elevation):   
+    def calculate_slope_fraction_flow_direction_d8(self, DTM, baseflow_provided):   
         start = time.time()
         
         # Old ArcGIS method but still used for the sediment transport aspect
-        elevation = Fill(elevation)
-        flow_direction_raster = FlowDirection(elevation)
-        arcpy.AddMessage("Flow Direcion Calculated")
+        DTM = Fill(DTM)
+        flow_direction_raster = FlowDirection(DTM)
+        arcpy.AddMessage("Flow direcion Calculated")
         arcpy.AddMessage("-------------------------")
-        slope = Slope(elevation, "DEGREE")
-        arcpy.AddMessage("Slope Calculated")
+        slope = Slope(DTM, "DEGREE")
+        arcpy.AddMessage("Slope calculated")
         arcpy.AddMessage("-------------------------")
 
         # Convert fill, slope, flow direction to numpy array
-        elevation = arcpy.RasterToNumPyArray(elevation,'#','#','#', -9999)
+        DTM = arcpy.RasterToNumPyArray(DTM,'#','#','#', -9999)
         slope = arcpy.RasterToNumPyArray(slope, '#','#','#', -9999)
         flow_direction_np = arcpy.RasterToNumPyArray(flow_direction_raster, '#','#','#', -9999)
 
         np.radians(slope)
         np.tan(slope)
         slope[slope == 0] = 0.0001
-        arcpy.AddMessage("Calculating took " + str(round(time.time() - start,2)) + "s.")
 
-        return slope, elevation, flow_direction_np, flow_direction_raster
+        if baseflow_provided and baseflow_provided != '#':
+            # Calculate flow accumulation
+            flow_accumulation = FlowAccumulation(flow_direction_raster)
+            arcpy.AddMessage("Calculated flow accumulation")
+            arcpy.AddMessage("-------------------------") 
+
+        else:
+            flow_accumulation = '#'
+
+        arcpy.AddMessage("Calculating took " + str(round(time.time() - start,2)) + "s.")
+        arcpy.AddMessage("-------------------------")
+        
+        return slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation
 
     # Function to convert the slope from a degrees to a fraction
-    def calculate_slope_fraction_flow_direction_dinf(self, elevation, numpy_array_location):   
+    def calculate_slope_fraction_flow_direction_dinf(self, DTM, numpy_array_location):   
         start = time.time()
         
         # Execute flow direction and slope on the first day of model operation or at the end of each month
@@ -46,7 +94,7 @@ class SCSCNQsurf(object):
         output_tiff = numpy_array_location + "\output_tif.tif"
 
         # Input
-        ele_ascii = arcpy.RasterToASCII_conversion(elevation, output_asc)
+        ele_ascii = arcpy.RasterToASCII_conversion(DTM, output_asc)
         ele_tiff = arcpy.ASCIIToRaster_conversion(ele_ascii, output_tiff, "FLOAT")
 
         # New version for calculating flow directions     
@@ -84,16 +132,16 @@ class SCSCNQsurf(object):
         arcpy.CalculateStatistics_management(slp)
       
         # Old ArcGIS method but still used for the sediment transport aspect
-        elevation = Fill(elevation)
-        flow_direction_raster = FlowDirection(elevation)
+        DTM = Fill(DTM)
+        flow_direction_raster = FlowDirection(DTM)
         arcpy.AddMessage("Flow Direcion Calculated")
         arcpy.AddMessage("-------------------------")
-        slope = Slope(elevation, "DEGREE")
+        slope = Slope(DTM, "DEGREE")
         arcpy.AddMessage("Slope Calculated")
         arcpy.AddMessage("-------------------------")
 
         # Convert fill, slope, flow direction to numpy array
-        elevation = arcpy.RasterToNumPyArray(elevation,'#','#','#', -9999)
+        DTM = arcpy.RasterToNumPyArray(DTM,'#','#','#', -9999)
         slope = arcpy.RasterToNumPyArray(slope, '#','#','#', -9999)
         flow_direction_np = arcpy.RasterToNumPyArray(flow_direction_raster, '#','#','#', -9999)
 
@@ -102,9 +150,9 @@ class SCSCNQsurf(object):
         slope[slope == 0] = 0.0001
         arcpy.AddMessage("Calculating took " + str(round(time.time() - start,2)) + "s.")
 
-        return slope, elevation, flow_direction_np, flow_direction_raster, ang
+        return slope, DTM, flow_direction_np, flow_direction_raster, ang
 
-    def spatial_uniform_spatial_precip(self, precipitation, elevation, day_pcp_yr, precipitation_gauge_elevation):
+    def spatial_uniform_spatial_precip(self, precipitation, DTM, day_pcp_yr, precipitation_gauge_elevation):
         precipitation = float(precipitation)
                         
         #Calculate days of precipitation per year       
@@ -112,21 +160,21 @@ class SCSCNQsurf(object):
             arcpy.AddMessage("The precipiation is " + str(precipitation))              
             arcpy.AddMessage("The average number of days precipitation per year in the catchment is " + str(day_pcp_yr))
             plaps = 0.5                
-            precip_array = ((elevation - float(precipitation_gauge_elevation)) * (plaps / (day_pcp_yr * 1000))) + float(precipitation)
-            precip_array[elevation == -9999] = -9999
+            precip_array = ((DTM - float(precipitation_gauge_elevation)) * (plaps / (day_pcp_yr * 1000))) + float(precipitation)
+            precip_array[DTM == -9999] = -9999
             arcpy.AddMessage("Orographic preciptation calculated")
             
         elif precipitation != 0 and precipitation_gauge_elevation == 0:
             # Create the precipitation array for the day
-            precip_array = np.ones_like(elevation)
+            precip_array = np.ones_like(DTM)
             precip_array = precip_array * float(precipitation)
-            precip_array[elevation == -9999] = -9999
+            precip_array[DTM == -9999] = -9999
             arcpy.AddMessage("Spatially uniform precipitation calculated")
         
         else:
             arcpy.AddMessage("No precipitation today")
-            precip_array = np.zeros_like(elevation)            
-            precip_array[elevation == -9999] = -9999
+            precip_array = np.zeros_like(DTM)            
+            precip_array[DTM == -9999] = -9999
 
         arcpy.AddMessage("-------------------------") 
         return precip_array
@@ -171,6 +219,7 @@ class SCSCNQsurf(object):
         CN3s_d[CN2s_d == -9999] = -9999
 
         arcpy.AddMessage("Calculating CN1 and CN3 adjusted for slope numbers took " + str(round(time.time() - start,2)) + "s.")      
+        arcpy.AddMessage("-------------------------")
                    
         return CN2s_d, CN1s_d, CN3s_d
     

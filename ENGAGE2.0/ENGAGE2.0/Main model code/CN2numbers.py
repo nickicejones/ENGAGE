@@ -13,12 +13,7 @@ class SCS_CN_Number(object):
         } 
     
     # Dict for converting FAO world soil data
-    FAO_soil = {
-                0:'A',
-                1:'C',
-                2:'C',
-                3:'D',
-                4:'C',
+    FAO_soil = {0:'A', 1:'C', 2:'C', 3:'D', 4:'C',
                 5:'C',
                 6:'C',
                 7:'C',
