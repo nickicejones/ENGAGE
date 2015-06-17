@@ -57,7 +57,7 @@ class Evapotranspiration(object):
     
                 del cursor, row
                 latitude = (lat_deg * math.pi)  / 180
-                arcpy.AddMessage("The latitude of the river catchment is " + str(lat_rad))
+                arcpy.AddMessage("The latitude of the river catchment is " + str(latitude))
 
                 return latitude
             latitude = getlatituderadiansrivercatchment(river_catchment_poly)
@@ -116,7 +116,7 @@ class Evapotranspiration(object):
         # ET is reference crop evapotranspiration, Ra is extraterrestrial
         # radiation, TR daily temperature range, TC mean air temperature
         ETo = 0.0029 * Ra * (mean_temp + 20) * (TR ** 0.4)
-        arcpy.AddMessage("Evapotranspiration for region is " + str(ETo))
+        arcpy.AddMessage("Evapotranspiration is " + str(ETo))
         arcpy.AddMessage("-------------------------") 
 
         return ETo

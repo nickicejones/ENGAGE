@@ -35,7 +35,10 @@
     <Compile Include="Main model code\CN2numbers.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Main model code\module1.py">
+    <Compile Include="Main model code\active_inactive_layer_check.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main model code\elevation_adjustment.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Main model code\sediment.py">
@@ -86,6 +89,7 @@
     <Folder Include="Land cover editing tools\" />
     <Folder Include="Main model code\" />
     <Folder Include="base flow\" />
+    <Folder Include="Main model code\Sediment\" />
     <Folder Include="Raw data processing\" />
   </ItemGroup>
   <ItemGroup>

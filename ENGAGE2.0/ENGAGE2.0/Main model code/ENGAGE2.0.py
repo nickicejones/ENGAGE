@@ -2,7 +2,7 @@
 # This is the start location for the running of the model. The input files and output files are located and input into the model in this script
 
 
-##### VARIABLES #####
+##### VARIABLES - Used in this file#####
 # numpy_array_location - this is the location on the computer where hard copies of the numpy arrays can be stored.
 
 ### MODEL INPUTS ###
@@ -13,7 +13,7 @@
 # "Midlands", "East Anglia", "England SW/ Wales S", "England SE/ Central S"] 
 # precipitation_gauge_elevation - elevation of the precipiation gauge #OPTIONAL
 # calculate_sediment - select whether or not the model calculates sediment
-# This is a series of points along the river network at which a value is saved
+# use_dinfinity - whether or not the user has installed taudem so they can use dinfinity flow accumulation
 
 ### OUTPUT FREQUENCYS RASTERS ###
 # output_surface_runoff - frequency to output surface runoff
@@ -71,15 +71,15 @@
 # inactive_layer_GS_P_temp - list of  temporary locations on the computer to store the inactive layer grain size proportions
 # inactive_layer_V_temp - list of temporary location ons the computer to store the inactive layer grain size volumes
 # CN2_d - Curve number 2 for that soil hydrology type and land cover (this is at 5% slope)
-
+# baseflow_provided - this is a true/false statement of whether or not the user has provided baseflow
 
 
 
 #---------------------------------------------------------------------#
-##### START OF MODEL CODE #####
+##### START OF CODE #####
 ### Import statements - Python ###
 import arcpy
-import numpy
+import numpy as np
 import tempfile
 import gc
 import time
@@ -97,6 +97,8 @@ import CN2numbers
 arcpy.env.overwriteOutput = True
 arcpy.env.compression = "NONE"
 arcpy.AddMessage(" ") 
+np.set_printoptions(suppress=True)
+np.set_printoptions(precision=15)
 
 # Start the timer for the model preparation
 start = time.time()
@@ -120,7 +122,7 @@ numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp')
 
 ### MODEL INPUTS - For StandAlone testing ###
 # Set Environmental Workspace
-arcpy.env.workspace = "D:\Boydd at Bitton\Boydd_1.gdb"
+arcpy.env.workspace = r"D:\Boydd at Bitton\3by3_1.gdb" # r"D:\Boydd at Bitton\Boydd_2.gdb"
 
 # Textfile with precipitation on each line and textfile with the baseflow on each line
 precipitation_textfile = r"D:\Boydd at Bitton\rainfall.txt"
@@ -132,26 +134,26 @@ model_start_date = "01/01/1990"
 region = "Midlands"
 
 # Ask the user for the elevation of the precipiation guage (if they would like to use spatial precipitation)
-precipitation_gauge_elevation = float("65.1")      # Optional
+precipitation_gauge_elevation = float("100.1")      # Optional
 
 # Selection of what the model calculates
-calculate_sediment = "true"
+calculate_sediment = True
 
 # Select the outputs and frequency
 output_surface_runoff = "Daily"                # Surface Runoff
 output_discharge = "Daily"                      # Discharge
-output_water_depth = "Daily"                    # Depth
-output_spatial_precipitation = "Daily"          # Spatial Precipitation 
-output_sediment_depth = "Daily"                # Sediment Depth
-output_net_sediment_transport = "Daily"         # Total erosion / depostion in each cell
-output_format = "Total"                      # Average or total for the above
+output_water_depth = "No output"                    # Depth
+output_spatial_precipitation = "No output"          # Spatial Precipitation 
+output_sediment_depth = "No output"                # Sediment Depth
+output_net_sediment_transport = "No output"         # Total erosion / depostion in each cell
+output_format = "Daily average"                      # Average or total for the above
 
 # This is a output that is saved at the pour point (mouth of the river)
 output_excel_discharge = r"D:\Boydd at Bitton"
 output_excel_sediment = r"D:\Boydd at Bitton"
 
 # Use Dinfinity flow directions
-use_dinfinity = "false"
+use_dinfinity = False
 
 '''### MODEL INPUTS - For ArcGIS 10.1 ###
 # Set Environmental Workspace
@@ -217,7 +219,12 @@ arcpy.AddMessage("Model data from pre-processing script succesfully loaded into 
 ### NUMPY TO RASTER INFORMATION FROM ELEVATION ###
 cell_size, bottom_left_corner = rastercharacteristics.get_cell_size_bottom_corner(DTM)
 
+### CONVERT INCOMMING ARCGIS STRING BOOLEANS TO ACTUAL BOOLS ###
+arcpy.AddMessage("Checking calculate sediment is a boolean...")
+calculate_sediment = datapreparation.convert_to_boolean(calculate_sediment)
 
+arcpy.AddMessage("Checking use dinfinity is a boolean...")
+use_dinfinity = datapreparation.convert_to_boolean(use_dinfinity)
 
 ### CONVERT ARCGIS RASTERS TO NUMPY ARRAYS ###
 # Convert the list of grain size proportion rasters to numpy arrays
@@ -246,13 +253,12 @@ arcpy.AddMessage("Time to complete model preparation is " + str(round(time.time(
 arcpy.AddMessage("-------------------------")
          
 
-
 ### MAIN MODEL CODE ###
 arcpy.AddMessage("Model initiated") 
 modelloop.model_loop(model_start_date, cell_size, bottom_left_corner, 
                      calculate_sediment, use_dinfinity).start_precipition(river_catchment, DTM, region, 
                                                                           precipitation_textfile, baseflow_provided, day_pcp_yr, precipitation_gauge_elevation, 
-                                                                          CN2_d, GS_list, active_layer, inactive_layer, 
+                                                                          CN2_d, GS_list, inactive_layer, 
                                                                           active_layer_GS_P_temp, active_layer_V_temp, 
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                                                                           numpy_array_location, 

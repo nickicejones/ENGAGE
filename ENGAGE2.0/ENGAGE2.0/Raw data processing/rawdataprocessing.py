@@ -17,6 +17,12 @@ arcpy.env.workspace = arcpy.GetParameterAsText(0)
 # Users will have to provide a rivere catchment boundry 
 river_catchment = arcpy.GetParameterAsText(1)
 
+# Check if MODEL_river_catchment exists as this is needed in the model start of the script.
+if arcpy.Exists("MODEL_river_catchment"):
+    river_catchment = river_catchment
+else:
+    arcpy.Copy_management(river_catchment, "MODEL_river_catchment")
+
 # Digital Terrain Model
 DTM = arcpy.GetParameterAsText(2)
 
@@ -260,9 +266,14 @@ def land_cover_clip_analysis(land_cover, DTM_cell_size, buffer_catchment, buffer
                 land_cover_shapefile = arcpy.RasterToPolygon_conversion(land_cover_clip, "MODEL_CORINE_shapefile", "NO_SIMPLIFY")
                 arcpy.AddMessage("Land cover converted to shapefile for editing")                        
         else:
-            land_cover_clip = arcpy.Clip_management(land_cover, catch_extent, "MODEL_Landcover", river_catchment_polygon, "#","ClippingGeometry")
-            arcpy.AddMessage("Land cover clipped")
+            if Land_cover_type == "LCM 2007":
 
+                land_cover_clip = arcpy.Clip_management(land_cover, catch_extent, "MODEL_Landcover_LCM", river_catchment_polygon, "#","ClippingGeometry")
+                arcpy.AddMessage("Land cover clipped")
+
+            elif Land_cover_type == "CORINE 2006":
+                land_cover_clip = arcpy.Clip_management(land_cover, catch_extent, "MODEL_Landcover_CORINE", river_catchment_polygon, "#","ClippingGeometry")
+                arcpy.AddMessage("Land cover clipped")
         
             
         if natural_england_SPS and natural_england_SPS != '#':
@@ -512,8 +523,13 @@ def soil_clip_analysis(soil, DTM_cell_size, buffer_catchment, buffer_extent, riv
             #soil_clip_raster = arcpy.Clip_management(Soil_clip, extent, "MODEL_Soil_FAO", River_catchment_poly, "#", "ClippingGeometry")
             
     else:
-        Soil_clip = arcpy.Clip_management(soil, catch_extent, "MODEL_Soil", river_catchment_polygon, "#","ClippingGeometry")
-        arcpy.AddMessage("-------------------------")          
+        if Soil_type == 'UK HOST':
+            Soil_clip = arcpy.Clip_management(soil, catch_extent, "MODEL_Soil_HOST", river_catchment_polygon, "#","ClippingGeometry")
+        
+        elif Soil_type == 'FAO':
+            Soil_clip = arcpy.Clip_management(soil, catch_extent, "MODEL_Soil_FAO", river_catchment_polygon, "#","ClippingGeometry")
+            
+                      
 soil_clipped = soil_clip_analysis(soil_BNG, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent)
 arcpy.AddMessage("Soil clipped to catchment")
 arcpy.AddMessage("-------------------------")
@@ -909,8 +925,8 @@ def soil_depth_calc(soil_parent_material_1, advanced_superficial_deposit, DTM_ce
         soil_depth[:] = 1.0
         soil_depth[DTM_Clip_np == -9999] = -9999
         soil_depth_raster = arcpy.NumPyArrayToRaster(soil_depth, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        soil_depth_raster.save("MODEL_river_soil_depth")
-
+        soil_depth_raster = arcpy.Clip_management(soil_depth_raster, catch_extent, "MODEL_river_soil_depth", river_catchment_polygon, "#","ClippingGeometry")
+        
 soil_depth_calculation = soil_depth_calc(soil_parent_material_1, advanced_superficial_deposit, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent)
 arcpy.AddMessage("Soil depth calculated")
 arcpy.AddMessage("-------------------------")

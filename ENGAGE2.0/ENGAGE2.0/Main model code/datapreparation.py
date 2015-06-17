@@ -15,8 +15,8 @@ class DoesNotCompute(Exception):
 def output_raster_types(output_surface_runoff, output_discharge, output_water_depth, output_spatial_precipitation
                         , output_sediment_depth, output_net_sediment_transport):
     # Create an output frequency dict of the different strings and print back the selections
-    output_file_dict = {"Surface runoff": output_surface_runoff, "Discharge": output_discharge, "Water depth": output_water_depth, 
-                        "Spatial precipitation": output_spatial_precipitation, "Sediment depth": output_sediment_depth, "Net sediment": output_net_sediment_transport}
+    output_file_dict = {"Surface_runoff": output_surface_runoff, "Discharge": output_discharge, "Water_depth": output_water_depth, 
+                        "Spatial_precipitation": output_spatial_precipitation, "Sediment_depth": output_sediment_depth, "Net_sediment": output_net_sediment_transport}
 
     for output, output_frequency in output_file_dict.iteritems():
         arcpy.AddMessage("You have selected " + str(output_frequency) + " for " + output)
@@ -310,6 +310,7 @@ def temporary_file_locations(numpy_array_location, GS_P_list, active_layer_GS_vo
 
     return active_layer_GS_P_temp, active_layer_GS_V_temp, inactive_layer_GS_P_temp, inactive_layer_GS_V_temp
 
+# Function to check whether or not baseflow has been provided and split the incoming textfile if required
 def combined_precipitation(numpy_array_location, precipitation_textfile, baseflow_textfile):
     # Check if the user has provided a baseflow textfile and if so combine the data into a new file
     if baseflow_textfile and baseflow_textfile != '#':
@@ -332,15 +333,31 @@ def combined_precipitation(numpy_array_location, precipitation_textfile, baseflo
         baseflow_read.close()
         precipitation_read.close()
         combined_precipitation_read.close()
-        baseflow_provided ='true'
+        baseflow_provided = True
         precipitation_textfile = numpy_array_location + "\combined_precipitation.txt"
 
     else:
         arcpy.AddMessage("No baseflow data detected")
-        baseflow_provided = 'false'
+        baseflow_provided = False
         precipitation_textfile = precipitation_textfile
 
     return precipitation_textfile, baseflow_provided
+
+# Function to check incoming string boolean created by ArcGIS
+def convert_to_boolean(trueorfalse):
+
+    if trueorfalse == 'true' or trueorfalse == 'True':
+        trueorfalse = True
+        arcpy.AddMessage("converted to True boolean")
+
+    elif trueorfalse == 'false' or trueorfalse == 'False':
+        trueorfalse = False
+        arcpy.AddMessage("converted to False boolean")
+    else:
+        trueorfalse = trueorfalse
+        arcpy.AddMessage("was already a boolean")
+
+    return trueorfalse
 
 
 

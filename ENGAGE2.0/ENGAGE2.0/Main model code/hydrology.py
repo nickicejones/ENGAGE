@@ -1,4 +1,6 @@
-# import statements
+#---------------------------------------------------------------------#
+##### START OF CODE #####
+# Import statements
 import math
 import arcpy
 import time
@@ -13,7 +15,7 @@ from arcpy.sa import *
 class SCSCNQsurf(object):
 
     def check_baseflow(self, precipitation, baseflow_provided):
-        if baseflow_provided == 'true': 
+        if baseflow_provided == True: 
             precipitation_split = precipitation.split()
             precipitation = precipitation_split[0]
             arcpy.AddMessage("Today precipitation is " + str(precipitation))
@@ -28,26 +30,26 @@ class SCSCNQsurf(object):
             arcpy.AddMessage("Today precipitation is " + str(precipitation))
             
         return precipitation, baseflow
+
     def check_slope_flow_directions(self, first_loop, use_dinfinity, day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location):
-        
-        if first_loop == "true" or self.day_of_year % 30 == 0:            
-            arcpy.AddMessage("Recalculating elevation, slope and flow directions")
-            arcpy.AddMessage("-------------------------") 
-            if use_dinfinity == 'true':
-                slope, DTM, flow_direction_np, flow_direction_raster, ang = SCSCNQsurf().calculate_slope_fraction_flow_direction_dinf(DTM, numpy_array_location)
+                 
+        arcpy.AddMessage("Recalculating elevation, slope and flow directions")
+        arcpy.AddMessage("-------------------------") 
+        if use_dinfinity == True:
+            slope, DTM, flow_direction_np, flow_direction_raster, ang = SCSCNQsurf().calculate_slope_fraction_flow_direction_dinf(DTM, numpy_array_location)
+            flow_accumulation = 0
 
-            else:
-                slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation = SCSCNQsurf().calculate_slope_fraction_flow_direction_d8(DTM, baseflow_provided)
-                                 
-            arcpy.AddMessage("New elevation, slope and flow directions calculated")
-            arcpy.AddMessage("-------------------------") 
-
-            # Calculate CN1_numbers and CN3_numbers adjusted for antecedent conditions
-            CN2s_d, CN1s_d, CN3s_d = SCSCNQsurf().combineSCSCN(CN2_d, slope)
         else:
-            arcpy.AddMessage("Elevation, slope and flow directions do not need to be recalculated")
-            
-        return slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d  
+            ang = 0
+            slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation = SCSCNQsurf().calculate_slope_fraction_flow_direction_d8(DTM, baseflow_provided)
+                                 
+        arcpy.AddMessage("New elevation, slope and flow directions calculated")
+        arcpy.AddMessage("-------------------------") 
+
+        # Calculate CN1_numbers and CN3_numbers adjusted for antecedent conditions
+        CN2s_d, CN1s_d, CN3s_d = SCSCNQsurf().combineSCSCN(CN2_d, slope)      
+                            
+        return slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang  
             
     # Function to convert the slope from a degrees to a fraction d8 methodology
     def calculate_slope_fraction_flow_direction_d8(self, DTM, baseflow_provided):   
@@ -71,7 +73,7 @@ class SCSCNQsurf(object):
         np.tan(slope)
         slope[slope == 0] = 0.0001
 
-        if baseflow_provided and baseflow_provided != '#':
+        if baseflow_provided == True:
             # Calculate flow accumulation
             flow_accumulation = FlowAccumulation(flow_direction_raster)
             arcpy.AddMessage("Calculated flow accumulation")
@@ -232,13 +234,14 @@ class SCSCNQsurf(object):
         # Calculate the Scurr
         Scurr = 25.4 * ((1000 / CN2s_d) - 10)
         Scurr[CN2s_d == -9999] = -9999
-
+                
         # Determine Preciptiation Excess
         Scurr_threshold = 0.05 * Scurr # intial abstractions is often abreviated to 0.2S
         Scurr_threshold[CN2s_d == -9999] = -9999
-
+        
         #Calculate for all cells
         Q_surf = ((precipitation - (0.05 * Scurr)) ** 2) / (precipitation + (0.95 * Scurr))
+        
         Q_surf[precipitation <= Scurr_threshold] = 0
         Q_surf[Q_surf < 0] = 0
 
@@ -255,6 +258,7 @@ class SCSCNQsurf(object):
         Q_surf[CN2s_d == -9999] = -9999
         arcpy.AddMessage("Calculating Qsurf old (Evapotranspiration not included) " + str(round(time.time() - start,2)) + "s.")
         arcpy.AddMessage("-------------------------")  
+
         return Q_surf
           
     # Method to caluclate the retention parameter - correct checked 08/07/14
@@ -270,17 +274,19 @@ class SCSCNQsurf(object):
         # wilting point
          
         Smax = 25.4 * ((1000 / CN1s_d) - 10)
-        SAT = 25.4 * ((1000 / 99) - 10)
+               
+
+        SAT = 2.565656566
         
         # Calculate FC, which is calculated using the CN3s_d, as it using the
         # field at capacity
         # S3 = 25.4 * ((1000/CN3s_d) - 10)
 
-        if first_loop == "True":
+        if first_loop == True:
             arcpy.AddMessage("This is the first day of model operation")
             Scurr = 0.9 * Smax
             Scurr[CN2s_d == -9999] = -9999
-
+            
         else:
             Scurr = Sprev + ETo * np.exp((cncoef * Sprev) / Smax) - precipitation + Q_surf
             np.putmask(Scurr, Scurr > Smax, Smax)
@@ -300,12 +306,12 @@ class SCSCNQsurf(object):
         # Determine Preciptiation Excess
         Scurr_threshold = 0.05 * Scurr # intial abstractions is often abreviated to 0.2S
         Scurr_threshold[Scurr == -9999] = -9999
-
+        
         #Calculate for all cells
         Q_surf = ((precipitation - (0.05 * Scurr)) ** 2) / (precipitation + (0.95 * Scurr))
         Q_surf[precipitation <= Scurr_threshold] = 0
         Q_surf[Q_surf < 0] = 0
-
+        
         # Check qsurf is not greater than the amount of precipitation
         #Q_surf[Q_surf > self.precipitation_d] = self.precipitation_d
         np.putmask(Q_surf, Q_surf > precipitation, precipitation)
