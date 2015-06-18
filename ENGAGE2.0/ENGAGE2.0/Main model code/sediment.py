@@ -6,12 +6,13 @@ import time
 import arcpy
 from itertools import izip
 import gc
-import decimal
-import active_inactive_layer_check
+
+
 
 # User created scripts
 import rasterstonumpys
-
+import elevation_adjustment
+import active_inactive_layer_check
 
 class sedimenttransport(object):
     """description of class"""
@@ -249,7 +250,8 @@ class sedimenttransport(object):
     def sediment_loop(self, sediment_time_step_seconds, GS_list, Q_dis, slope, 
                                                            cell_size, flow_direction_np, bottom_left_corner, daily_save_date, 
                                                            active_layer_GS_P_temp, active_layer_V_temp, 
-                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, inactive_layer):
+                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, inactive_layer,
+                                                           DTM, DTM_MINUS_AL_IAL):
                 
         def sediment_entrainment_calculation(slope, depth_recking, Fs, d50, GS, GS_P, GS_V, cell_size, sediment_time_step_seconds):
 
@@ -455,7 +457,18 @@ class sedimenttransport(object):
             # Increment the timestep ready for the next loop
             total_time += sediment_time_step_seconds
 
-            return inactive_layer
+            ### Check if elevations need to be recalculated ###
+            DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = elevation_adjustment.update_DTM_elevations(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size)
+            print active_layer
+            print inactive_layer
+
+            inactive_layer *= (cell_size*cell_size)
+            active_layer *= (cell_size*cell_size)
+
+            print active_layer
+            print inactive_layer
+
+            return inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow
                      
             ### Section to save rasters while testing model ###
             #rasterstonumpys.convert_numpy_to_raster_single(active_layer, "active_layer", bottom_left_corner, cell_size, "0")

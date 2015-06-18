@@ -258,7 +258,7 @@ arcpy.AddMessage("Model initiated")
 modelloop.model_loop(model_start_date, cell_size, bottom_left_corner, 
                      calculate_sediment, use_dinfinity).start_precipition(river_catchment, DTM, region, 
                                                                           precipitation_textfile, baseflow_provided, day_pcp_yr, precipitation_gauge_elevation, 
-                                                                          CN2_d, GS_list, inactive_layer, 
+                                                                          CN2_d, GS_list, active_layer, inactive_layer, 
                                                                           active_layer_GS_P_temp, active_layer_V_temp, 
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                                                                           numpy_array_location, 

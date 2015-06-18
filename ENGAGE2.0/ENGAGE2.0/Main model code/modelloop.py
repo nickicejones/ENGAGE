@@ -81,6 +81,7 @@ import hydrology
 import evapotranspiration
 import sediment
 import rasterstonumpys
+import elevation_adjustment
 
 
 class model_loop(object):
@@ -99,7 +100,7 @@ class model_loop(object):
         
     def start_precipition(self, river_catchment, DTM, region, precipitation_textfile, 
                           baseflow_provided, day_pcp_yr, precipitation_gauge_elevation, 
-                          CN2_d, GS_list, inactive_layer, 
+                          CN2_d, GS_list, active_layer, inactive_layer, 
                           active_layer_GS_P_temp, active_layer_V_temp, 
                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                           numpy_array_location, output_file_dict, output_format, 
@@ -111,6 +112,9 @@ class model_loop(object):
         # Open the precipitation file
         precipitation_read = open(precipitation_textfile)
         
+        ### Set to default for the first loop ###
+        recalculate_slope_flow = True
+
         ##### Daily loop start #####     
         arcpy.AddMessage("Starting Model...")
         for precipitation in precipitation_read:
@@ -125,12 +129,29 @@ class model_loop(object):
 
             ### CHECK TO SEE IF THE SLOPE NEEDS TO BE CALCULATED ###
             
-            if self.first_loop == False:   
-                DTM = arcpy.NumPyArrayToRaster(DTM, self.bottom_left_corner, self.cell_size, self.cell_size, -9999) 
-                 
-            slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang = hydrology.SCSCNQsurf().check_slope_flow_directions(self.first_loop, self.use_dinfinity, self.day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location)         
-                                          
-                                  
+            if recalculate_slope_flow == True and self.first_loop == False: 
+                arcpy.AddMessage("Recalculating variables due to degree of elevation change")
+                print DTM
+                print flow_direction_np
+                print slope
+
+                DTM = arcpy.NumPyArrayToRaster(DTM, self.bottom_left_corner, self.cell_size, self.cell_size, -9999)                  
+                slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang = hydrology.SCSCNQsurf().check_slope_flow_directions(self.first_loop, self.use_dinfinity, self.day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location)   
+                            
+            if self.first_loop == True:
+                arcpy.AddMessage("Calculating variables for the first loop")               
+                slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang = hydrology.SCSCNQsurf().check_slope_flow_directions(self.first_loop, self.use_dinfinity, self.day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location)  
+                DTM_MINUS_AL_IAL = elevation_adjustment.get_DTM_AL_IAL(DTM, active_layer, inactive_layer, self.cell_size) 
+                # change the inactive layer to m3
+                inactive_layer *= (self.cell_size*self.cell_size) 
+
+            flow_np = rasterstonumpys.convert_raster_to_numpy([flow_accumulation])
+
+            print flow_np
+            print DTM
+            print flow_direction_np
+            print slope
+                                                                          
             ##### HYDROLOGY SECTION OF LOOP #####
             # Calculate the daily precipitation in each grid cell
             precipitation = hydrology.SCSCNQsurf().spatial_uniform_spatial_precip(precipitation, DTM, day_pcp_yr, precipitation_gauge_elevation)
@@ -145,6 +166,7 @@ class model_loop(object):
             
             # Check if this is the first loop of the models operation
             if self.first_loop == True:
+                
                 # Set a 0 value for Sprev
                 Sprev = np.zeros_like(DTM)
 
@@ -170,7 +192,7 @@ class model_loop(object):
                 Q_dis = Q_dis + baseflow_raster
                                                 
             Q_dis = arcpy.RasterToNumPyArray(Q_dis, '#','#','#', -9999)
-
+            
             Q_max = np.amax(Q_dis)
             arcpy.AddMessage("Discharge at the outlet for today is " + str(Q_max))
             arcpy.AddMessage(" ") 
@@ -192,14 +214,10 @@ class model_loop(object):
                 arcpy.AddMessage("Starting to calculate sediment transport...")              
                 # Calculate d50, d84, Fs
                 d50, d84, Fs, active_layer_GS_P_list = sediment.sedimenttransport().d50_d84_Fs_grain(GS_list, active_layer_GS_P_temp)
-                print d50
-                print d84
-                print Fs
-                            
+                                            
                 # Calculate depth using the recking parameters and the indexs of the cells with a depth greater than the threshold (cell_size / 1000)
                 depth_recking = sediment.sedimenttransport().depth_recking(Q_dis, slope, d84, self.cell_size)
-                print depth_recking               
-
+                            
                 # Calculate the timestep of the sediment transport using the maximum rate of entrainment in all the cells
                 sediment_time_step_seconds = sediment.sedimenttransport().SedimentEntrainmentQmax(slope, depth_recking, Fs, d50, 
                                                                                                   self.cell_size, GS_list, active_layer_GS_P_list)
@@ -220,10 +238,14 @@ class model_loop(object):
             
                          
                 # Calculate sediment transport for each timestep based on the above calculation 
-                inactive_layer = sediment.sedimenttransport().sediment_loop(sediment_time_step_seconds, GS_list, Q_dis, slope, 
-                                                           self.cell_size, flow_direction_np, self.bottom_left_corner, daily_save_date, 
-                                                           active_layer_GS_P_temp, active_layer_V_temp, 
-                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, inactive_layer)
+                inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = sediment.sedimenttransport().sediment_loop(sediment_time_step_seconds, GS_list, 
+                                                                                                                           Q_dis, slope,
+                                                                                                                           self.cell_size, flow_direction_np, 
+                                                                                                                           self.bottom_left_corner, daily_save_date, 
+                                                                                                                           active_layer_GS_P_temp, active_layer_V_temp, 
+                                                                                                                           inactive_layer_GS_P_temp, 
+                                                                                                                           inactive_layer_V_temp, inactive_layer, 
+                                                                                                                           DTM, DTM_MINUS_AL_IAL)
                 Sed_max = " "
 
 
