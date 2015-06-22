@@ -122,7 +122,7 @@ numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp')
 
 ### MODEL INPUTS - For StandAlone testing ###
 # Set Environmental Workspace
-arcpy.env.workspace = r"D:\Boydd at Bitton\3by3_1.gdb" # r"D:\Boydd at Bitton\Boydd_2.gdb"
+arcpy.env.workspace = r"D:\Boydd at Bitton\5by5new_1.gdb" #r"D:\Boydd at Bitton\3by3_1.gdb" # r"D:\Boydd at Bitton\Boydd_2.gdb"
 
 # Textfile with precipitation on each line and textfile with the baseflow on each line
 precipitation_textfile = r"D:\Boydd at Bitton\rainfall.txt"

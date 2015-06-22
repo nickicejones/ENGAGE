@@ -13,6 +13,7 @@ import gc
 import rasterstonumpys
 import elevation_adjustment
 import active_inactive_layer_check
+import masswasting
 
 class sedimenttransport(object):
     """description of class"""
@@ -468,7 +469,17 @@ class sedimenttransport(object):
             print active_layer
             print inactive_layer
 
-            return inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow
+            # Collect garbage
+            collected = gc.collect()
+            arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
+
+        ### SECTION TO CHECK IF MASS WASTING NEEDS TO TAKE PLACE ###
+        DTM = arcpy.NumPyArrayToRaster(DTM, bottom_left_corner, cell_size, cell_size, -9999)
+        masswasting.masswasting_sediment().masswasting_loop(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size, flow_direction_np, 
+                                                            active_layer_GS_P_temp, active_layer_V_temp, 
+                                                            inactive_layer_GS_P_temp, inactive_layer_V_temp)
+
+        return inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow
                      
             ### Section to save rasters while testing model ###
             #rasterstonumpys.convert_numpy_to_raster_single(active_layer, "active_layer", bottom_left_corner, cell_size, "0")

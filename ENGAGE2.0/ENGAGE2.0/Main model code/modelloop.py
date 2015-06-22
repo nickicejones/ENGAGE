@@ -134,16 +134,21 @@ class model_loop(object):
                 print DTM
                 print flow_direction_np
                 print slope
-
-                DTM = arcpy.NumPyArrayToRaster(DTM, self.bottom_left_corner, self.cell_size, self.cell_size, -9999)                  
+                                 
+                                                               
                 slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang = hydrology.SCSCNQsurf().check_slope_flow_directions(self.first_loop, self.use_dinfinity, self.day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location)   
                             
             if self.first_loop == True:
-                arcpy.AddMessage("Calculating variables for the first loop")               
+                arcpy.AddMessage("Calculating variables for the first loop")
+                                               
                 slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang = hydrology.SCSCNQsurf().check_slope_flow_directions(self.first_loop, self.use_dinfinity, self.day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location)  
                 DTM_MINUS_AL_IAL = elevation_adjustment.get_DTM_AL_IAL(DTM, active_layer, inactive_layer, self.cell_size) 
                 # change the inactive layer to m3
                 inactive_layer *= (self.cell_size*self.cell_size) 
+
+                
+                
+
 
             flow_np = rasterstonumpys.convert_raster_to_numpy([flow_accumulation])
 

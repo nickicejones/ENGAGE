@@ -44,6 +44,9 @@
     <Compile Include="Main model code\sediment.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Main model code\masswasting.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main model code\temperatureregion.py">
       <SubType>Code</SubType>
     </Compile>
@@ -89,7 +92,6 @@
     <Folder Include="Land cover editing tools\" />
     <Folder Include="Main model code\" />
     <Folder Include="base flow\" />
-    <Folder Include="Main model code\Sediment\" />
     <Folder Include="Raw data processing\" />
   </ItemGroup>
   <ItemGroup>
