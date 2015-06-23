@@ -34,7 +34,7 @@ def get_DTM_AL_IAL(DTM, active_layer, inactive_layer, cell_size):
 # Function to calculate the updated DTM
 def update_DTM_elevations(DTM_previous, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size):
     print DTM_previous
-        
+     
     # Covert active_layer and inactive layer to meters by dividing by cell size 
     active_layer /= (cell_size*cell_size) 
     inactive_layer /= (cell_size*cell_size) 
@@ -44,10 +44,13 @@ def update_DTM_elevations(DTM_previous, DTM_MINUS_AL_IAL, active_layer, inactive
 
     DTM_difference = DTM_current - DTM_previous
 
-    B = np.logical_or(DTM_difference > 0.05, DTM_difference < -0.05)
+    B = np.logical_or(DTM_difference > 0.04, DTM_difference < -0.04)
 
     if np.any(B == True):
         arcpy.AddMessage("Need to recalculate elevation, slope and flow directions")
         recalculate_slope_flow = True
+
+    else:
+        reclculate_slope_flow = False
         
     return DTM_current, DTM_MINUS_AL_IAL, recalculate_slope_flow

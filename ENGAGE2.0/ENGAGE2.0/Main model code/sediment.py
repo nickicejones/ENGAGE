@@ -413,7 +413,7 @@ class sedimenttransport(object):
                     counter_transport = 1
 
             # Collect garbage
-            del d50, d84, Fs, depth_recking, sediment_entrainment_out, sediment_entrainment_in
+            del d50, d84, Fs, depth_recking, sediment_entrainment_out, sediment_entrainment_in, new_grain_volume
             collected = gc.collect()
             arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
 
@@ -474,8 +474,8 @@ class sedimenttransport(object):
             arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
 
         ### SECTION TO CHECK IF MASS WASTING NEEDS TO TAKE PLACE ###
-        DTM = arcpy.NumPyArrayToRaster(DTM, bottom_left_corner, cell_size, cell_size, -9999)
-        masswasting.masswasting_sediment().masswasting_loop(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size, flow_direction_np, 
+        
+        masswasting.masswasting_sediment().masswasting_loop(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, bottom_left_corner, cell_size, flow_direction_np, 
                                                             active_layer_GS_P_temp, active_layer_V_temp, 
                                                             inactive_layer_GS_P_temp, inactive_layer_V_temp)
 

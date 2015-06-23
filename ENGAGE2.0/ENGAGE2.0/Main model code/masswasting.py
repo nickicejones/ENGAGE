@@ -18,15 +18,20 @@
 import numpy as np
 import arcpy
 from arcpy.sa import *
+from itertools import izip
+import gc
 
 ### Import Script Files NJ created ###
-
+import active_inactive_layer_check
+import elevation_adjustment
 
 class masswasting_sediment(object):
 ### A function to calculate the lowest cell in a neighbour hood. This is using tanX = Opposite (Height difference) / Adjacent (Cell width) ###
     
-    def calculate_slope(self, DTM, cell_size):
-        
+    def calculate_slope(self, DTM, bottom_left_corner,cell_size):
+
+        DTM = arcpy.NumPyArrayToRaster(DTM, bottom_left_corner, cell_size, cell_size, -9999)
+
         # Set local variables
         nbr = NbrRectangle(3, 3, "CELL")
 
@@ -48,8 +53,17 @@ class masswasting_sediment(object):
         
         return slope
 
-    def get_cellsgreater_45degrees(self, slope):
+    def get_cellsgreater_45degrees(self, slope, active_layer, inactive_layer):
 
+        def is_empty(any_structure):
+            if any_structure:
+                print('Mass wasting needs to be calculated')
+                return False
+            else:
+                print('Mass wasting does not need to be calculated')
+                return True
+
+        
         # The follow code is adapted from the peice of code that moves sediment through the system
         slope_mask = np.zeros_like(slope, dtype = float)
         slope_threshold = 45
@@ -63,21 +77,38 @@ class masswasting_sediment(object):
 
         # Now return those indices as a list
         new_idx = zip(*np.unravel_index(sort_idx[::-1], slope.shape))
+        
 
-        if np.any(slope_mask >= 45):
+        # Check that if the slope is greater than 45 degrees that there is availiable sediment to move 
+        final_idx = []
+        for x in new_idx:
+            if active_layer[x] != 0 and inactive_layer[x] != 0:
+                final_idx.append(x)
+       
+        empty = is_empty(final_idx)
+
+        # Now check that there are slopes greater than 45 degrees and that there is availiable sediment to move
+        if np.any(slope_mask >= 45) and empty == False:
             carryout_masswasting = True
             arcpy.AddMessage("There are cells with a steep slope therefore masswasting will be calculated.")
         else:
             carryout_masswasting = False
             arcpy.AddMessage("Mass wasting will not be calculated.")
 
-        return carryout_masswasting, new_idx
+        return carryout_masswasting, final_idx
 
-    def sediment_movement_amount(self, GS_P, GS_V, cell_size):
+    def sediment_movement_amount(self, active_layer_proportion, new_idx, cell_size):
         
-        sediment_entrainment_out = np.zeros_like(DTM, dtype = float)
+        sediment_entrainment_out = np.zeros_like(active_layer_proportion, dtype = float)
 
-    def move_sediment(self, new_idx, flow_direction_np):
+        removal_amount = 0.05 * (cell_size * cell_size)
+
+        for i, j in new_idx:
+            sediment_entrainment_out[i, j] = active_layer_proportion[i, j] * removal_amount
+
+        return sediment_entrainment_out
+
+    def move_sediment(self, sediment_entrainment_out, new_idx, flow_direction_np):
 
         # Get the rows and columns of the slope file
         nrows, ncols = flow_direction_np.shape
@@ -108,44 +139,114 @@ class masswasting_sediment(object):
             sediment_entrainment_in[r + dr, c + dc] += sediment_entrainment_out[r, c] # move the sediment in the downstream direction by one timestep.
                            
 
-        sediment_entrainment_in_fin = np.zeros_like(slope, dtype=float)
+        sediment_entrainment_in_fin = np.zeros_like(flow_direction_np, dtype=float)
         sediment_entrainment_in_fin = sediment_entrainment_in[1:-1, 1:-1] 
-        sediment_entrainment_in_fin[slope == -9999] = -9999
+        sediment_entrainment_in_fin[flow_direction_np == -9999] = -9999
 
-    def masswasting_loop(self, DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size, flow_direction_np, 
+        return sediment_entrainment_in_fin
+
+    def masswasting_loop(self, DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, bottom_left_corner, cell_size, flow_direction_np, 
                                                             active_layer_GS_P_temp, active_layer_V_temp, 
                                                             inactive_layer_GS_P_temp, inactive_layer_V_temp):
 
         # First calculate the slope of the cells
         arcpy.AddMessage("Checking is any cells have a slope greater than 45 degrees and sediment is available to be transported")
-        slope = self.calculate_slope(DTM, cell_size)
+        np.set_printoptions(precision=4)
+        slope = self.calculate_slope(DTM, bottom_left_corner, cell_size)
         print slope
 
         # Check if any of then are greater than 45 degrees
-        conduct_masswasting, new_idx = self.get_cellsgreater_45degrees(slope)
+        conduct_masswasting, new_idx = self.get_cellsgreater_45degrees(slope, active_layer, inactive_layer)
         print conduct_masswasting
         print new_idx
+               
 
+        grain_size_counter = 1
+        while conduct_masswasting == True:
 
-         ### ~~~ GOT TO HERE ~~~ ###
-        for active_layer_proportion_temp, active_layer_volume_temp, inactive_layer_proportion_temp, inactive_layer_volume_temp in izip(active_layer_GS_P_temp,
-                                                                                                                                    active_layer_V_temp,
-                                                                                                                                    inactive_layer_GS_P_temp, 
-                                                                                                                                    inactive_layer_V_temp):
-            # Locad the arrays from the disk
-            active_layer_proportion = np.load(active_layer_proportion_temp)
-            active_layer_volume = np.load(active_layer_volume_temp)
-            inactive_layer_proportion = np.load(inactive_layer_proportion_temp)
-            inactive_layer_volume = np.load(inactive_layer_volume_temp)
-            arcpy.AddMessage("Loaded arrays for grain size " + str(grain_size_counter))
+            total_volume = np.zeros_like(slope, dtype = float)
+            for active_layer_proportion_temp, active_layer_volume_temp in izip(active_layer_GS_P_temp, active_layer_V_temp):
 
-            sediment_entrainment_out = self.sediment_movement_amount(GS_P, GS_V, cell_size)
-     
-
+                # Locad the arrays from the disk
+                active_layer_proportion = np.load(active_layer_proportion_temp)
+                active_layer_volume = np.load(active_layer_volume_temp)
+                arcpy.AddMessage("Loaded arrays for grain size " + str(grain_size_counter))
                 
-                                        
-        # Increment the grainsize by 1 for the next round of calculations
-        grain_size_counter = grain_size_counter + 1
+                # Calculate the amount of sediment that can be moved out of each cell
+                sediment_entrainment_out = self.sediment_movement_amount(active_layer_proportion, new_idx, cell_size)
+                print sediment_entrainment_out     
 
-    # Count the grainsizes as the model works through them
-    grain_size_counter = 1 
+                # Calculate sediment transport in for that grainsize
+                sediment_entrainment_in = self.move_sediment(sediment_entrainment_out, new_idx, flow_direction_np)
+                print flow_direction_np
+                print sediment_entrainment_in
+                
+                # Calculate the change in sediment volume
+                new_grain_volume = active_layer_volume - sediment_entrainment_out + sediment_entrainment_in               
+                np.save(active_layer_volume_temp, new_grain_volume)
+                arcpy.AddMessage("Calculated mass wasting for grain size " + str(grain_size_counter))            
+                             
+                # Update the total volume
+                total_volume += new_grain_volume
+                           
+                # Increment the grainsize by 1 for the next round of calculations
+                grain_size_counter = grain_size_counter + 1
+
+            # Collect garbage
+            del sediment_entrainment_out, sediment_entrainment_in, new_grain_volume
+            collected = gc.collect()
+            arcpy.AddMessage("Garbage collector: collected %d objects." % (collected))
+
+            # Count the grainsizes as the model works through them
+            grain_size_counter = 1 
+
+            for active_layer_proportion_temp, active_layer_volume_temp in izip(active_layer_GS_P_temp, active_layer_V_temp):
+                # Locad the arrays from the disk                
+                active_layer_volume = np.load(active_layer_volume_temp)
+                active_layer_proportion  = active_layer_volume / total_volume
+                print total_volume
+                print active_layer_volume
+                print active_layer_proportion
+
+                arcpy.AddMessage("Calculated new proportion after mass wasting for grainsize " + str(grain_size_counter)) 
+                
+                # Check for nodata and nan values and save to disk
+                active_layer_proportion[total_volume == 0] = 0
+                active_layer_proportion[slope == -9999] = -9999 
+                np.save(active_layer_proportion_temp, active_layer_proportion) 
+
+                # Update the counter
+                grain_size_counter += 1
+                if grain_size_counter == 8:
+                    grain_size_counter = 1
+
+
+            del active_layer_volume, active_layer_proportion
+
+            # Collect garbage
+            collected = gc.collect()
+            arcpy.AddMessage("Garbage collector: collected %d objects." % (collected))  
+
+            # Need to update active layer and inactive layer depths if required.               
+            active_layer, inactive_layer = active_inactive_layer_check.active_layer_depth(total_volume, inactive_layer, active_layer_GS_P_temp, active_layer_V_temp, 
+                                                            inactive_layer_GS_P_temp, inactive_layer_V_temp, cell_size)
+                        
+            # Convert DTM back to a raster
+            #DTM = arcpy.RasterToNumPyArray(DTM, '#', '#', '#', -9999)  
+            # Need to recalculate the DTM
+            ### Check if elevations need to be recalculated ###
+            DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = elevation_adjustment.update_DTM_elevations(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size)
+            
+            print DTM
+            
+            inactive_layer *= (cell_size*cell_size)
+            active_layer *= (cell_size*cell_size)
+                        
+            slope = self.calculate_slope(DTM, bottom_left_corner, cell_size)
+            print slope
+
+            # Check if any of then are greater than 45 degrees
+            conduct_masswasting, new_idx = self.get_cellsgreater_45degrees(slope, active_layer, inactive_layer)
+            print conduct_masswasting
+            print new_idx
+
