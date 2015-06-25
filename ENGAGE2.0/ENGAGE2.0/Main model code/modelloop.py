@@ -1,4 +1,4 @@
-###### MODEL LOOP DESCRIPTION #####
+﻿###### MODEL LOOP DESCRIPTION #####
 # The purpose of this file is to carry out all the daily processes that are required
 
 ##### VARIABLES - used in this file #####
@@ -97,9 +97,24 @@ class model_loop(object):
         self.month_day = 0
         self.year_day = 0
         self.day_of_year = 0
+        self.tomorrow_day = 0
+        self.index = 0
+    
+    # Simple function to get the number of days precipitation in a month and the daily average precipitation
+    def days_pcp_month(self, total_day_month_precip, total_avg_month_precip,):
+
+        if self.tomorrow_day == 1:
+            self.index += 1
+                    
+        day_pcp_month = total_day_month_precip[self.index]
+        day_avg_pcp = total_avg_month_precip[self.index]
+
+        return day_pcp_month, day_avg_pcp
         
     def start_precipition(self, river_catchment, DTM, region, precipitation_textfile, 
-                          baseflow_provided, day_pcp_yr, precipitation_gauge_elevation, 
+                          baseflow_provided, day_pcp_yr, years_of_sim, 
+                          total_day_month_precip, total_avg_month_precip,
+                          precipitation_gauge_elevation, 
                           CN2_d, GS_list, active_layer, inactive_layer, 
                           active_layer_GS_P_temp, active_layer_V_temp, 
                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
@@ -122,13 +137,15 @@ class model_loop(object):
             arcpy.AddMessage("Today's date is " + str(self.current_date))
             self.day_of_year = int(self.current_date.strftime('%j'))
             
-            
+            ### Section of loop to continue checking number of days of precipitation for next month ###
+            day_pcp_month, day_avg_pcp = self.days_pcp_month(total_day_month_precip, total_avg_month_precip,)
+                        
             ### CHECK TO SEE IF BASEFLOW NEEDS TO BE SEPERATED ###
             precipitation, baseflow = hydrology.SCSCNQsurf().check_baseflow(precipitation, baseflow_provided)
             
 
             ### CHECK TO SEE IF THE SLOPE NEEDS TO BE CALCULATED ###
-            
+            '''
             if recalculate_slope_flow == True and self.first_loop == False: 
                 arcpy.AddMessage("Recalculating variables due to degree of elevation change")
                 print DTM
@@ -270,11 +287,13 @@ class model_loop(object):
         
                 
             ### VARIABLES / PARAMETERS THAT CHANGE AT END OF LOOP ###
-            
+            '''
             self.first_loop = False
 
             # Increment the date and day by 1
             self.current_date = self.current_date + datetime.timedelta(days=1)
+            tomorrow = self.current_date + datetime.timedelta(days=1)
+            self.tomorrow_day = int(tomorrow.strftime('%d'))
             self.day_of_year += 1
             arcpy.AddMessage("Time to complete today is " + str(round(time.time() - start,2)) + "s. Note that on day 1 and every 30 days the timestep will take longer.")
             arcpy.AddMessage("-------------------------") 

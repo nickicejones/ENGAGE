@@ -475,10 +475,14 @@ class sedimenttransport(object):
 
         ### SECTION TO CHECK IF MASS WASTING NEEDS TO TAKE PLACE ###
         
-        masswasting.masswasting_sediment().masswasting_loop(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, bottom_left_corner, cell_size, flow_direction_np, 
-                                                            active_layer_GS_P_temp, active_layer_V_temp, 
-                                                            inactive_layer_GS_P_temp, inactive_layer_V_temp)
-
+        DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow, active_layer, inactive_layer = masswasting.masswasting_sediment().masswasting_loop(DTM, DTM_MINUS_AL_IAL, 
+                                                                                                                                          active_layer, inactive_layer,
+                                                                                                                                          bottom_left_corner, cell_size,
+                                                                                                                                          flow_direction_np,
+                                                                                                                                          active_layer_GS_P_temp,
+                                                                                                                                          active_layer_V_temp,
+                                                                                                                                          inactive_layer_GS_P_temp, 
+                                                                                                                                          inactive_layer_V_temp)
         return inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow
                      
             ### Section to save rasters while testing model ###

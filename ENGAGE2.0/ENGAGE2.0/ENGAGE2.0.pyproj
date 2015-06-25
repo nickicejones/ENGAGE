@@ -20,6 +20,10 @@
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <PtvsTargetsFile>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="base flow\baseflowprep.py" />
     <Compile Include="base flow\module1.py">
@@ -80,6 +84,9 @@
     <Compile Include="Raw data processing\mergerasters.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Main model code\maxhalfhourrain.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Raw data processing\riverchannelburn.py">
       <SubType>Code</SubType>
     </Compile>
@@ -100,5 +107,6 @@
     <Content Include="base flow\file.lst" />
     <Content Include="Land cover codes.xlsx" />
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+  <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />
 </Project>

@@ -1,4 +1,4 @@
-#---------------------------------------------------------------------#
+﻿#---------------------------------------------------------------------#
 ##### START OF CODE #####
 # Import statements
 import math
@@ -401,3 +401,4 @@ class SCSCNQsurf(object):
         baseflow_raster = (flow_accumulation / max_flow_accumulation) * baseflow
  
         return baseflow_raster
+

@@ -1,3 +1,11 @@
+﻿###### MODEL LOOP DESCRIPTION #####
+# The purpose of this file is to carry out all the data preparation prior to the model starting to operate
+
+##### VARIABLES - used in this file #####
+# numpy_array_location - this is the location on the computer where hard copies of the numpy arrays can be stored.
+
+### MODEL INPUTS ###
+
 # Import statements
 import arcpy
 import numpy as np
@@ -197,28 +205,65 @@ def get_grain_volumes(GS_P_list, active_layer, inactive_layer):
     return active_layer_GS_volumes, inactive_layer_GS_volumes
 
 # Function to the average number of days rainfall per year based on the input textfile
-def average_days_rainfall(precipitation_textfile):
+def average_days_rainfall(model_start_date, precipitation_textfile):
+    
+    
     total_number_days = 0
+    month_day = 0
     total_day_precip = 0
+    total_day_precip_month = 0
+    total_precip_month = 0.0
+
+    # List to store the monthly precipitation values and average daily month values
+    total_day_month_precip = []
+    total_avg_month_precip = []
 
     # Open the precipitation file
     precip_read = open(precipitation_textfile)
 
+    # Set the starting date
+    current_date = datetime.datetime.strptime(model_start_date, '%d/%m/%Y')
+
     for precip in precip_read:
-        total_number_days += 1
-        if float(precip) >= 0.1:
+        month_day += 1
+        tomorrow = current_date + datetime.timedelta(days=1)
+        tomorrow_day = int(tomorrow.strftime('%d'))
+
+        if precip == '.' or precip == '---':
+            precip = 0
+
+        if float(precip) > 0:
             total_day_precip += 1
-        if total_number_days == 1456 or total_number_days == 2913:
+            total_day_precip_month += 1
+            total_precip_month += float(precip)
+
+        if tomorrow_day == 1:
+            # Used to calculate the number of days precipitation in a month
+            total_day_month_precip.append(total_day_precip_month)
+
+            # Used to calculate the average precipitation in a month
+            avg_day_month_precip = total_precip_month / month_day
+            total_avg_month_precip.append(avg_day_month_precip)
+
+            total_day_precip_month = 0
+            total_precip_month = 0 
+            month_day = 0
+
+        if total_number_days == 1456 or total_number_days == 2913 or total_number_days == 4370 or total_number_days == 5827:
             total_number_days += 1
+
+        # Increment the date and day by 1
+        total_number_days += 1        
+        current_date = current_date + datetime.timedelta(days=1)
     
     years_of_sim = total_number_days / 364.25
     day_pcp_yr = total_day_precip / years_of_sim
-          
+              
     arcpy.AddMessage("Average number of days precipitation per year is " + str(day_pcp_yr))
     arcpy.AddMessage("-------------------------")  
     precip_read.close()
 
-    return day_pcp_yr
+    return day_pcp_yr, years_of_sim, total_day_month_precip, total_avg_month_precip
 
 # Function to create and store the temporary file locations on the harddrive of the computer
 def temporary_file_locations(numpy_array_location, GS_P_list, active_layer_GS_volumes, inactive_layer_GS_volumes):

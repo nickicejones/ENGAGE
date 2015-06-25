@@ -1,4 +1,4 @@
-##### Description of this python file #####
+﻿##### Description of this python file #####
 # This is the start location for the running of the model. The input files and output files are located and input into the model in this script
 
 
@@ -66,6 +66,7 @@
 # active_layer_GS_volumes - list containing the volumes of each of the grainsizes in the active layer
 # inactive_layer_GS_volumes - list containing the volumes of each of the grainsizes in the inactive layer 
 # day_pcp_yr - average number of days precipitation falling in the river catchment
+# years_of_sim - number of years of rainfall data
 # active_layer_GS_P_temp - list of temporary locations on the computer to store the active layer grain size proportions
 # active_layer_V_temp - list of temporary locations on the computer to store the active layer grain size volumes
 # inactive_layer_GS_P_temp - list of  temporary locations on the computer to store the inactive layer grain size proportions
@@ -90,6 +91,7 @@ import rastercharacteristics
 import rasterstonumpys
 import modelloop
 import CN2numbers
+import maxhalfhourrain
 
 
 ### ENVIRONMENT SETTINGS ###
@@ -125,11 +127,12 @@ numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp')
 arcpy.env.workspace = r"D:\Boydd at Bitton\5by5new_1.gdb" #r"D:\Boydd at Bitton\3by3_1.gdb" # r"D:\Boydd at Bitton\Boydd_2.gdb"
 
 # Textfile with precipitation on each line and textfile with the baseflow on each line
-precipitation_textfile = r"D:\Boydd at Bitton\rainfall.txt"
-baseflow_textfile = r"D:\Boydd at Bitton\Baseflow.txt"
+precipitation_textfile = r"D:\Boydd at Bitton\rainfalltest.txt"
+precipitation_hour_textfile = r"D:\Boydd at Bitton\rainfall_hour.txt"
+baseflow_textfile = '#' #r"D:\Boydd at Bitton\Baseflow.txt"
 
 # Date of starting model operation
-model_start_date = "01/01/1990"
+model_start_date = "01/09/1998"
 # Region for the evapotranspiration calculations
 region = "Midlands"
 
@@ -238,7 +241,8 @@ active_layer, inactive_layer = datapreparation.calculate_active_layer(model_inpu
 # Active /  Inactive layer volumes for each grainsize
 active_layer_GS_volumes, inactive_layer_GS_volumes = datapreparation.get_grain_volumes(GS_P_list, active_layer, inactive_layer) 
 # Calculating the number of days precipitation in the catchment per year
-day_pcp_yr = datapreparation.average_days_rainfall(precipitation_textfile)
+day_pcp_yr, years_of_sim, total_day_month_precip, total_avg_month_precip = datapreparation.average_days_rainfall(model_start_date, precipitation_textfile)
+max_30min_rainfall_list = maxhalfhourrain.max_30min_rainfall(precipitation_hour_textfile, model_start_date) ############### GOT TO HERE ####################
 # Create temporary locations to store numpy arrays on the computers hardrive
 arcpy.AddMessage("Temporary files will be located here " + str(numpy_array_location))
 arcpy.AddMessage("-------------------------")
@@ -257,7 +261,9 @@ arcpy.AddMessage("-------------------------")
 arcpy.AddMessage("Model initiated") 
 modelloop.model_loop(model_start_date, cell_size, bottom_left_corner, 
                      calculate_sediment, use_dinfinity).start_precipition(river_catchment, DTM, region, 
-                                                                          precipitation_textfile, baseflow_provided, day_pcp_yr, precipitation_gauge_elevation, 
+                                                                          precipitation_textfile, baseflow_provided, day_pcp_yr, years_of_sim, 
+                                                                          total_day_month_precip, total_avg_month_precip,
+                                                                          precipitation_gauge_elevation, 
                                                                           CN2_d, GS_list, active_layer, inactive_layer, 
                                                                           active_layer_GS_P_temp, active_layer_V_temp, 
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 

@@ -250,3 +250,4 @@ class masswasting_sediment(object):
             print conduct_masswasting
             print new_idx
 
+        return DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow, active_layer, inactive_layer
