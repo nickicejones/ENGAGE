@@ -1,4 +1,4 @@
-##### Description of this python file #####
+﻿##### Description of this python file #####
 # This is the file to calculate the adjusted elevation and determine whether or not slope/flow directions need to be recalculated
 
 ##### VARIABLES - Used in this file#####
@@ -56,11 +56,9 @@ class masswasting_sediment(object):
     def get_cellsgreater_45degrees(self, slope, active_layer, inactive_layer):
 
         def is_empty(any_structure):
-            if any_structure:
-                print('Mass wasting needs to be calculated')
+            if any_structure:              
                 return False
-            else:
-                print('Mass wasting does not need to be calculated')
+            else:              
                 return True
 
         
@@ -90,10 +88,12 @@ class masswasting_sediment(object):
         # Now check that there are slopes greater than 45 degrees and that there is availiable sediment to move
         if np.any(slope_mask >= 45) and empty == False:
             carryout_masswasting = True
-            arcpy.AddMessage("There are cells with a steep slope therefore masswasting will be calculated.")
+            arcpy.AddMessage("There are cells with a steep slope therefore mass wasting will be calculated.")
         else:
             carryout_masswasting = False
             arcpy.AddMessage("Mass wasting will not be calculated.")
+
+        arcpy.AddMessage("-------------------------")
 
         return carryout_masswasting, final_idx
 
@@ -153,16 +153,13 @@ class masswasting_sediment(object):
         arcpy.AddMessage("Checking is any cells have a slope greater than 45 degrees and sediment is available to be transported")
         np.set_printoptions(precision=4)
         slope = self.calculate_slope(DTM, bottom_left_corner, cell_size)
-        print slope
 
         # Check if any of then are greater than 45 degrees
         conduct_masswasting, new_idx = self.get_cellsgreater_45degrees(slope, active_layer, inactive_layer)
-        print conduct_masswasting
-        print new_idx
-               
-
+             
         grain_size_counter = 1
         while conduct_masswasting == True:
+            
 
             total_volume = np.zeros_like(slope, dtype = float)
             for active_layer_proportion_temp, active_layer_volume_temp in izip(active_layer_GS_P_temp, active_layer_V_temp):
@@ -170,22 +167,17 @@ class masswasting_sediment(object):
                 # Locad the arrays from the disk
                 active_layer_proportion = np.load(active_layer_proportion_temp)
                 active_layer_volume = np.load(active_layer_volume_temp)
-                arcpy.AddMessage("Loaded arrays for grain size " + str(grain_size_counter))
-                
+                                
                 # Calculate the amount of sediment that can be moved out of each cell
                 sediment_entrainment_out = self.sediment_movement_amount(active_layer_proportion, new_idx, cell_size)
-                print sediment_entrainment_out     
-
+                 
                 # Calculate sediment transport in for that grainsize
                 sediment_entrainment_in = self.move_sediment(sediment_entrainment_out, new_idx, flow_direction_np)
-                print flow_direction_np
-                print sediment_entrainment_in
-                
+                                
                 # Calculate the change in sediment volume
                 new_grain_volume = active_layer_volume - sediment_entrainment_out + sediment_entrainment_in               
                 np.save(active_layer_volume_temp, new_grain_volume)
-                arcpy.AddMessage("Calculated mass wasting for grain size " + str(grain_size_counter))            
-                             
+                                                 
                 # Update the total volume
                 total_volume += new_grain_volume
                            
@@ -204,11 +196,8 @@ class masswasting_sediment(object):
                 # Locad the arrays from the disk                
                 active_layer_volume = np.load(active_layer_volume_temp)
                 active_layer_proportion  = active_layer_volume / total_volume
-                print total_volume
-                print active_layer_volume
-                print active_layer_proportion
 
-                arcpy.AddMessage("Calculated new proportion after mass wasting for grainsize " + str(grain_size_counter)) 
+                arcpy.AddMessage("Calculated new proportions after mass wasting for grainsize " + str(grain_size_counter)) 
                 
                 # Check for nodata and nan values and save to disk
                 active_layer_proportion[total_volume == 0] = 0
@@ -237,17 +226,12 @@ class masswasting_sediment(object):
             ### Check if elevations need to be recalculated ###
             DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = elevation_adjustment.update_DTM_elevations(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size)
             
-            print DTM
-            
             inactive_layer *= (cell_size*cell_size)
             active_layer *= (cell_size*cell_size)
                         
             slope = self.calculate_slope(DTM, bottom_left_corner, cell_size)
-            print slope
-
+            
             # Check if any of then are greater than 45 degrees
             conduct_masswasting, new_idx = self.get_cellsgreater_45degrees(slope, active_layer, inactive_layer)
-            print conduct_masswasting
-            print new_idx
-
+            
         return DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow, active_layer, inactive_layer

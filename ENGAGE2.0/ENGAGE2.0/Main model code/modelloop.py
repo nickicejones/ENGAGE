@@ -10,7 +10,7 @@
 # region - region for evapotranspiration calculation - Choice of the following - ["Scotland N", "Scotland E", "Scotland W", "England E & NE", "England NW/ Wales N",
 # "Midlands", "East Anglia", "England SW/ Wales S", "England SE/ Central S"] 
 # precipitation_gauge_elevation - elevation of the precipiation gauge #OPTIONAL
-# calculate_sediment - select whether or not the model calculates sediment
+# calculate_sediment_transport - select whether or not the model calculates sediment
 
 ### MODEL OUTPUTS - CSV ###
 # output_excel_discharge - output daily discharge at the pour point 
@@ -86,12 +86,13 @@ import elevation_adjustment
 
 class model_loop(object):
   
-    def __init__(self, model_start_date, cell_size, bottom_left_corner, calculate_sediment, use_dinfinity):
+    def __init__(self, model_start_date, cell_size, bottom_left_corner, calculate_sediment_transport, calculate_sediment_erosion_hillslope, use_dinfinity):
         self.first_loop = True
         self.current_date = datetime.datetime.strptime(model_start_date, '%d/%m/%Y')       
         self.cell_size = cell_size
         self.bottom_left_corner = bottom_left_corner
-        self.calculate_sediment = calculate_sediment 
+        self.calculate_sediment_transport = calculate_sediment_transport 
+        self.calculate_sediment_erosion_hillslope = calculate_sediment_erosion_hillslope
         self.use_dinfinity = use_dinfinity
         self.week_day = 0    
         self.month_day = 0
@@ -101,25 +102,21 @@ class model_loop(object):
         self.index = 0
     
     # Simple function to get the number of days precipitation in a month and the daily average precipitation
-    def days_pcp_month(self, total_day_month_precip, total_avg_month_precip,):
+    def days_pcp_month(self, total_day_month_precip, total_avg_month_precip):
 
         if self.tomorrow_day == 1:
             self.index += 1
                     
         day_pcp_month = total_day_month_precip[self.index]
         day_avg_pcp = total_avg_month_precip[self.index]
-
+        
         return day_pcp_month, day_avg_pcp
         
-    def start_precipition(self, river_catchment, DTM, region, precipitation_textfile, 
-                          baseflow_provided, day_pcp_yr, years_of_sim, 
-                          total_day_month_precip, total_avg_month_precip,
-                          precipitation_gauge_elevation, 
-                          CN2_d, GS_list, active_layer, inactive_layer, 
-                          active_layer_GS_P_temp, active_layer_V_temp, 
-                          inactive_layer_GS_P_temp, inactive_layer_V_temp, 
-                          numpy_array_location, output_file_dict, output_format, 
-                          output_excel_discharge, output_excel_sediment):
+    def start_precipition(self, river_catchment, DTM, region, precipitation_textfile, baseflow_provided, 
+                          day_pcp_yr, years_of_sim, total_day_month_precip, total_avg_month_precip, max_30min_rainfall_list, 
+                          mannings_n, precipitation_gauge_elevation, CN2_d, GS_list, 
+                          active_layer, inactive_layer, active_layer_GS_P_temp, active_layer_V_temp, inactive_layer_GS_P_temp, inactive_layer_V_temp, 
+                          numpy_array_location, output_file_dict, output_format, output_excel_discharge, output_excel_sediment):
                           
         # Check to see if the user wants to output discharge / sediment loss from the system
         discharge_spamwriter, sediment_spamwriter = rasterstonumpys.save_discharge_or_sediment_csv(output_excel_discharge, output_excel_sediment)
@@ -133,26 +130,23 @@ class model_loop(object):
         ##### Daily loop start #####     
         arcpy.AddMessage("Starting Model...")
         for precipitation in precipitation_read:
+
+            # Ensure amount of availiable memory is at the optimum
+            collected = gc.collect()
+            arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
+
             start = time.time()
             arcpy.AddMessage("Today's date is " + str(self.current_date))
             self.day_of_year = int(self.current_date.strftime('%j'))
-            
-            ### Section of loop to continue checking number of days of precipitation for next month ###
-            day_pcp_month, day_avg_pcp = self.days_pcp_month(total_day_month_precip, total_avg_month_precip,)
-                        
+                                                
             ### CHECK TO SEE IF BASEFLOW NEEDS TO BE SEPERATED ###
             precipitation, baseflow = hydrology.SCSCNQsurf().check_baseflow(precipitation, baseflow_provided)
             
 
-            ### CHECK TO SEE IF THE SLOPE NEEDS TO BE CALCULATED ###
-            '''
+            ### CHECK TO SEE IF THE SLOPE NEEDS TO BE CALCULATED ###            
             if recalculate_slope_flow == True and self.first_loop == False: 
                 arcpy.AddMessage("Recalculating variables due to degree of elevation change")
-                print DTM
-                print flow_direction_np
-                print slope
-                                 
-                                                               
+                                                             
                 slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang = hydrology.SCSCNQsurf().check_slope_flow_directions(self.first_loop, self.use_dinfinity, self.day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location)   
                             
             if self.first_loop == True:
@@ -162,17 +156,7 @@ class model_loop(object):
                 DTM_MINUS_AL_IAL = elevation_adjustment.get_DTM_AL_IAL(DTM, active_layer, inactive_layer, self.cell_size) 
                 # change the inactive layer to m3
                 inactive_layer *= (self.cell_size*self.cell_size) 
-
-                
-                
-
-
-            flow_np = rasterstonumpys.convert_raster_to_numpy([flow_accumulation])
-
-            print flow_np
-            print DTM
-            print flow_direction_np
-            print slope
+                         
                                                                           
             ##### HYDROLOGY SECTION OF LOOP #####
             # Calculate the daily precipitation in each grid cell
@@ -197,6 +181,7 @@ class model_loop(object):
                       
             # Calculate surface runoff and then convert to raster
             Q_surf_np = hydrology.SCSCNQsurf().SurfSCS(precipitation, Scurr, CN2s_d)
+
             Q_surf = arcpy.NumPyArrayToRaster(Q_surf_np, self.bottom_left_corner, self.cell_size, self.cell_size, -9999)
                                                                     
             # Execute Flow accumulation to work out the discharge.
@@ -226,13 +211,13 @@ class model_loop(object):
             Sprev = Scurr
 
             ### HYDROLOGY GARBAGE COLLECTION ###
-            del flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, baseflow_raster, Scurr
+            del CN2s_d, CN1s_d, CN3s_d, Scurr
             collected = gc.collect()
             arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
 
 
             ###SEDIMENT TRANSPORT SECTION OF LOOP###                         
-            if self.calculate_sediment == True: 
+            if self.calculate_sediment_transport == True: 
                 arcpy.AddMessage("Starting to calculate sediment transport...")              
                 # Calculate d50, d84, Fs
                 d50, d84, Fs, active_layer_GS_P_list = sediment.sedimenttransport().d50_d84_Fs_grain(GS_list, active_layer_GS_P_temp)
@@ -260,14 +245,14 @@ class model_loop(object):
             
                          
                 # Calculate sediment transport for each timestep based on the above calculation 
-                inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = sediment.sedimenttransport().sediment_loop(sediment_time_step_seconds, GS_list, 
+                '''inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = sediment.sedimenttransport().sediment_loop(sediment_time_step_seconds, GS_list, 
                                                                                                                            Q_dis, slope,
                                                                                                                            self.cell_size, flow_direction_np, 
                                                                                                                            self.bottom_left_corner, daily_save_date, 
                                                                                                                            active_layer_GS_P_temp, active_layer_V_temp, 
                                                                                                                            inactive_layer_GS_P_temp, 
                                                                                                                            inactive_layer_V_temp, inactive_layer, 
-                                                                                                                           DTM, DTM_MINUS_AL_IAL)
+                                                                                                                           DTM, DTM_MINUS_AL_IAL)'''
                 Sed_max = " "
 
 
@@ -280,6 +265,24 @@ class model_loop(object):
                 net_sediment = 0
                 
 
+            # Section of the loop to calculate peak runoff for the day
+            if self.calculate_sediment_erosion_hillslope == True:
+
+                # Adjustment factor is something that could be worked in at a later date.
+                adjustment_factor = 1
+
+                # Calculate the number of rainfall days per month and the average precipitation in each day over the month
+                day_pcp_month, day_avg_pcp = self.days_pcp_month(total_day_month_precip, total_avg_month_precip)
+
+                # Calculate the monthly average half hour fraction
+                average_half_hour_fraction = hydrology.SCSCNQsurf().average_half_hour_rainfall(years_of_sim, day_pcp_month, 
+                                                                                day_avg_pcp, max_30min_rainfall_list, 
+                                                                                adjustment_factor, self.index, self.first_loop)
+
+                concentration_overland_flow = hydrology.SCSCNQsurf().time_concentration(depth_recking, flow_direction_raster, slope, mannings_n, self.cell_size)
+
+                q_peak = hydrology.SCSCNQsurf().peak_flow(depth_recking, Q_surf_np, concentration_overland_flow, flow_accumulation, average_half_hour_fraction, self.cell_size)
+
             sediment_depth = 0
             net_sediment = 0 
             ### Check  what needs to be output from the model ###
@@ -287,7 +290,7 @@ class model_loop(object):
         
                 
             ### VARIABLES / PARAMETERS THAT CHANGE AT END OF LOOP ###
-            '''
+            
             self.first_loop = False
 
             # Increment the date and day by 1

@@ -73,14 +73,11 @@ class SCSCNQsurf(object):
         np.tan(slope)
         slope[slope == 0] = 0.0001
 
-        if baseflow_provided == True:
-            # Calculate flow accumulation
-            flow_accumulation = FlowAccumulation(flow_direction_raster)
-            arcpy.AddMessage("Calculated flow accumulation")
-            arcpy.AddMessage("-------------------------") 
-
-        else:
-            flow_accumulation = '#'
+        
+        # Calculate flow accumulation
+        flow_accumulation = FlowAccumulation(flow_direction_raster)
+        arcpy.AddMessage("Calculated flow accumulation")
+        arcpy.AddMessage("-------------------------") 
 
         arcpy.AddMessage("Calculating took " + str(round(time.time() - start,2)) + "s.")
         arcpy.AddMessage("-------------------------")
@@ -402,3 +399,46 @@ class SCSCNQsurf(object):
  
         return baseflow_raster
 
+
+    def average_half_hour_rainfall(self, years_of_sim, day_pcp_month, day_avg_pcp, max_30min_rainfall_list, adjustment_factor, index, first_loop):
+
+        if first_loop == True:
+            R_smooth = (max_30min_rainfall_list[index] + max_30min_rainfall_list[index + 1]) / 2
+
+        if first_loop == False:
+            R_smooth = max_30min_rainfall_list[index - 1] + max_30min_rainfall_list[index] + max_30min_rainfall_list[index + 1] / 3
+
+        average_half_hour_rainfall_fraction = adjustment_factor * (1 - math.exp(R_smooth / (day_avg_pcp * math.log((0.5 / years_of_sim * day_pcp_month)))))
+
+        return average_half_hour_rainfall_fraction
+
+
+    def time_concentration(self, depth_recking, flow_direction_raster, slope, mannings_n, cell_size):
+
+        ### CALCULATE OVERLAND FLOW CONC TIME ###
+        B = (depth_recking < 0.1)
+        # Calculate the flow lengths
+        slope_length = FlowLength(flow_direction_raster, "UPSTREAM", "")
+        slope_length = arcpy.RasterToNumPyArray(slope_length, '#', '#', '#', -9999)
+
+        # Calculate overland flow
+        concentration_overland_flow = np.zeros_like(depth_recking)
+        concentration_overland_flow[B] = (np.power(slope_length[B], 0.6) * np.power(mannings_n[B], 0.6)) / (18 * np.power(slope[B], 0.3))
+                        
+        return concentration_overland_flow
+
+    def peak_flow(self, depth_recking, Q_surf_np, concentration_overland_flow, flow_accumulation, average_half_hour_fraction, cell_size):
+               
+        ### CALCULATE QPEAK ###
+        B = (depth_recking < 0.1)
+        fraction_daily_runoff_concentration = np.zeros_like(concentration_overland_flow)
+        fraction_daily_runoff_concentration = 1 - np.exp(2 * concentration_overland_flow * np.log(1 - average_half_hour_fraction))
+
+        flow_accumulation = arcpy.RasterToNumPyArray(flow_accumulation, '#', '#', '#', -9999)
+        multiply_factor = (cell_size*cell_size) / 1000
+        hru_area = flow_accumulation * multiply_factor
+
+        q_peak = np.zeros_like(Q_surf_np)
+        q_peak[B] = fraction_daily_runoff_concentration[B] * Q_surf_np[B] * flow_accumulation[B] / 3.6 * concentration_overland_flow[B]
+
+        return q_peak, hru_area

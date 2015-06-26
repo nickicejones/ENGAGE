@@ -92,7 +92,7 @@ import rasterstonumpys
 import modelloop
 import CN2numbers
 import maxhalfhourrain
-
+import manningsroughness
 
 ### ENVIRONMENT SETTINGS ###
 # Overwrite pre-existing files
@@ -140,7 +140,8 @@ region = "Midlands"
 precipitation_gauge_elevation = float("100.1")      # Optional
 
 # Selection of what the model calculates
-calculate_sediment = True
+calculate_sediment_erosion_hillslope = True
+calculate_sediment_transport = True
 
 # Select the outputs and frequency
 output_surface_runoff = "Daily"                # Surface Runoff
@@ -175,7 +176,7 @@ region = arcpy.GetParameterAsText(4)
 precipitation_gauge_elevation = float(arcpy.GetParameterAsText(5))      # Optional
 
 # Selection of what the model calculates
-calculate_sediment = arcpy.GetParameterAsText(6)
+calculate_sediment_transport = arcpy.GetParameterAsText(6)
 
 # Select the outputs and frequency
 output_surface_runoff = arcpy.GetParameterAsText(7)                 # Surface Runoff
@@ -223,11 +224,14 @@ arcpy.AddMessage("Model data from pre-processing script succesfully loaded into 
 cell_size, bottom_left_corner = rastercharacteristics.get_cell_size_bottom_corner(DTM)
 
 ### CONVERT INCOMMING ARCGIS STRING BOOLEANS TO ACTUAL BOOLS ###
-arcpy.AddMessage("Checking calculate sediment is a boolean...")
-calculate_sediment = datapreparation.convert_to_boolean(calculate_sediment)
-
+arcpy.AddMessage("Checking calculate sediment hillslope erosion is a boolean...")
+calculate_sediment_erosion_hillslope = datapreparation.convert_to_boolean(calculate_sediment_erosion_hillslope)
+arcpy.AddMessage("Checking calculate sediment erosion in channel is a boolean...")
+calculate_sediment_transport = datapreparation.convert_to_boolean(calculate_sediment_transport)
 arcpy.AddMessage("Checking use dinfinity is a boolean...")
 use_dinfinity = datapreparation.convert_to_boolean(use_dinfinity)
+arcpy.AddMessage("-------------------------")
+
 
 ### CONVERT ARCGIS RASTERS TO NUMPY ARRAYS ###
 # Convert the list of grain size proportion rasters to numpy arrays
@@ -253,17 +257,20 @@ precipitation_textfile, baseflow_provided = datapreparation.combined_precipitati
 
 ### CONVERT LANDCOVER AND SOIL DATA TO CN2 NUMBERS ### - CHECKED 12/11/14 NJ
 CN2_d = CN2numbers.SCS_CN_Number().get_SCSCN2_numbers(model_inputs_list[1], soil_type, model_inputs_list[0], land_cover_type)
+mannings_n = manningsroughness.get_mannings(model_inputs_list[0])
+
 arcpy.AddMessage("Time to complete model preparation is " + str(round(time.time() - start,2)) + "s. ")
 arcpy.AddMessage("-------------------------")
-         
+
+        
 
 ### MAIN MODEL CODE ###
 arcpy.AddMessage("Model initiated") 
 modelloop.model_loop(model_start_date, cell_size, bottom_left_corner, 
-                     calculate_sediment, use_dinfinity).start_precipition(river_catchment, DTM, region, 
+                     calculate_sediment_transport, calculate_sediment_erosion_hillslope, use_dinfinity).start_precipition(river_catchment, DTM, region, 
                                                                           precipitation_textfile, baseflow_provided, day_pcp_yr, years_of_sim, 
-                                                                          total_day_month_precip, total_avg_month_precip,
-                                                                          precipitation_gauge_elevation, 
+                                                                          total_day_month_precip, total_avg_month_precip, max_30min_rainfall_list, 
+                                                                          mannings_n, precipitation_gauge_elevation, 
                                                                           CN2_d, GS_list, active_layer, inactive_layer, 
                                                                           active_layer_GS_P_temp, active_layer_V_temp, 
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 

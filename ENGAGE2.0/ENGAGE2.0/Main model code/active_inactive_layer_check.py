@@ -1,4 +1,4 @@
-##### Description of this python file #####
+﻿##### Description of this python file #####
 # This is the file to calculate the active and inactive layer distributions
 
 ##### VARIABLES - Used in this file#####
@@ -88,6 +88,7 @@ def active_layer_depth(active_layer, inactive_layer,
         grain_size_counter = grain_size_counter + 1
 
     arcpy.AddMessage("Change to proportions saved to disk")
+    arcpy.AddMessage("-------------------------")
 
     return new_active_layer_total, new_inactive_layer_total
 
@@ -125,6 +126,7 @@ def check_depth(active_layer, inactive_layer, active_layer_proportion, active_la
         np.save(active_layer_volume_temp, active_layer_volume)
         np.save(inactive_layer_volume_temp, inactive_layer_volume)
         arcpy.AddMessage("Saved updated active and inactive layer volumes")
+        arcpy.AddMessage("-------------------------")
                 
         # Check the nodata values                          
         new_active_layer_total[active_layer == -9999] = -9999
