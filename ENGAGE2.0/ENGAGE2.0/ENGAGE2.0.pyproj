@@ -48,6 +48,9 @@
     <Compile Include="Main model code\manningsroughness.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Main model code\Cfactor.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main model code\MUSLE.py">
       <SubType>Code</SubType>
     </Compile>

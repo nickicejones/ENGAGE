@@ -82,7 +82,7 @@ import evapotranspiration
 import sediment
 import rasterstonumpys
 import elevation_adjustment
-
+import MUSLE
 
 class model_loop(object):
   
@@ -114,7 +114,7 @@ class model_loop(object):
         
     def start_precipition(self, river_catchment, DTM, region, precipitation_textfile, baseflow_provided, 
                           day_pcp_yr, years_of_sim, total_day_month_precip, total_avg_month_precip, max_30min_rainfall_list, 
-                          mannings_n, precipitation_gauge_elevation, CN2_d, GS_list, 
+                          mannings_n, CULSE, precipitation_gauge_elevation, CN2_d, GS_list, 
                           active_layer, inactive_layer, active_layer_GS_P_temp, active_layer_V_temp, inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                           numpy_array_location, output_file_dict, output_format, output_excel_discharge, output_excel_sediment):
                           
@@ -282,6 +282,8 @@ class model_loop(object):
                 concentration_overland_flow = hydrology.SCSCNQsurf().time_concentration(depth_recking, flow_direction_raster, slope, mannings_n, self.cell_size)
 
                 q_peak = hydrology.SCSCNQsurf().peak_flow(depth_recking, Q_surf_np, concentration_overland_flow, flow_accumulation, average_half_hour_fraction, self.cell_size)
+
+                hillslope_sediment_erosion = MUSLE.hillslope_erosion_MUSLE(slope, self.cell_size, GS_list, active_layer_GS_P_temp).calculate_MUSLE(Q_surf_np, q_peak, orgC, CULSE)
 
             sediment_depth = 0
             net_sediment = 0 

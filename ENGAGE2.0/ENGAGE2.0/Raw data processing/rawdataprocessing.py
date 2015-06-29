@@ -1,4 +1,4 @@
-# Import Required Modules
+﻿# Import Required Modules
 import arcpy
 import numpy as np
 import grainsize_lookup
@@ -46,6 +46,8 @@ soil_parent_material_50 = arcpy.GetParameterAsText(10) # shapefile of UK coverag
 # Uk soil parent material 
 advanced_superficial_deposit = arcpy.GetParameterAsText(11) # raster of superficial deposit depth
 soil_parent_material_1 = arcpy.GetParameterAsText(12) 
+orgC = arcpy.GetParameterAsText(13)
+
 
 # Calculate some stats for the DTM
 # Fill the raster
@@ -123,7 +125,7 @@ else:
     BNG = 'false'
 
 # Check if the user is working in British National Grid
-def convert_BNG(BNG, DTM_fill, soil, land_cover, river_catchment_polygon):
+def convert_BNG(BNG, DTM_fill, soil, land_cover, orgC, river_catchment_polygon):
 
     if BNG == 'true':
         # Define the projection of the shapefiles
@@ -135,6 +137,10 @@ def convert_BNG(BNG, DTM_fill, soil, land_cover, river_catchment_polygon):
         # Check the land cover type
         desc_land = arcpy.Describe(land_cover)
         land_type = desc_land.datasetType
+        
+        # Check the orgC type
+        desc_orgC = arcpy.Describe(orgC)
+        orgC_type = desc_orgC.datasetType
 
          # River Catchemnt Projection    
         river_catchment_BNG = arcpy.Project_management(river_catchment_polygon, "catchment_BNG", "PROJCS['British_National_Grid',GEOGCS['GCS_OSGB_1936',DATUM['D_OSGB_1936',SPHEROID['Airy_1830',6377563.396,299.3249646]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Transverse_Mercator'],PARAMETER['False_Easting',400000.0],PARAMETER['False_Northing',-100000.0],PARAMETER['Central_Meridian',-2.0],PARAMETER['Scale_Factor',0.9996012717],PARAMETER['Latitude_Of_Origin',49.0],UNIT['Meter',1.0]]")
@@ -154,6 +160,12 @@ def convert_BNG(BNG, DTM_fill, soil, land_cover, river_catchment_polygon):
             land_cover_BNG = arcpy.Project_management(land_cover, "land_BNG", "PROJCS['British_National_Grid',GEOGCS['GCS_OSGB_1936',DATUM['D_OSGB_1936',SPHEROID['Airy_1830',6377563.396,299.3249646]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Transverse_Mercator'],PARAMETER['False_Easting',400000.0],PARAMETER['False_Northing',-100000.0],PARAMETER['Central_Meridian',-2.0],PARAMETER['Scale_Factor',0.9996012717],PARAMETER['Latitude_Of_Origin',49.0],UNIT['Meter',1.0]]")
             arcpy.AddMessage("Land cover" + " is now in British National Grid projection")
 
+        if orgC_type =='FeatureClass':
+            orgC_BNG = arcpy.Project_management(orgC, "orgC_BNG", "PROJCS['British_National_Grid',GEOGCS['GCS_OSGB_1936',DATUM['D_OSGB_1936',SPHEROID['Airy_1830',6377563.396,299.3249646]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Transverse_Mercator'],PARAMETER['False_Easting',400000.0],PARAMETER['False_Northing',-100000.0],PARAMETER['Central_Meridian',-2.0],PARAMETER['Scale_Factor',0.9996012717],PARAMETER['Latitude_Of_Origin',49.0],UNIT['Meter',1.0]]")
+            arcpy.AddMessage("Land cover" + " is now in British National Grid projection")
+
+
+
         else:
             land_cover_BNG = arcpy.ProjectRaster_management(land_cover, "land_BNG","PROJCS['British_National_Grid',GEOGCS['GCS_OSGB_1936',DATUM['D_OSGB_1936',SPHEROID['Airy_1830',6377563.396,299.3249646]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Transverse_Mercator'],PARAMETER['False_Easting',400000.0],PARAMETER['False_Northing',-100000.0],PARAMETER['Central_Meridian',-2.0],PARAMETER['Scale_Factor',0.9996012717],PARAMETER['Latitude_Of_Origin',49.0],UNIT['Meter',1.0]]","NEAREST", '#',"#","#","PROJCS['British_National_Grid',GEOGCS['GCS_OSGB_1936',DATUM['D_OSGB_1936',SPHEROID['Airy_1830',6377563.396,299.3249646]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Transverse_Mercator'],PARAMETER['False_Easting',400000.0],PARAMETER['False_Northing',-100000.0],PARAMETER['Central_Meridian',-2.0],PARAMETER['Scale_Factor',0.9996012717],PARAMETER['Latitude_Of_Origin',49.0],UNIT['Meter',1.0]]")
             arcpy.AddMessage("Land cover" + " is now in British National Grid projection")
@@ -164,8 +176,8 @@ def convert_BNG(BNG, DTM_fill, soil, land_cover, river_catchment_polygon):
         land_cover_BNG = land_cover
         river_catchment_BNG = river_catchment_polygon
              
-    return DTM_BNG, soil_BNG, land_cover_BNG, river_catchment_BNG
-DTM_BNG, soil_BNG, land_cover_BNG, river_catchment_BNG = convert_BNG(BNG, DTM_fill, soil, land_cover, river_catchment_polygon)
+    return DTM_BNG, soil_BNG, land_cover_BNG, river_catchment_BNG, orgC_BNG
+DTM_BNG, soil_BNG, land_cover_BNG, river_catchment_BNG = convert_BNG(BNG, DTM_fill, soil, land_cover, orgC, river_catchment_polygon)
 arcpy.AddMessage("Projection set for all files")
 arcpy.AddMessage("-------------------------")
 
@@ -721,14 +733,14 @@ def grain_size_calculation(soil_parent_material_50, DTM_cell_size, buffer_catchm
     else:
     
         arcpy.AddMessage("No spatially distributed information provided. Therefore uniform distributions will be created")
-        # 9 proportions of grainsizes that are listed below
-        g_pro_1 = float(arcpy.GetParameterAsText(13)) #0.1
-        g_pro_2 = float(arcpy.GetParameterAsText(14)) #0.35
-        g_pro_3 = float(arcpy.GetParameterAsText(15)) #0.15
-        g_pro_4 = float(arcpy.GetParameterAsText(16)) #0.15
-        g_pro_5 = float(arcpy.GetParameterAsText(17)) #0.15
-        g_pro_6 = float(arcpy.GetParameterAsText(18)) #0.05
-        g_pro_7 = float(arcpy.GetParameterAsText(19)) #0.05
+        # 9 proportions of grainsizes that are listed below - defaults are listed on the right
+        g_pro_1 = float(arcpy.GetParameterAsText(14)) #0.1
+        g_pro_2 = float(arcpy.GetParameterAsText(15)) #0.35
+        g_pro_3 = float(arcpy.GetParameterAsText(16)) #0.15
+        g_pro_4 = float(arcpy.GetParameterAsText(17)) #0.15
+        g_pro_5 = float(arcpy.GetParameterAsText(18)) #0.15
+        g_pro_6 = float(arcpy.GetParameterAsText(19)) #0.05
+        g_pro_7 = float(arcpy.GetParameterAsText(20)) #0.05
         
         # Create a list of the proportions
         grain_proportions = [g_pro_1, g_pro_2, g_pro_3, g_pro_4, g_pro_5, g_pro_6, g_pro_7]
@@ -930,6 +942,66 @@ def soil_depth_calc(soil_parent_material_1, advanced_superficial_deposit, DTM_ce
 soil_depth_calculation = soil_depth_calc(soil_parent_material_1, advanced_superficial_deposit, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent)
 arcpy.AddMessage("Soil depth calculated")
 arcpy.AddMessage("-------------------------")
+
+# Calculate the organic carbon in the topsoil
+def soil_orgC_calc(orgC_BNG, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent):
+
+    if orgC and orgC != '#':
+        # Check the soil parent type
+        desc_soil_orgC = arcpy.Describe(orgC)
+        soil_orgC_raster_feature = desc_soil_orgC.datasetType
+        arcpy.AddMessage("The soil orgC dataset is a " + soil_orgC_raster_feature)
+
+        # process the soil parent material for entry into the model.
+        if soil_orgC_raster_feature == 'FeatureClass':
+            
+            soil_orgC_clip = arcpy.Clip_analysis(orgC, river_catchment_polygon)
+                        
+            arcpy.AddField_management(soil_orgC_clip, "orgC_PER", "FLOAT")
+            arcpy.AddMessage("Added new fields to the table")
+            
+            # Create update cursor for feature class 
+            rows = arcpy.UpdateCursor(soil_orgC_clip) 
+
+            #H(igh): > 6.0%
+            #M(edium): 2.1-6.0%
+            #L(ow): 1.1-2.0%
+            #V(ery) L(ow): < 1.0%
+
+            for row in rows:
+                if row.OC_TOP == "H":
+                    row.orgC_PER = 10.0
+
+                elif row.OC_TOP == "M":
+                    row.OC_TOP = 4.0
+
+                elif row.OC_TOP == "L":
+                    row.orgC_PER = 1.5
+
+                elif row.OC_TOP == "V":
+                    row.orgC_PER = 0.5
+
+                else:
+                    row.orgC_PER = 0.0
+
+                rows.updateRow(row) 
+
+            # Delete cursor and row objects to remove locks on the data 
+            del row 
+            del rows
+
+            soil_orgC_raster = arcpy.FeatureToRaster_conversion(soil_orgC_clip, "orgC_PER", '#', DTM_cell_size)
+                  
+            soil_depth_raster_clip = arcpy.Clip_management(soil_orgC_raster, catch_extent, "MODEL_orgC", river_catchment_polygon, "#","ClippingGeometry")  
+            arcpy.AddMessage("Soil orgC field converted to raster and clipped")
+
+        else:
+            arcpy.AddMessage("Soil orgC not provided")
+        
+soil_orgC_calculation = soil_orgC_calc(orgC_BNG, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent)
+arcpy.AddMessage("Soil orgC calculated")
+arcpy.AddMessage("-------------------------")
+
 
 # Small part of code to delete the unused/not needed parts
 def delete_temp_files(delete_list):

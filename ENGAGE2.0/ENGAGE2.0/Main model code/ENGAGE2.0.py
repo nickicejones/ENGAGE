@@ -82,7 +82,6 @@
 import arcpy
 import numpy as np
 import tempfile
-import gc
 import time
 
 ### Import Script Files NJ created ###
@@ -93,6 +92,7 @@ import modelloop
 import CN2numbers
 import maxhalfhourrain
 import manningsroughness
+import Cfactor
 
 ### ENVIRONMENT SETTINGS ###
 # Overwrite pre-existing files
@@ -246,7 +246,7 @@ active_layer, inactive_layer = datapreparation.calculate_active_layer(model_inpu
 active_layer_GS_volumes, inactive_layer_GS_volumes = datapreparation.get_grain_volumes(GS_P_list, active_layer, inactive_layer) 
 # Calculating the number of days precipitation in the catchment per year
 day_pcp_yr, years_of_sim, total_day_month_precip, total_avg_month_precip = datapreparation.average_days_rainfall(model_start_date, precipitation_textfile)
-max_30min_rainfall_list = maxhalfhourrain.max_30min_rainfall(precipitation_hour_textfile, model_start_date) ############### GOT TO HERE ####################
+max_30min_rainfall_list = maxhalfhourrain.max_30min_rainfall(precipitation_hour_textfile, model_start_date) 
 # Create temporary locations to store numpy arrays on the computers hardrive
 arcpy.AddMessage("Temporary files will be located here " + str(numpy_array_location))
 arcpy.AddMessage("-------------------------")
@@ -255,14 +255,14 @@ active_layer_GS_P_temp, active_layer_V_temp, inactive_layer_GS_P_temp, inactive_
 precipitation_textfile, baseflow_provided = datapreparation.combined_precipitation(numpy_array_location, precipitation_textfile, baseflow_textfile)
 
 
-### CONVERT LANDCOVER AND SOIL DATA TO CN2 NUMBERS ### - CHECKED 12/11/14 NJ
+### CONVERT LANDCOVER AND SOIL DATA TO CN2 NUMBERS, Mannings n and CUSLE (C factor) ### - CHECKED 12/11/14 NJ
 CN2_d = CN2numbers.SCS_CN_Number().get_SCSCN2_numbers(model_inputs_list[1], soil_type, model_inputs_list[0], land_cover_type)
 mannings_n = manningsroughness.get_mannings(model_inputs_list[0])
+CULSE = Cfactor.get_Cfactor(model_inputs_list[0])
 
 arcpy.AddMessage("Time to complete model preparation is " + str(round(time.time() - start,2)) + "s. ")
 arcpy.AddMessage("-------------------------")
-
-        
+       
 
 ### MAIN MODEL CODE ###
 arcpy.AddMessage("Model initiated") 
@@ -270,7 +270,7 @@ modelloop.model_loop(model_start_date, cell_size, bottom_left_corner,
                      calculate_sediment_transport, calculate_sediment_erosion_hillslope, use_dinfinity).start_precipition(river_catchment, DTM, region, 
                                                                           precipitation_textfile, baseflow_provided, day_pcp_yr, years_of_sim, 
                                                                           total_day_month_precip, total_avg_month_precip, max_30min_rainfall_list, 
-                                                                          mannings_n, precipitation_gauge_elevation, 
+                                                                          mannings_n, CULSE, precipitation_gauge_elevation, 
                                                                           CN2_d, GS_list, active_layer, inactive_layer, 
                                                                           active_layer_GS_P_temp, active_layer_V_temp, 
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
