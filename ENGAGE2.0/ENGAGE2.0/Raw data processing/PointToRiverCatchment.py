@@ -1,4 +1,4 @@
-# Import Required Modules
+﻿# Import Required Modules
 import arcpy
 import numpy as np
 from arcpy.sa import *
@@ -64,5 +64,8 @@ def catchment_pour(pour_point, DTM_flow_direction):
 # Check if the pour point needs snapping and calculate the river catchment.
 if snap_pour != 'false':
     snapped_pour_point = snap_pour_point(pour_point, DTM_flow_direction)
+
+else:
+    snapped_pour_point = pour_point
 
 river_catchment_polygon = catchment_pour(snapped_pour_point, DTM_flow_direction)

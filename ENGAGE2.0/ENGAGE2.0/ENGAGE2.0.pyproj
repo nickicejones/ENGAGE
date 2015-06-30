@@ -90,10 +90,40 @@
     <Compile Include="Raw data processing\addinchannelstructures.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Raw data processing\landcover_prep.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Raw data processing\mergerasters.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Main model code\maxhalfhourrain.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Raw data processing\DTM_prep.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Raw data processing\catchment_prep.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Raw data processing\BNG_check.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Raw data processing\define_extents.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Raw data processing\grain_size_proportion.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Raw data processing\delete_unused_array.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Raw data processing\orgC_prep.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Raw data processing\soil_depth_prep.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Raw data processing\soil_hydro_prep.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Raw data processing\riverchannelburn.py">
