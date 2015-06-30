@@ -33,6 +33,9 @@
     <Compile Include="Main model code\hydrology.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Main model code\mergesoil.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main model code\modelloop.py">
       <SubType>Code</SubType>
     </Compile>

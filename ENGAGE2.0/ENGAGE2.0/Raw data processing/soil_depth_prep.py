@@ -1,4 +1,4 @@
-##### Description of this python file #####
+﻿##### Description of this python file #####
 # This is the start location for preprocessing script for the data preparation prior to running the model
 
 
@@ -15,6 +15,12 @@ from arcpy.sa import *
 
 # Function to calculate the depth of soil in the river and on the hillslopes
 def soil_depth_calc(soil_parent_material_1, advanced_superficial_deposit, DTM_clip_np, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent, bottom_left_corner):
+
+    adaquate_soil_data_provided = False
+    if soil_parent_material_1 and soil_parent_material_1 != '#':
+        if advanced_superficial_deposit and advanced_superficial_deposit  != '#':
+            arcpy.AddMessage("Adequate soil information provided")
+            adaquate_soil_data_provided = True
 
     if soil_parent_material_1 and soil_parent_material_1 != '#':
         # Check the soil parent type
@@ -71,7 +77,7 @@ def soil_depth_calc(soil_parent_material_1, advanced_superficial_deposit, DTM_cl
         else:
             Soil_clip = arcpy.Clip_management(soil_depth, catch_extent, "MODEL_BGS_SOIL_DEPTH", river_catchment_BNG, "#","ClippingGeometry")
 
-        # Process and clip the advanced superficial deposit data ready to go into the model.
+    # Process and clip the advanced superficial deposit data ready to go into the model.
     if advanced_superficial_deposit and advanced_superficial_deposit  != '#':
         # Check superficial type
         desc_advanced_superficial_deposit = arcpy.Describe(advanced_superficial_deposit)
@@ -112,17 +118,17 @@ def soil_depth_calc(soil_parent_material_1, advanced_superficial_deposit, DTM_cl
         final_depth[DTM_clip_np == -9999] = -9999
 
         soil_depth_raster = arcpy.NumPyArrayToRaster(final_depth, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        soil_depth_raster.save("MODEL_river_soil_depth")
+        soil_depth_raster.save("MODEL_ASD_soil_depth")
                 
                 
     # Soil depth data
-    else:
-        arcpy.AddMessage("No soil depth data has been provided therefore a default depth of 1m will be used")
+    if adaquate_soil_data_provided == False:
+        arcpy.AddMessage("No soil depth or particaldata has been provided therefore a default depth of 1m will be used for missing areas")
         soil_depth = np.empty_like(DTM_clip_np, dtype = float)
         soil_depth[:] = 1.0
         soil_depth[DTM_clip_np == -9999] = -9999
         soil_depth_raster = arcpy.NumPyArrayToRaster(soil_depth, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        soil_depth_raster = arcpy.Clip_management(soil_depth_raster, catch_extent, "MODEL_river_soil_depth", river_catchment_BNG, "#","ClippingGeometry")
+        soil_depth_raster = arcpy.Clip_management(soil_depth_raster, catch_extent, "MODEL_general_soil_depth", river_catchment_BNG, "#","ClippingGeometry")
         
     arcpy.AddMessage("Soil depth calculated")
     arcpy.AddMessage("-------------------------")

@@ -1,4 +1,4 @@
-# import statments
+﻿# import statments
 import numpy as np
 import time
 import arcpy
@@ -5131,7 +5131,7 @@ class SCS_CN_Number(object):
             (57, "A"): 59, (57, "B"): 74, (57, "C"): 82, (57, "D"): 86, # Farmsteds - buildings, lanes, driveways and surrounding lots
             (23, "A"): 61, (23, "B"): 75, (23, "C"): 83, (23, "D"): 87, # Suburban
             (22, "A"): 89, (22, "B"): 92, (22, "C"): 94, (22, "D"): 95, # Urban
-            (65, "A"): 89, (65, "B"): 65, (22, "C"): 94, (65, "D"): 95, # Commercial and buisness
+            (65, "A"): 89, (65, "B"): 65, (65, "C"): 94, (65, "D"): 95, # Commercial and buisness
             (66, "A"): 81, (66, "B"): 88, (66, "C"): 91, (66, "D"): 93, # Industrial
 
             #OPEN PARKS / SPACES

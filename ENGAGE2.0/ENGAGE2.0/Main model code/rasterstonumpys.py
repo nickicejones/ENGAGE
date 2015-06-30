@@ -1,4 +1,4 @@
-#---------------------------------------------------------------------#
+﻿#---------------------------------------------------------------------#
 ##### START OF CODE #####
 # Import statements
 import arcpy
@@ -10,9 +10,12 @@ import numpy as np
 def convert_raster_to_numpy(list_of_rasters):   
     list_of_numpy_arrays = []
     for raster in list_of_rasters:
-        arcpy.AddMessage("Converting " + str(raster) + " raster to numpy array")
-        numpy_raster = arcpy.RasterToNumPyArray(raster, '#', '#', '#', -9999)   
-        list_of_numpy_arrays.append(numpy_raster)
+        if raster and raster != '#':
+            arcpy.AddMessage("Converting " + str(raster) + " raster to numpy array")
+            numpy_raster = arcpy.RasterToNumPyArray(raster, '#', '#', '#', -9999)   
+            list_of_numpy_arrays.append(numpy_raster)
+        else:
+            list_of_numpy_arrays.append(raster)
 
     arcpy.AddMessage("-------------------------")          
     arcpy.AddMessage("Successfully converted rasters to numpy arrays")

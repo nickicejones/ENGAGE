@@ -122,12 +122,29 @@ def check_preprocessing_files():
         else:
             raise DoesNotCompute("grain size proportions")  
 
-        if arcpy.Exists("MODEL_river_soil_depth"):
-            river_soil_depth = "MODEL_river_soil_depth"
-            arcpy.AddMessage("River soil depth data detected")  
+        if arcpy.Exists("MODEL_ASD_soil_depth"):
+            ASD_soil_depth = "MODEL_ASD_soil_depth"
+            arcpy.AddMessage("Advanced superficial deposit soil depth data detected")  
                        
         else:
-            raise DoesNotCompute("river soil depth")
+            ASD_soil_depth = '#'
+            arcpy.AddMessage("Advanced superficial deposit data not detected")  
+
+        if arcpy.Exists("MODEL_BGS_SOIL_DEPTH"):
+            BGS_soil_depth = "MODEL_BGS_SOIL_DEPTH"
+            arcpy.AddMessage("BGS soil depth data detected")  
+                       
+        else:
+            BGS_soil_depth = '#'
+            arcpy.AddMessage("BGS soil depth data not detected") 
+            
+        if arcpy.Exists("MODEL_general_soil_depth"):
+            general_soil_depth = "MODEL_general_soil_depth"
+            arcpy.AddMessage("Generalised soil depth data detected")  
+                       
+        else:
+            general_soil_depth = '#'
+            arcpy.AddMessage("General data not detected")    
 
         if arcpy.Exists("MODEL_river_catchment"):
             river_catchment = "MODEL_river_catchment"
@@ -136,12 +153,21 @@ def check_preprocessing_files():
         else:
             raise DoesNotCompute("River catchment")
 
+        if arcpy.Exists("MODEL_orgC"):
+            orgC = "MODEL_orgC"
+            arcpy.AddMessage("orgC detected") 
+
+        else:
+            orgC = '#'
+            calculate_sediment_erosion_hillslope = False
+            arcpy.AddMessage("orgC not detected therefore hillslope erosion cannot be calculated") 
+
         arcpy.AddMessage("-------------------------")  
     except DoesNotCompute as error:        
         arcpy.AddError("Model data: " + str(error.value) + " from the pre-processing script could not be found at the location you specified") 
            
         
-    return DTM, land_cover, land_cover_type, soil, soil_type, GS_1_P, GS_2_P, GS_3_P, GS_4_P, GS_5_P, GS_6_P, GS_7_P, river_soil_depth, river_catchment
+    return DTM, land_cover, land_cover_type, soil, soil_type, GS_1_P, GS_2_P, GS_3_P, GS_4_P, GS_5_P, GS_6_P, GS_7_P, ASD_soil_depth, BGS_soil_depth, general_soil_depth, river_catchment, orgC
 
 # Function to convert the date into a day of the year
 def convert_date_day_year(current_date):

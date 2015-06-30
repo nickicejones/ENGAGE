@@ -75,7 +75,6 @@
 # baseflow_provided - this is a true/false statement of whether or not the user has provided baseflow
 
 
-
 #---------------------------------------------------------------------#
 ##### START OF CODE #####
 ### Import statements - Python ###
@@ -93,6 +92,7 @@ import CN2numbers
 import maxhalfhourrain
 import manningsroughness
 import Cfactor
+import mergesoil
 
 ### ENVIRONMENT SETTINGS ###
 # Overwrite pre-existing files
@@ -124,7 +124,7 @@ numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp')
 
 ### MODEL INPUTS - For StandAlone testing ###
 # Set Environmental Workspace
-arcpy.env.workspace = r"D:\Boydd at Bitton\5by5new_1.gdb" #r"D:\Boydd at Bitton\3by3_1.gdb" # r"D:\Boydd at Bitton\Boydd_2.gdb"
+arcpy.env.workspace = r"D:\SmallTesting\New File Geodatabase.gdb" #r"D:\Boydd at Bitton\3by3_1.gdb" # r"D:\Boydd at Bitton\Boydd_2.gdb"
 
 # Textfile with precipitation on each line and textfile with the baseflow on each line
 precipitation_textfile = r"D:\Boydd at Bitton\rainfalltest.txt"
@@ -214,9 +214,9 @@ GS_list = [GS_1, GS_2, GS_3, GS_4, GS_5, GS_6, GS_7]
 
 ### INPUTS FROM PREPROCESSING SCRIPT ###
 # Elevation, Land cover, soil, grain size proportions,
-DTM, land_cover, land_cover_type, soil, soil_type, GS_1_P, GS_2_P, GS_3_P, GS_4_P, GS_5_P, GS_6_P, GS_7_P, river_soil_depth, river_catchment = datapreparation.check_preprocessing_files()
+DTM, land_cover, land_cover_type, soil, soil_type, GS_1_P, GS_2_P, GS_3_P, GS_4_P, GS_5_P, GS_6_P, GS_7_P, ASD_soil_depth, BGS_soil_depth, general_soil_depth, river_catchment, orgC = datapreparation.check_preprocessing_files()
 GS_P_list = [GS_1_P, GS_2_P, GS_3_P, GS_4_P, GS_5_P, GS_6_P, GS_7_P]
-model_inputs_list = [land_cover, soil, river_soil_depth]
+model_inputs_list = [land_cover, soil, ASD_soil_depth, BGS_soil_depth, general_soil_depth, orgC]
 arcpy.AddMessage("Model data from pre-processing script succesfully loaded into model")
 
 
@@ -238,10 +238,12 @@ arcpy.AddMessage("-------------------------")
 GS_P_list = rasterstonumpys.convert_raster_to_numpy(GS_P_list)
 model_inputs_list = rasterstonumpys.convert_raster_to_numpy(model_inputs_list)
 
+### Merge the soil depths and check the soil depth based on the land cover depths ###
+soil_depth = mergesoil.calculate_soil_depth(model_inputs_list[0], land_cover_type, model_inputs_list[2], model_inputs_list[3], model_inputs_list[4])
 
 ### CALCULATE ACTIVE LAYER DEPTH/REMAINING SOIL DEPTH, AVERAGE NUMBER OF DAYS PRECIPITATION PER YEAR, STARTING GRAIN SIZE VOLUMES, TEMPORARY FILE LOCATIONS ###
 # Active / Inactive layer volumes
-active_layer, inactive_layer = datapreparation.calculate_active_layer(model_inputs_list[2], cell_size) 
+active_layer, inactive_layer = datapreparation.calculate_active_layer(soil_depth, cell_size) 
 # Active /  Inactive layer volumes for each grainsize
 active_layer_GS_volumes, inactive_layer_GS_volumes = datapreparation.get_grain_volumes(GS_P_list, active_layer, inactive_layer) 
 # Calculating the number of days precipitation in the catchment per year
