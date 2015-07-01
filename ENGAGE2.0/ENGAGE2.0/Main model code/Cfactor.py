@@ -9,6 +9,101 @@
 import numpy as np
 import arcpy
 
+Corine = {
+    1:	93, #CONTINIOUS URBAN FABRIC
+    2: 92,	#DISCONTINUOUS URBAN FABRIC
+    3: 95,	#INDUSTRIAL OR COMMERCIAL UNTS
+    4: 95,	#ROAD AND RAIL NETWORKS AND ASSOCIATED L
+    5: 95,	#PORT AREAS
+    6: 95,	#AIRPORTS
+    7: 92,	#MINERAL EXTRACTION SITES
+    8: 92,	#DUMP SITES
+    9: 96,	#CONSTRUCTION SITES
+    10: 89,	#GREEN URBAN AREAS
+    11: 89,	#SPORT AND LEISURE FACILITIES
+    12: 93,	#NON-IRRIGATED ARABLE LAND
+    13: 91,	#PERMANENTLY IRRIGATED LAND
+    14: 90,	#RICE FIELDS
+    15: 88,	#VINEYARDS
+    16: 88,	#FRUIT TREES AND BERRY PLANTATIONS
+    17: 88,	#OLIVE GROWES
+    18: 89,	#PASTURES
+    19: 91,	#ANNUAL CROPS ASSOCIATED WITH PERMANENT
+    20: 91,	#COMPLEX CULTIVATION PATTERNS
+    21: 91,	#AGRICULTURE, WITH SIGNIFICANT AREAS OF
+    22: 88,	#AGRO-FORESTRY AREAS
+    23: 80,	#BROAD-LEAVED FOREST
+    24: 77,	#CONIFEROUS FOREST
+    25: 80,	#MIXED FOREST
+    26: 84,	#NATURAL GRASSLAND
+    27: 92,	#MOORS AND HEATHLAND
+    28: 88,	#SCLEROPHYLLOUS VEGETATION
+    29: 88,	#TRANSITIONAZL WOODLAND-SHRUB
+    30: 96,	#BEACHES, DUNES, AND SAND PLAINS
+    31: 96,	#BARE ROCK
+    32: 90,	#SPARSELY VEGETATED AREAS
+    33: 90,	#BURNT AREAS
+    34: 98,	#GLACIERS AND PERPETUAL SNOW
+    35: 90,	#INLAND MARSHES
+    36: 90,	#PEATBOGS
+    37: 90,	#SALT-MARSHES
+    38: 96,	#SALINES
+    39: 96,	#INTERTIDAL FLATS
+    40: 100, #WATER COURSES
+    41: 100, #WATER BODIES
+    42: 100, #COASTAL LAGOONS
+    43: 100, #ESTUARIES
+    44: 100, #SEA AND OCEAN
+
+    #WOODLAND CODES
+    50: 83, # Broad leaf woodland - Poor condition
+    45: 79, # Broad leaf woodland - Fair condition
+    51: 77, # Broad leaf woodland - Good condition
+           
+    52: 83, # Coniferous woodland - Poor condition
+    46: 79, # Coniferous woodland - Fair condition
+    53: 77, # Coniferous woodland - Good condition
+
+    73: 86, # Woods?grass combination (orchard or tree farm).- Poor condition
+    74: 82, # Woods?grass combination (orchard or tree farm).  - Fair condition
+    75: 79, # Woods?grass combination (orchard or tree farm).  - Good condition
+
+    #ARABLE CODES
+    47: 90, # Arable and horticulture - Good condition
+    54: 93, # Arable and horticulture - Poor condition
+    76: 94, # Fallow - Bare soil
+
+    #Grassland CODES
+    48: 89, # Improved grassland - Poor condition
+    55: 84, # Improved grassland - Fair condition
+    56: 80, # Improved grassland - Good condition
+
+        #URBAN CODES
+    57: 86, # Farmsteds - buildings, lanes, driveways and surrounding lots
+    65: 95, # Commercial and buisness
+    66: 93, # Industrial
+
+    #OPEN PARKS / SPACES
+    58: 89, # Open spaces (lawns, parks, golfcourses, cemeteries etc) - Poor
+    59: 84, # Open spaces (lawns, parks, golfcourses, cemeteries etc) - Fair
+    60: 80, # Open spaces (lawns, parks, golfcourses, cemeteries etc) - Good
+            
+    #IMPERVIOUS AREAS
+    61: 98, # Paved parking lots, roofs, driveways (Excl right of way)
+    62: 93, # Paved streets and roads: open ditches (incl right of way)
+    63: 91, # Gravel streets and roads (including right of way)
+    64: 89, # Dirt streets and roads (including right of way)
+
+    #RESIDENTIAL
+    67: 90, # 1/8 acre or less (town houses)
+    68: 87, # 1/4 acre
+    69: 86, # 1/3 acre
+    70: 85, # 1/2 acre
+    71: 84, # 1 acre
+    72: 82, # 2 acres
+
+    }
+
 # Hardcoded mannings values taken from Kalyanapu et al. and the SWAT handbook
 COMBINE_SCS = {             
         
@@ -148,4 +243,3 @@ def get_Cfactor(land_cover):
     arcpy.AddMessage("-------------------------")
 
     return CUSLE
-

@@ -29,6 +29,9 @@
     <Compile Include="base flow\module1.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Main model code\calculate_daily_precipitation.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main model code\ENGAGE2.0.py" />
     <Compile Include="Main model code\hydrology.py">
       <SubType>Code</SubType>
