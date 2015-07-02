@@ -1,4 +1,4 @@
-#---------------------------------------------------------------------#
+﻿#---------------------------------------------------------------------#
 ##### START OF CODE #####
 # Import statements
 import numpy as np
@@ -220,7 +220,7 @@ class sedimenttransport(object):
         for grain_size, grain_proportion in izip(GS_list, GS_P_list):                                 
             # Calculate sediment transport for that grainsize
             sediment_entrainment = sediment_entrainment_calculation(slope, depth_recking, Fs, d50, grain_size, grain_proportion, cell_size)
-            print sediment_entrainment
+            
             arcpy.AddMessage("Calculated sediment transport for " + "_" + str(grain_size))
                             
             Q_max = np.amax(sediment_entrainment)
@@ -381,7 +381,7 @@ class sedimenttransport(object):
 
             # Calcualte the depth recking and index of active cells in this timestep
             depth_recking = self.depth_recking(Q_dis, slope, d84, cell_size)
-            print depth_recking
+            
 
             # Iterate through the grain sizes and proportions calculating the transport
             for GS, GS_P, GS_V_temp in izip(GS_list, active_layer_GS_P, active_layer_V_temp):
@@ -392,13 +392,12 @@ class sedimenttransport(object):
                 # Calculate sediment transport out for that grainsize              
                 sediment_entrainment_out = sediment_entrainment_calculation(slope, depth_recking, Fs, d50, GS, GS_P, GS_V, cell_size, sediment_time_step_seconds)
                 arcpy.AddMessage("Calculated sediment transport for " + "_" + str(GS))
-                print sediment_entrainment_out
+                
            
                 # Calculate sediment transport in for that grainsize
                 sediment_entrainment_in = move_sediment(depth_recking, sediment_entrainment_out, slope, flow_direction_np)
                 arcpy.AddMessage("Transported sediment for grain size " + "_" + str(GS))
-                print sediment_entrainment_in
-
+                
                 # Calculate the change in sediment volume
                 new_grain_volume = GS_V - sediment_entrainment_out + sediment_entrainment_in               
                 np.save(GS_V_temp, new_grain_volume)
@@ -423,8 +422,7 @@ class sedimenttransport(object):
             for GS_P_temp, GS_V_temp in izip(active_layer_GS_P_temp, active_layer_V_temp):
                 GS_V = np.load(GS_V_temp)                               
                 GS_P = GS_V / total_volume
-                print total_volume
-                print GS_V
+                
                 
 
                 arcpy.AddMessage("Calculated new proportion for grainsize " + str(counter_proportion)) 
@@ -433,8 +431,7 @@ class sedimenttransport(object):
                 GS_P[total_volume == 0] = 0
                 GS_P[slope == -9999] = -9999 
                 np.save(GS_P_temp, GS_P) 
-
-                print GS_P
+                                
                 del GS_V, GS_P
 
                 counter_proportion += 1
@@ -447,28 +444,22 @@ class sedimenttransport(object):
                 
             total_volume[slope == -9999] = -9999   
              
-            print total_volume
-            print inactive_layer  
+              
                         
             active_layer, inactive_layer = active_inactive_layer_check.active_layer_depth(total_volume, inactive_layer, active_layer_GS_P_temp, active_layer_V_temp, 
                                                            inactive_layer_GS_P_temp, inactive_layer_V_temp, cell_size)
-            print active_layer
-            print inactive_layer
+            
 
             # Increment the timestep ready for the next loop
             total_time += sediment_time_step_seconds
 
             ### Check if elevations need to be recalculated ###
             DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = elevation_adjustment.update_DTM_elevations(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size)
-            print active_layer
-            print inactive_layer
-
+            
             inactive_layer *= (cell_size*cell_size)
             active_layer *= (cell_size*cell_size)
 
-            print active_layer
-            print inactive_layer
-
+            
             # Collect garbage
             collected = gc.collect()
             arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 

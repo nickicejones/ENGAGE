@@ -26,6 +26,7 @@
 # Import statements
 import arcpy
 import numpy as np
+from itertools import izip
 
 class hillslope_erosion_MUSLE(object):
 
@@ -71,7 +72,7 @@ class hillslope_erosion_MUSLE(object):
         Fcsand = (0.2 + 0.3 * np.exp(-2.56 * Msand * (1 - (Msilt/100))))
 
         # Calcualte Fcl_si - gives low erodibility for soils with high lay to silt ratios
-        Fcl_si = np.power((Msilt / Mclay + Msilt), 0.3)
+        Fcl_si = np.power((Msilt / (Mclay + Msilt)), 0.3)
 
         # Calculate ForgC - factor that reduces soil erodibility for soils with high organic carbon content
         ForgC = (1 - ((0.25 * orgC)/(orgC + np.exp(3.72 - (2.95 * orgC)))))
@@ -81,6 +82,9 @@ class hillslope_erosion_MUSLE(object):
 
         # Calculate KUSLE (Soil Erodibility Factor)
         KUSLE = Fcsand * Fcl_si * ForgC * Fhisand
+
+        # Check nodata values
+        KUSLE[self.slope == -9999] = -9999
 
         return KUSLE
 
@@ -98,7 +102,10 @@ class hillslope_erosion_MUSLE(object):
 
         m = 0.6 * ( 1 - np.exp(-35.835 * self.slope))
 
-        LSULSE = np.power(cell_size/22.1, m) * (65.41 * (np.power(np.sin(slope_angle), 2) + (4.56*np.sin(slope_angle)) + 0.065))
+        LSULSE = np.power(self.cell_size/22.1, m) * (65.41 * (np.power(np.sin(slope_angle), 2) + (4.56*np.sin(slope_angle)) + 0.065))
+        
+        # Check nodata values
+        LSULSE[self.slope == -9999] = -9999
 
         return LSULSE
 
@@ -109,7 +116,7 @@ class hillslope_erosion_MUSLE(object):
         total_proportion_rock = np.zeros_like(self.slope)
 
         # Iterate through the layers and check if they are over a certain value add it to a running total
-        for grain_size, active_layer_proportion_temp in izip(GS_list, active_layer_GS_P_temp):
+        for grain_size, active_layer_proportion_temp in izip(self.GS_list, active_layer_GS_P_temp):
                         
             # Locad the arrays from the disk
             active_layer_proportion = np.load(active_layer_proportion_temp)
@@ -121,6 +128,7 @@ class hillslope_erosion_MUSLE(object):
         total_proportion_rock *= 100
         
         CFRG = np.exp(-0.053*total_proportion_rock)
+        CFRG[self.slope == -9999] = -9999
 
         return CFRG
         
@@ -136,4 +144,6 @@ class hillslope_erosion_MUSLE(object):
 
         hillslope_sediment_erosion = 11.8 * np.power((Q_surf_np * q_peak * hru_area), 0.56) * KUSLE * CUSLE * PUSLE * LSULSE * CFRG
 
+        # Check no data cell
+        hillslope_sediment_erosion[self.slope == -9999] = -9999
         return hillslope_sediment_erosion

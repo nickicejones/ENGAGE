@@ -424,6 +424,7 @@ class SCSCNQsurf(object):
         # Calculate overland flow
         concentration_overland_flow = np.zeros_like(depth_recking)
         concentration_overland_flow[B] = (np.power(slope_length[B], 0.6) * np.power(mannings_n[B], 0.6)) / (18 * np.power(slope[B], 0.3))
+        concentration_overland_flow[depth_recking == -9999] = -9999
                         
         return concentration_overland_flow
 
@@ -440,5 +441,6 @@ class SCSCNQsurf(object):
 
         q_peak = np.zeros_like(Q_surf_np)
         q_peak[B] = fraction_daily_runoff_concentration[B] * Q_surf_np[B] * flow_accumulation[B] / 3.6 * concentration_overland_flow[B]
+        q_peak[Q_surf_np == -9999] = -9999
 
         return q_peak, hru_area

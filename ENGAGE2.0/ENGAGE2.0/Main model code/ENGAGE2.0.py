@@ -91,7 +91,7 @@ import rasterstonumpys
 import modelloop
 import CN2numbers
 import maxhalfhourrain
-# import manningsroughness - *** NEED TO READD TO GITHUB WHEN IN THE OFFIC ***
+import manningsroughness 
 import Cfactor
 import mergesoil
 import calculate_daily_precipitation
@@ -126,11 +126,11 @@ numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp')
 
 ### MODEL INPUTS - For StandAlone testing ###
 # Set Environmental Workspace
-arcpy.env.workspace = r"D:\EngageTesting\SmallCatchment_1.gdb" #r"D:\Boydd at Bitton\3by3_1.gdb" # r"D:\Boydd at Bitton\Boydd_2.gdb"
+arcpy.env.workspace = r"D:\SmallTesting\New File Geodatabase.gdb" #r"D:\EngageTesting\SmallCatchment_1.gdb"
 
 # Textfile with precipitation on each line and textfile with the baseflow on each line
-precipitation_textfile = "#"
-precipitation_hour_textfile = r"D:\EngageTesting\rainfall_hour.txt" # Going to have to work out the best way to do this! - maybe do the same option as with SWAT
+precipitation_textfile = r"D:\Boydd at Bitton\rainfall.txt"
+precipitation_hour_textfile = r"D:\Boydd at Bitton\rainfall_hour.txt" # Going to have to work out the best way to do this! - maybe do the same option as with SWAT
 baseflow_textfile = '#' #r"D:\Boydd at Bitton\Baseflow.txt"
 
 # Check if the user has provided daily rainfall or only hourly.
@@ -265,12 +265,13 @@ precipitation_textfile, baseflow_provided = datapreparation.combined_precipitati
 
 ### CONVERT LANDCOVER AND SOIL DATA TO CN2 NUMBERS, Mannings n and CUSLE (C factor) ### - CHECKED 12/11/14 NJ
 CN2_d = CN2numbers.SCS_CN_Number().get_SCSCN2_numbers(model_inputs_list[1], soil_type, model_inputs_list[0], land_cover_type)
-mannings_n =  '#' # manningsroughness.get_mannings(model_inputs_list[0]) - need to change back when in UNI
+mannings_n = manningsroughness.get_mannings(model_inputs_list[0]) 
 CULSE = Cfactor.get_Cfactor(model_inputs_list[0])
 
 arcpy.AddMessage("Time to complete model preparation is " + str(round(time.time() - start,2)) + "s. ")
 arcpy.AddMessage("-------------------------")
 
+del soil_depth
 ### MAIN MODEL CODE ###
 arcpy.AddMessage("Model initiated")
  
@@ -278,7 +279,7 @@ modelloop.model_loop(model_start_date, cell_size, bottom_left_corner,
                      calculate_sediment_transport, calculate_sediment_erosion_hillslope, use_dinfinity).start_precipition(river_catchment, DTM, region, 
                                                                           precipitation_textfile, baseflow_provided, day_pcp_yr, years_of_sim, 
                                                                           total_day_month_precip, total_avg_month_precip, max_30min_rainfall_list, 
-                                                                          mannings_n, CULSE, orgC, precipitation_gauge_elevation, 
+                                                                          mannings_n, CULSE, model_inputs_list[5], precipitation_gauge_elevation, 
                                                                           CN2_d, GS_list, active_layer, inactive_layer, 
                                                                           active_layer_GS_P_temp, active_layer_V_temp, 
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
