@@ -408,7 +408,7 @@ class SCSCNQsurf(object):
         if first_loop == False:
             R_smooth = max_30min_rainfall_list[index - 1] + max_30min_rainfall_list[index] + max_30min_rainfall_list[index + 1] / 3
 
-        average_half_hour_rainfall_fraction = adjustment_factor * (1 - math.exp(R_smooth / (day_avg_pcp * math.log((0.5 / years_of_sim * day_pcp_month)))))
+        average_half_hour_rainfall_fraction = adjustment_factor * (1 - math.exp(R_smooth / (day_avg_pcp * math.log((0.5 / (years_of_sim * day_pcp_month))))))
 
         return average_half_hour_rainfall_fraction
 

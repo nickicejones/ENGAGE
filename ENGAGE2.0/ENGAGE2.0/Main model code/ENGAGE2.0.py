@@ -126,11 +126,11 @@ numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp')
 
 ### MODEL INPUTS - For StandAlone testing ###
 # Set Environmental Workspace
-arcpy.env.workspace = r"D:\SmallTesting\New File Geodatabase.gdb" #r"D:\EngageTesting\SmallCatchment_1.gdb"
+arcpy.env.workspace = r"D:\EngageTesting\SmallCatchment_1.gdb" # r"D:\SmallTesting\New File Geodatabase.gdb" r"D:\EngageTesting\SmallCatchment_1.gdb
 
 # Textfile with precipitation on each line and textfile with the baseflow on each line
-precipitation_textfile = r"D:\Boydd at Bitton\rainfall.txt"
-precipitation_hour_textfile = r"D:\Boydd at Bitton\rainfall_hour.txt" # Going to have to work out the best way to do this! - maybe do the same option as with SWAT
+precipitation_textfile = '#' #r"D:\Boydd at Bitton\rainfall.txt"
+precipitation_hour_textfile = r"D:\EngageTesting\rainfall_hour.txt" # r"D:\Boydd at Bitton\rainfall_hour.txt" # Going to have to work out the best way to do this! - maybe do the same option as with SWAT
 baseflow_textfile = '#' #r"D:\Boydd at Bitton\Baseflow.txt"
 
 # Check if the user has provided daily rainfall or only hourly.
@@ -159,8 +159,8 @@ output_net_sediment_transport = "No output"         # Total erosion / depostion 
 output_format = "Daily average"                      # Average or total for the above
 
 # This is a output that is saved at the pour point (mouth of the river)
-output_excel_discharge = r"D:\Boydd at Bitton"
-output_excel_sediment = r"D:\Boydd at Bitton"
+output_excel_discharge = '#' # r"D:\Boydd at Bitton"
+output_excel_sediment = '#' # r"D:\Boydd at Bitton"
 
 # Use Dinfinity flow directions
 use_dinfinity = False

@@ -85,6 +85,7 @@ class hillslope_erosion_MUSLE(object):
 
         # Check nodata values
         KUSLE[self.slope == -9999] = -9999
+        print KUSLE
 
         return KUSLE
 
@@ -106,6 +107,7 @@ class hillslope_erosion_MUSLE(object):
         
         # Check nodata values
         LSULSE[self.slope == -9999] = -9999
+        print LSULSE
 
         return LSULSE
 
@@ -116,7 +118,7 @@ class hillslope_erosion_MUSLE(object):
         total_proportion_rock = np.zeros_like(self.slope)
 
         # Iterate through the layers and check if they are over a certain value add it to a running total
-        for grain_size, active_layer_proportion_temp in izip(self.GS_list, active_layer_GS_P_temp):
+        for grain_size, active_layer_proportion_temp in izip(self.GS_list, self.active_layer_GS_P_temp):
                         
             # Locad the arrays from the disk
             active_layer_proportion = np.load(active_layer_proportion_temp)
@@ -129,11 +131,14 @@ class hillslope_erosion_MUSLE(object):
         
         CFRG = np.exp(-0.053*total_proportion_rock)
         CFRG[self.slope == -9999] = -9999
+        print CFRG
 
         return CFRG
         
     # Final function to calculate the MUSLE (Modified Universal Soil Loss Equation)
     def calculate_MUSLE(self, Q_surf_np, q_peak, orgC, CUSLE):
+        np.set_printoptions(suppress=True)
+        np.set_printoptions(precision=3)
 
         KUSLE = self.calculate_KUSLE(orgC)
         PUSLE = self.calculate_PUSLE()
@@ -143,7 +148,7 @@ class hillslope_erosion_MUSLE(object):
         hru_area = (self.cell_size * self.cell_size)
 
         hillslope_sediment_erosion = 11.8 * np.power((Q_surf_np * q_peak * hru_area), 0.56) * KUSLE * CUSLE * PUSLE * LSULSE * CFRG
-
+               
         # Check no data cell
-        hillslope_sediment_erosion[self.slope == -9999] = -9999
+        hillslope_sediment_erosion[Q_surf_np == -9999] = -9999
         return hillslope_sediment_erosion

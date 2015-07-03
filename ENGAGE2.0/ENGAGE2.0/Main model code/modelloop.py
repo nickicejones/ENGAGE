@@ -300,10 +300,15 @@ class model_loop(object):
                     average_half_hour_fraction = hydrology.SCSCNQsurf().average_half_hour_rainfall(years_of_sim, day_pcp_month, 
                                                                                     day_avg_pcp, max_30min_rainfall_list, 
                                                                                     adjustment_factor, self.index, self.first_loop)
+                    print average_half_hour_fraction
 
                     concentration_overland_flow = hydrology.SCSCNQsurf().time_concentration(depth_recking, flow_direction_raster, slope, mannings_n, self.cell_size)
 
-                    q_peak = hydrology.SCSCNQsurf().peak_flow(depth_recking, Q_surf_np, concentration_overland_flow, flow_accumulation, average_half_hour_fraction, self.cell_size)
+                    print concentration_overland_flow
+
+                    q_peak, hru_area = hydrology.SCSCNQsurf().peak_flow(depth_recking, Q_surf_np, concentration_overland_flow, flow_accumulation, average_half_hour_fraction, self.cell_size)
+
+                    print q_peak
 
                     hillslope_sediment_erosion = MUSLE.hillslope_erosion_MUSLE(slope, self.cell_size, GS_list, active_layer_GS_P_temp).calculate_MUSLE(Q_surf_np, q_peak, orgC, CULSE)
                 else:
