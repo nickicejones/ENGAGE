@@ -5,6 +5,7 @@ import arcpy
 import csv
 import datetime
 import numpy as np
+from itertools import izip
 
 # Simple function to convert rasters to numpys
 def convert_raster_to_numpy(list_of_rasters):   
@@ -515,3 +516,17 @@ def raster_outputs(week_day, month_day, year_day, current_date, first_loop, outp
 
 
     return week_day, month_day, year_day
+
+def numpystocsv(list_of_numpys, list_of_numpy_names):
+    
+    for numpy_array, numpy_name in izip(list_of_numpys, list_of_numpy_names):
+        numpy_array_type = type(numpy_array).__module__
+        numpy_array_bool = type(numpy_array).__module__ == np.__name__
+
+        if numpy_array_bool == True:   
+            np.savetxt(r"D:/EngageTesting/CSV_outputs/" + numpy_name + ".csv", numpy_array, delimiter=",")
+            print numpy_name + " is a numpy array." 
+        else:
+            print numpy_name + " is not a numpy array. It is " + str(numpy_array_type)
+
+    

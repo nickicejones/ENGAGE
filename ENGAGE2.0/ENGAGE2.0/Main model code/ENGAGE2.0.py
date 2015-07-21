@@ -244,8 +244,10 @@ arcpy.AddMessage("-------------------------")
 GS_P_list = rasterstonumpys.convert_raster_to_numpy(GS_P_list)
 model_inputs_list = rasterstonumpys.convert_raster_to_numpy(model_inputs_list)
 
+
 ### Merge the soil depths and check the soil depth based on the land cover depths ###
 soil_depth = mergesoil.calculate_soil_depth(model_inputs_list[0], land_cover_type, model_inputs_list[2], model_inputs_list[3], model_inputs_list[4])
+
 
 ### CALCULATE ACTIVE LAYER DEPTH/REMAINING SOIL DEPTH, AVERAGE NUMBER OF DAYS PRECIPITATION PER YEAR, STARTING GRAIN SIZE VOLUMES, TEMPORARY FILE LOCATIONS ###
 # Active / Inactive layer volumes
@@ -271,11 +273,23 @@ CULSE = Cfactor.get_Cfactor(model_inputs_list[0])
 arcpy.AddMessage("Time to complete model preparation is " + str(round(time.time() - start,2)) + "s. ")
 arcpy.AddMessage("-------------------------")
 
+### CONVERT these to CSV files for data analysis only ### ~~~ TAKE OUT FOR FINAL VERSION
+model_inputs_list_strings = ["land_cover", "soil", "ASD_soil_depth", "BGS_soil_depth", "general_soil_depth", "orgC"]
+rasterstonumpys.numpystocsv(model_inputs_list, model_inputs_list_strings) 
+
+DTM_np = rasterstonumpys.convert_raster_to_numpy([DTM])
+DTM_np = DTM_np[0]
+
+list_of_numpys = [active_layer, inactive_layer, CN2_d, DTM_np, CULSE, soil_depth]
+list_of_numpys_strings = ["active_layer", "inactive_layer", "CN2_d", "DTM", "CULSE", "soil_depth"]
+rasterstonumpys.numpystocsv(list_of_numpys, list_of_numpys_strings) 
+
 del soil_depth
+
 ### MAIN MODEL CODE ###
 arcpy.AddMessage("Model initiated")
  
-modelloop.model_loop(model_start_date, cell_size, bottom_left_corner, 
+''' modelloop.model_loop(model_start_date, cell_size, bottom_left_corner, 
                      calculate_sediment_transport, calculate_sediment_erosion_hillslope, use_dinfinity).start_precipition(river_catchment, DTM, region, 
                                                                           precipitation_textfile, baseflow_provided, day_pcp_yr, years_of_sim, 
                                                                           total_day_month_precip, total_avg_month_precip, max_30min_rainfall_list, 
@@ -285,5 +299,5 @@ modelloop.model_loop(model_start_date, cell_size, bottom_left_corner,
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                                                                           numpy_array_location, 
                                                                           output_file_dict, output_format, 
-                                                                          output_excel_discharge, output_excel_sediment)
+                                                                          output_excel_discharge, output_excel_sediment)'''
                                                                                            
