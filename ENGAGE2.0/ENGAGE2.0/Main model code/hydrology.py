@@ -436,7 +436,7 @@ class SCSCNQsurf(object):
         fraction_daily_runoff_concentration = 1 - np.exp(2 * concentration_overland_flow * np.log(1 - average_half_hour_fraction))
 
         flow_accumulation = arcpy.RasterToNumPyArray(flow_accumulation, '#', '#', '#', -9999)
-        multiply_factor = (cell_size*cell_size) / 1000
+        multiply_factor = (cell_size*cell_size) / 1000000
         hru_area = flow_accumulation * multiply_factor
 
         q_peak = np.zeros_like(Q_surf_np)

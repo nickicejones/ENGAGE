@@ -1,4 +1,4 @@
-##### Description of this python file #####
+﻿##### Description of this python file #####
 # This is a module to check the soil depths are correct based on the land use (this prevents soil erosion taking place where no soil erosion should be taking place!
 
 
@@ -11,6 +11,8 @@
 # Import statements
 import arcpy
 import numpy as np
+import gc
+from arcpy.sa import *
 
 Corine = {
     1:	0, #CONTINIOUS URBAN FABRIC
@@ -224,24 +226,58 @@ COMBINE_SCS = {
 
 
 # Function to check what the soil depth should be based on land cover and merging the existing soil depths
-def calculate_soil_depth(land_cover, land_cover_type, ASD_soil_depth, BGS_soil_depth, general_soil_depth):
+def calculate_soil_depth(DTM, cell_size, numpy_array_location, land_cover, land_cover_type, ASD_soil_depth, BGS_soil_depth, general_soil_depth):
 
     # Create an empty numpy array to store the new soil depths
     final_soil_depth = np.zeros_like(land_cover, dtype = float)
-    
-    # Bit of the script to sort out the various input features into the script
-    if ASD_soil_depth and ASD_soil_depth != '#':
-    # Check to see which cells have sediment and not equal to the default value
-        B = [ASD_soil_depth > 0]
-        final_soil_depth[B] = river_soil_depth[B]
 
-        # If BGS soil depth data has been provided then use that ## Note to self this may result in the filling in of cells that should be bedrock - consider removing or allocating based on flow accumulation. - Check with Chris.
-        if BGS_soil_depth and BGS_soil_depth != '#':
+    # Code to check if the various numpy arrays are provided or not.
+    ASD_soil_depth_bool = type(ASD_soil_depth).__module__ == np.__name__
+    BGS_soil_depth_bool = type(BGS_soil_depth).__module__ == np.__name__
+
+
+    # Bit of the script to sort out the various input features into the script
+    if ASD_soil_depth_bool == True:
+
+        arcpy.AddMessage("Advanced Superficial Deposit data detected calculating river cells")
+        # Need to check which cells contain soil and which should be river bedrock
+        # Do the various ArcGIS processing to calculate the number of cells 
+        filled_dtm = Fill(DTM)
+        arcpy.AddMessage("Filled DTM")
+        flow_directions = FlowDirection(filled_dtm)
+        arcpy.AddMessage("Calculated flow directions")
+        flow_accumulation = FlowAccumulation(flow_directions)
+        arcpy.AddMessage("Accumulated flow")
+        # Convert to km2 from m2
+        multiply_factor = (cell_size * cell_size) / 1000000
+        drainage_area = flow_accumulation * multiply_factor     
+        river_cells = GreaterThanEqual(drainage_area, 0.5)
+        drainage_area = arcpy.RasterToNumPyArray(drainage_area, '#', '#', '#', -9999)#
+        drainage_area_TMP = numpy_array_location + '\drainage_area.npy'
+        np.save(drainage_area_TMP, drainage_area)
+        river_cells = arcpy.RasterToNumPyArray(river_cells, '#','#','#', -9999)
+        arcpy.AddMessage("Calculated cells with greater than 0.5km2 drainage area")
+
+        if BGS_soil_depth_bool == True:
             # Swap B round to be true for the other cells
-            B = ~B
+            arcpy.AddMessage("BGS soil depths detected calculating cells outside of river network soil depth")
+            B = (river_cells < 1)
             final_soil_depth[B] = BGS_soil_depth[B]
 
-    elif BGS_soil_depth and BGS_soil_depth != '#':
+        else:
+            arcpy.AddMessage("BGS soil depths not detected cells outside of river network assumed to be 1metre deep")
+            # Swap B round to be true for the other cells
+            B = (river_cells < 1)
+            final_soil_depth[B] = general_soil_depth[B]
+
+        # Check to see which cells have sediment and not equal to the default value
+        B = [ASD_soil_depth > 0]
+        final_soil_depth[B] = ASD_soil_depth[B]
+
+        arcpy.AddMessage("Soil depth using the advanced superficial deposit calculated.")
+        arcpy.AddMessage("-------------------------")
+
+    elif BGS_soil_depth_bool == True:
         final_soil_depth = BGS_soil_depth
 
     else:
@@ -284,4 +320,9 @@ def calculate_soil_depth(land_cover, land_cover_type, ASD_soil_depth, BGS_soil_d
     B = (land_cover_soil_depths == 0)
     final_soil_depth[B] = land_cover_soil_depths[B]
 
-    return final_soil_depth
+    del ASD_soil_depth_bool, BGS_soil_depth_bool, filled_dtm, flow_directions, flow_accumulation, multiply_factor, drainage_area, B, river_cells, V_get_soil_depths, land_cover_soil_depths
+    collected = gc.collect()
+    arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
+    len(gc.get_objects())
+
+    return final_soil_depth, drainage_area_TMP

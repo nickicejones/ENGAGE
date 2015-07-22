@@ -79,6 +79,7 @@
 ##### START OF CODE #####
 ### Import statements - Python ###
 import arcpy
+from arcpy import env
 import numpy as np
 import tempfile
 import time
@@ -106,6 +107,7 @@ np.set_printoptions(precision=15)
 
 # Start the timer for the model preparation
 start = time.time()
+#gc.set_threshold(5, 2, 2)
 
 # Check out the ArcGIS Spatial Analyst extension license
 try:
@@ -124,13 +126,19 @@ except LicenseError:
 # Set a location to store the numpy array in a physical form
 numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp')
 
+# Create scratch geodatabase in the same temporary location
+# Execute CreateFileGDB
+arcpy.CreateFileGDB_management(numpy_array_location, "tempgb.gdb")
+arcpy.env.scratchWorkspace = numpy_array_location + "\tempgb.gdb"
+arcpy.AddMessage("Scratch workspace created in " + str(numpy_array_location))
+
 ### MODEL INPUTS - For StandAlone testing ###
 # Set Environmental Workspace
-arcpy.env.workspace = r"D:\EngageTesting\SmallCatchment_1.gdb" # r"D:\SmallTesting\New File Geodatabase.gdb" r"D:\EngageTesting\SmallCatchment_1.gdb
+arcpy.env.workspace =  r"D:\Soil depth test\New File Geodatabase.gdb" #r"D:\EngageTesting\SmallCatchment_1.gdb" # r"D:\SmallTesting\New File Geodatabase.gdb" r"D:\EngageTesting\SmallCatchment_1.gdb
 
 # Textfile with precipitation on each line and textfile with the baseflow on each line
 precipitation_textfile = '#' #r"D:\Boydd at Bitton\rainfall.txt"
-precipitation_hour_textfile = r"D:\EngageTesting\rainfall_hour.txt" # r"D:\Boydd at Bitton\rainfall_hour.txt" # Going to have to work out the best way to do this! - maybe do the same option as with SWAT
+precipitation_hour_textfile = r"D:\Boydd at Bitton\rainfall_hour.txt" #r"D:\EngageTesting\rainfall_hour.txt" #  # Going to have to work out the best way to do this! - maybe do the same option as with SWAT
 baseflow_textfile = '#' #r"D:\Boydd at Bitton\Baseflow.txt"
 
 # Check if the user has provided daily rainfall or only hourly.
@@ -246,8 +254,8 @@ model_inputs_list = rasterstonumpys.convert_raster_to_numpy(model_inputs_list)
 
 
 ### Merge the soil depths and check the soil depth based on the land cover depths ###
-soil_depth = mergesoil.calculate_soil_depth(model_inputs_list[0], land_cover_type, model_inputs_list[2], model_inputs_list[3], model_inputs_list[4])
-
+soil_depth, drainage_area_TMP = mergesoil.calculate_soil_depth(DTM, cell_size, numpy_array_location, model_inputs_list[0], land_cover_type, model_inputs_list[2], model_inputs_list[3], model_inputs_list[4])
+gc.collect()
 
 ### CALCULATE ACTIVE LAYER DEPTH/REMAINING SOIL DEPTH, AVERAGE NUMBER OF DAYS PRECIPITATION PER YEAR, STARTING GRAIN SIZE VOLUMES, TEMPORARY FILE LOCATIONS ###
 # Active / Inactive layer volumes
@@ -274,17 +282,16 @@ arcpy.AddMessage("Time to complete model preparation is " + str(round(time.time(
 arcpy.AddMessage("-------------------------")
 
 ### CONVERT these to CSV files for data analysis only ### ~~~ TAKE OUT FOR FINAL VERSION
-model_inputs_list_strings = ["land_cover", "soil", "ASD_soil_depth", "BGS_soil_depth", "general_soil_depth", "orgC"]
+'''model_inputs_list_strings = ["land_cover", "soil", "ASD_soil_depth", "BGS_soil_depth", "general_soil_depth", "orgC"]
 rasterstonumpys.numpystocsv(model_inputs_list, model_inputs_list_strings) 
 
-DTM_np = rasterstonumpys.convert_raster_to_numpy([DTM])
+#DTM_np = rasterstonumpys.convert_raster_to_numpy([DTM])
 DTM_np = DTM_np[0]
 
 list_of_numpys = [active_layer, inactive_layer, CN2_d, DTM_np, CULSE, soil_depth]
 list_of_numpys_strings = ["active_layer", "inactive_layer", "CN2_d", "DTM", "CULSE", "soil_depth"]
-rasterstonumpys.numpystocsv(list_of_numpys, list_of_numpys_strings) 
+rasterstonumpys.numpystocsv(list_of_numpys, list_of_numpys_strings) '''
 
-del soil_depth
 
 ### MAIN MODEL CODE ###
 arcpy.AddMessage("Model initiated")

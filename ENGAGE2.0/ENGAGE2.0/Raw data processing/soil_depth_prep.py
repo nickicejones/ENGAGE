@@ -99,7 +99,7 @@ def soil_depth_calc(soil_parent_material_1, advanced_superficial_deposit, DTM_cl
             advanced_superficial_deposit_final_clip = arcpy.gp.ExtractByMask_sa(advanced_superficial_deposit_correct_cell, river_catchment_BNG, "MODEL_SUP_DEPTH")
             arcpy.AddMessage("Advanced superficial deposit correct cell clipped to catchment")
 
-        neighborhood = NbrRectangle(100, 100, "Map")
+        neighborhood = NbrRectangle(200, 200, "Map")
 
         # Execute FocalStatistics
         focal_advanced_superficial_deposit = FocalStatistics(advanced_superficial_deposit_final_clip, neighborhood, "MEAN", "")
