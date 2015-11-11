@@ -3,7 +3,12 @@
 
 
 ##### VARIABLES - Used in this file#####
-# 
+# workspace is the environmental workspace (geodatabase on your machine)
+# decay_parameter 
+# maximum_depth_change
+# DTM - digital terrain model (elevation of catchment)
+# pre_catchment_clip - small area to burn in any river channels
+# river_network 
 
 #---------------------------------------------------------------------#
 ##### START OF CODE #####
@@ -27,20 +32,29 @@ maximum_depth_change = int(arcpy.GetParameterAsText(2))
 
 DTM = arcpy.GetParameterAsText(3)
 
-pre_catchment_clip = arcpy.GetParameterAsText(4)
+river_network = arcpy.GetParameterAsText(4)
 
-# Prepare the DTM.
-DTM_fill, DTM_flow_direction, cell_size = DTM_prep.DTM_preparation(DTM)
+pour_point = arcpy.GetParameterAsText(5)
 
-if arcpy.Exists("MODEL_river_network"):
-    river_network = "MODEL_river_network"
-    arcpy.AddMessage("River network detected")
-    arcpy.AddMessage("-------------------------")
+# Clip the river network to the extent to the same as the DTM
+pnt_array = arcpy.Array()
+extent = arcpy.Raster(in_raster).extent
+pnt_array.add(extent.lowerLeft)
+pnt_array.add(extent.lowerRight)
+pnt_array.add(extent.upperRight)
+pnt_array.add(extent.upperLeft)
 
-if arcpy.Exists("MODEL_DTM"):
-    DTM = "MODEL_DTM"
-    arcpy.AddMessage("Model elevation detected (DTM)")
-    arcpy.AddMessage("-------------------------")
+poly = arcpy.Polygon(pnt_array)
+
+# Clip the river network to the same as the digital terrain model
+arcpy.Clip_analysis(river_network, poly, "out_dataset")
+
+# Set the environment extent to the same as the DTM
+arcpy.env.extent = pnt_array
+
+# Convert the point to a raster
+
+# Calculate Euc Distance
 
 DTM_cell_size = arcpy.GetRasterProperties_management(DTM, "CELLSIZEX")
 #Get the elevation standard deviation value from geoprocessing result object
