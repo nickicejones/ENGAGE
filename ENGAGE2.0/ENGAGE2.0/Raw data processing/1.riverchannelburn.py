@@ -1,3 +1,14 @@
+﻿##### Description of this python file #####
+# This is the start location for the river channel burn section of ENGAGE
+
+
+##### VARIABLES - Used in this file#####
+# 
+
+#---------------------------------------------------------------------#
+##### START OF CODE #####
+
+
 # Import the required modules
 import arcpy
 
@@ -13,6 +24,13 @@ workspace = arcpy.env.workspace
 decay_parameter = int(arcpy.GetParameterAsText(1))
 
 maximum_depth_change = int(arcpy.GetParameterAsText(2))
+
+DTM = arcpy.GetParameterAsText(3)
+
+pre_catchment_clip = arcpy.GetParameterAsText(4)
+
+# Prepare the DTM.
+DTM_fill, DTM_flow_direction, cell_size = DTM_prep.DTM_preparation(DTM)
 
 if arcpy.Exists("MODEL_river_network"):
     river_network = "MODEL_river_network"

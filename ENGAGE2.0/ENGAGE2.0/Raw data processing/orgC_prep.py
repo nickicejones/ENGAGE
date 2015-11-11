@@ -1,5 +1,5 @@
-##### Description of this python file #####
-# This is the start location for preprocessing script for the data preparation prior to running the model
+﻿##### Description of this python file #####
+# This is the start location for preprocessing script for calculating Organic Content prior to running the model
 
 
 ##### VARIABLES - Used in this file#####

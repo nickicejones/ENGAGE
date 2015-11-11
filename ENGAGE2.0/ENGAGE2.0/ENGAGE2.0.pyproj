@@ -99,9 +99,6 @@
     <Compile Include="Raw data processing\landcover_prep.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Raw data processing\mergerasters.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Main model code\maxhalfhourrain.py">
       <SubType>Code</SubType>
     </Compile>
@@ -132,7 +129,7 @@
     <Compile Include="Raw data processing\soil_hydro_prep.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Raw data processing\riverchannelburn.py">
+    <Compile Include="Raw data processing\1.riverchannelburn.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Raw data processing\rawdataprocessing.py">
