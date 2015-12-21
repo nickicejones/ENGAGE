@@ -1,4 +1,4 @@
-# Required modules
+﻿# Required modules
 import arcpy
 import os
 import subprocess  
@@ -82,7 +82,9 @@ dict_of_multiplication = {"E-07": 0.00000001, "E-06": 0.0000001, "E-05": 0.00000
 for baseflow in baseflow_read.readlines()[1:]:
     
     if first_loop == 'true':
+        date = baseflow[:9]
         baseflow = "0.0"
+        output_baseflow.write(date)
         output_baseflow.write(baseflow)
         output_baseflow.write('\n')
 
@@ -104,6 +106,7 @@ for baseflow in baseflow_read.readlines()[1:]:
         pass_2_last = pass_2_full[-4:]
         pass_3_last = pass_3_full[-4:]
 
+        output_baseflow.write(date)
         if use_pass == 'pass_1_bfi':           
             corrected_discharge = str(pass_1_first * dict_of_multiplication[pass_1_last])
             output_baseflow.write(corrected_discharge)

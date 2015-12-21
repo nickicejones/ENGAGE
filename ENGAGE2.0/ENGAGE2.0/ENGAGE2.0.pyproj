@@ -132,10 +132,10 @@
     <Compile Include="Raw data processing\1.riverchannelburn.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Raw data processing\rawdataprocessing.py">
+    <Compile Include="Raw data processing\3.rawdataprocessing.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Raw data processing\PointToRiverCatchment.py" />
+    <Compile Include="Raw data processing\2.PointToRiverCatchment.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Land cover editing tools\" />

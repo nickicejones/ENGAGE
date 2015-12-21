@@ -1,4 +1,4 @@
-##### Description of this python file #####
+﻿##### Description of this python file #####
 # This is the start location for preprocessing script for the data preparation prior to running the model
 
 
@@ -199,13 +199,13 @@ def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
     
         arcpy.AddMessage("No spatially distributed information provided. Therefore uniform distributions will be created")
         # 9 proportions of grainsizes that are listed below - defaults are listed on the right
-        g_pro_1 = float(arcpy.GetParameterAsText(14)) #0.1
-        g_pro_2 = float(arcpy.GetParameterAsText(15)) #0.35
-        g_pro_3 = float(arcpy.GetParameterAsText(16)) #0.15
-        g_pro_4 = float(arcpy.GetParameterAsText(17)) #0.15
-        g_pro_5 = float(arcpy.GetParameterAsText(18)) #0.15
-        g_pro_6 = float(arcpy.GetParameterAsText(19)) #0.05
-        g_pro_7 = float(arcpy.GetParameterAsText(20)) #0.05
+        g_pro_1 = float(arcpy.GetParameterAsText(13)) #0.1
+        g_pro_2 = float(arcpy.GetParameterAsText(14)) #0.35
+        g_pro_3 = float(arcpy.GetParameterAsText(15)) #0.15
+        g_pro_4 = float(arcpy.GetParameterAsText(16)) #0.15
+        g_pro_5 = float(arcpy.GetParameterAsText(17)) #0.15
+        g_pro_6 = float(arcpy.GetParameterAsText(18)) #0.05
+        g_pro_7 = float(arcpy.GetParameterAsText(19)) #0.05
         
         # Create a list of the proportions
         grain_proportions = [g_pro_1, g_pro_2, g_pro_3, g_pro_4, g_pro_5, g_pro_6, g_pro_7]

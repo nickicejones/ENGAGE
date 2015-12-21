@@ -257,12 +257,17 @@ def average_days_rainfall(model_start_date, precipitation_textfile):
 
         if precip == '.' or precip == '---':
             precip = 0
+        
+        try:
+     
+            if float(precip) > 0:
+                total_day_precip += 1
+                total_day_precip_month += 1
+                total_precip_month += float(precip)
 
-        if float(precip) > 0:
-            total_day_precip += 1
-            total_day_precip_month += 1
-            total_precip_month += float(precip)
-
+        except ValueError:
+            precip = 0         
+        
         if tomorrow_day == 1:
             # Used to calculate the number of days precipitation in a month
             total_day_month_precip.append(total_day_precip_month)
@@ -395,6 +400,7 @@ def combined_precipitation(numpy_array_location, precipitation_textfile, baseflo
         for precipitation, baseflow in izip(precipitation_read, baseflow_read):
             precipitation = precipitation.strip()
             baseflow = baseflow.strip()
+            baseflow = baseflow[9:22]
             combined_precipitation_read.write(precipitation + " " + baseflow + "\n")
 
         arcpy.AddMessage("Combined baseflow and precipitation")

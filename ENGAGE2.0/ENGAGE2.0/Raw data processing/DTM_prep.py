@@ -1,4 +1,4 @@
-##### Description of this python file #####
+﻿##### Description of this python file #####
 # This is the location for the DTM preparation module in the model.
 
 
@@ -56,4 +56,4 @@ def DTM_clip(DTM_BNG, catch_extent, river_catchment_BNG):
     # Turns the corner into a point
     bottom_left_corner = arcpy.Point(DTM_extent.XMin, DTM_extent.YMin)
 
-    return DTM_clip, DTM_clip_np, DTM_cell_size, bottom_left_corner
+    return DTM_clip, DTM_cell_size, bottom_left_corner

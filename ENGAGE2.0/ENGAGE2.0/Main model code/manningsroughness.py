@@ -123,6 +123,7 @@ COMBINE_SCS = {
         48: "0.19", # Permanent Fruit and Vegtables *
         49: "0.19", # Agri-environment land that does not fit any other catagory - Removed *
 
+        0: "0.0" # Error?
         } 
 
 def get_mannings(land_cover):

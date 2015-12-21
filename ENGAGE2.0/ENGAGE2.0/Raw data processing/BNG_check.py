@@ -1,6 +1,6 @@
-##### Description of this python file #####
+﻿##### Description of this python file #####
 # This is the start location for preprocessing script for the data preparation prior to running the model
-
+# This script checks if the data is in the correct grid reference
 
 ##### VARIABLES - Used in this file#####
 # 

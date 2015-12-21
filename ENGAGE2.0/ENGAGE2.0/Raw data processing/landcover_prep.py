@@ -1,4 +1,4 @@
-##### Description of this python file #####
+﻿##### Description of this python file #####
 # This is the start location for preprocessing script for the data preparation prior to running the model
 
 
@@ -13,7 +13,7 @@ import numpy as np
 from arcpy.sa import *
 
 # Clip the land cover to the river catchment 
-def land_cover_clip_analysis(land_cover, Land_cover_type, DTM_clip_np, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent, natural_england_SPS, roads):
+def land_cover_clip_analysis(land_cover, Land_cover_type, DTM_clip_np, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent, natural_england_SPS, roads, bottom_left_corner):
 
     # Check land cover type
     desc_land = arcpy.Describe(land_cover)
@@ -45,7 +45,7 @@ def land_cover_clip_analysis(land_cover, Land_cover_type, DTM_clip_np, DTM_cell_
             arcpy.AddMessage("Land cover clipped to enlarged catchment")
             
             if Land_cover_type == "LCM 2007":
-                land_cover_raster = arcpy.FeatureToRaster_conversion(land_cover_clip, "grid_code", "LCMSTAGE3", DTM_cell_size)
+                land_cover_raster = arcpy.FeatureToRaster_conversion(land_cover_clip, "gridcode", "LCMSTAGE3", DTM_cell_size)
                 arcpy.AddMessage("Cell size of land cover converted to same as DTM")
                 #land_cover_clip = arcpy.gp.ExtractByMask_sa(land_cover_raster, river_catchment_BNG, "MODEL_Landcover_LCM2") 
                 land_cover_clip = arcpy.Clip_management(land_cover_raster, catch_extent, "MODEL_Landcover_LCM", river_catchment_BNG, "#", "ClippingGeometry")
@@ -214,23 +214,23 @@ def land_cover_clip_analysis(land_cover, Land_cover_type, DTM_clip_np, DTM_cell_
                     # Delete cursor and row objects to remove locks on the data 
                     del row 
                     del rows
-
+                    
                     roads_raster = arcpy.FeatureToRaster_conversion(roads_clip, "ROAD_CODE", "Temp3", 10)
 
                     roads_polygon = arcpy.RasterToPolygon_conversion(roads_raster, "MODEL_roads_polygon", "NO_SIMPLIFY", "#")
 
-                    roads_merge = arcpy.Merge_management([roads_polygon, river_catchment_BNG], "Temp4") 
+                    roads_merge = arcpy.Merge_management([river_catchment_BNG, roads_polygon], "Temp4") 
 
-                    roads_clip2 = arcpy.Clip_analysis(roads_merge, river_catchment_BNG)
+                    roads_clip2 = arcpy.Clip_analysis(roads_merge, river_catchment_BNG, "Temp111")
 
-                    roads_raster = arcpy.FeatureToRaster_conversion(roads_clip2, "grid_code", "Temp5", DTM_cell_size)
+                    roads_raster = arcpy.PolygonToRaster_conversion(roads_clip2, "gridcode", "Temp5", "CELL_CENTER", "gridcode", DTM_cell_size)
                     
                     # Determine cell size of roads
                     desc_roads_raster_cell_size = arcpy.Describe(roads_raster)
                     roads_raster_cell_size = desc_roads_raster_cell_size.meanCellHeight
 
                     if roads_raster_cell_size != DTM_cell_size:
-                        roads_raster = arcpy.Resample_management(roads_raster, "Temp6", DTM_cell_size,"NEAREST")
+                        roads_raster = arcpy.Resample_management(roads_raster, "Temp6", DTM_cell_size, "NEAREST")
                     
                     # With road data
                     #roads_raster_clip = arcpy.gp.ExtractByMask_sa(roads_raster, river_catchment_BNG, "Model_ROADS1")
@@ -239,10 +239,10 @@ def land_cover_clip_analysis(land_cover, Land_cover_type, DTM_clip_np, DTM_cell_
                     roads_np = arcpy.RasterToNumPyArray("Model_ROADS", '#','#','#', -9999)
                     LCM_np = arcpy.RasterToNumPyArray("MODEL_Landcover_LCM", '#','#','#', -9999)
              
-                    roads_zero_np = np.zeros_like(DTM_clip_np, dtype = int) 
-                    np.putmask(roads_zero_np, roads_np > 0, roads_np)
+                    roads_zero_np = np.zeros_like(roads_np, dtype = int) 
+                    np.putmask(roads_zero_np, roads_np > 1, roads_np)
 
-                    natural_england_zero_np = np.zeros_like(DTM_clip_np, dtype = int)
+                    natural_england_zero_np = np.zeros_like(roads_np, dtype = int)
                     np.putmask(natural_england_zero_np, natural_england_SPS_np  > 0, natural_england_SPS_np)
                     natural_england_zero_np[DTM_clip_np == -9999] = -9999 
                      

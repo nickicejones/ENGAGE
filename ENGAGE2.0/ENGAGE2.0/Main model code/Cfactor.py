@@ -1,4 +1,4 @@
-###### MODEL LOOP DESCRIPTION #####
+﻿###### MODEL LOOP DESCRIPTION #####
 # The purpose of this file is to calculate the C-factor using values taken from Panagos et al 2015
 
 ##### VARIABLES - used in this file #####
@@ -216,6 +216,8 @@ COMBINE_SCS = {
         47: "0.14", # Crops * T
         48: "0.12", # Permanent Fruit and Vegtables * T
         49: "0.12", # Agri-environment land that does not fit any other catagory - Removed * T
+
+        0: "0.0" # Error Handling
 
         } 
 

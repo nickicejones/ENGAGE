@@ -132,7 +132,7 @@ arcpy.CreateFileGDB_management(numpy_array_location, "tempgb.gdb")
 arcpy.env.scratchWorkspace = numpy_array_location + "\tempgb.gdb"
 arcpy.AddMessage("Scratch workspace created in " + str(numpy_array_location))
 
-### MODEL INPUTS - For StandAlone testing ###
+'''### MODEL INPUTS - For StandAlone testing ###
 # Set Environmental Workspace
 arcpy.env.workspace =  r"D:\Soil depth test\New File Geodatabase.gdb" #r"D:\EngageTesting\SmallCatchment_1.gdb" # r"D:\SmallTesting\New File Geodatabase.gdb" r"D:\EngageTesting\SmallCatchment_1.gdb
 
@@ -171,42 +171,51 @@ output_excel_discharge = '#' # r"D:\Boydd at Bitton"
 output_excel_sediment = '#' # r"D:\Boydd at Bitton"
 
 # Use Dinfinity flow directions
-use_dinfinity = False
+use_dinfinity = False'''
 
-'''### MODEL INPUTS - For ArcGIS 10.1 ###
+### MODEL INPUTS - For ArcGIS 10.1 ###
 # Set Environmental Workspace
 arcpy.env.workspace = arcpy.GetParameterAsText(0) 
 
 # Textfile with precipitation on each line and textfile with the baseflow on each line
 precipitation_textfile = arcpy.GetParameterAsText(1)
-baseflow_textfile = arcpy.GetParameterAsText(2)
+
+# Ask the user if they provided hourly rainfall
+hourly_precipitation = arcpy.GetParameterAsText(2)
+
+if hourly_precipitation == True:
+    precipitation_textfile = calculate_daily_precipitation.convert_precipitation(precipitation_hour_textfile)    
+
+# Option for the user to input baseflow  
+baseflow_textfile = arcpy.GetParameterAsText(3)
 
 # Date of starting model operation
-model_start_date = arcpy.GetParameterAsText(3)
+model_start_date = arcpy.GetParameterAsText(4)
 # Region for the evapotranspiration calculations
-region = arcpy.GetParameterAsText(4)
+region = arcpy.GetParameterAsText(5)
 
 # Ask the user for the elevation of the precipiation guage (if they would like to use spatial precipitation)
-precipitation_gauge_elevation = float(arcpy.GetParameterAsText(5))      # Optional
+precipitation_gauge_elevation = float(arcpy.GetParameterAsText(6))      # Optional
 
 # Selection of what the model calculates
-calculate_sediment_transport = arcpy.GetParameterAsText(6)
+calculate_sediment_transport = arcpy.GetParameterAsText(7)
+calculate_sediment_erosion_hillslope = arcpy.GetParameterAsText(8) 
 
 # Select the outputs and frequency
-output_surface_runoff = arcpy.GetParameterAsText(7)                 # Surface Runoff
-output_discharge = arcpy.GetParameterAsText(8)                      # Discharge
-output_water_depth = arcpy.GetParameterAsText(9)                    # Depth
-output_spatial_precipitation = arcpy.GetParameterAsText(10)         # Spatial Precipitation 
-output_sediment_depth = arcpy.GetParameterAsText(11)                # Sediment Depth
-output_net_sediment_transport = arcpy.GetParameterAsText(12)        # Total erosion / depostion in each cell
-output_format = arcpy.GetParameterAsText(13)                        # Average or total for the above
+output_surface_runoff = arcpy.GetParameterAsText(9)                 # Surface Runoff
+output_discharge = arcpy.GetParameterAsText(10)                      # Discharge
+output_water_depth = arcpy.GetParameterAsText(11)                    # Depth
+output_spatial_precipitation = arcpy.GetParameterAsText(12)         # Spatial Precipitation 
+output_sediment_depth = arcpy.GetParameterAsText(13)                # Sediment Depth
+output_net_sediment_transport = arcpy.GetParameterAsText(14)        # Total erosion / depostion in each cell
+output_format = arcpy.GetParameterAsText(15)                        # Average or total for the above
 
 # This is a series of points along the river network at which a value is saved
-output_excel_discharge = arcpy.GetParameterAsText(14) 
-output_excel_sediment = arcpy.GetParameterAsText(15) 
+output_excel_discharge = arcpy.GetParameterAsText(16) 
+output_excel_sediment = arcpy.GetParameterAsText(17) 
 
 # Use Dinfinity flow directions
-use_dinfinity = arcpy.GetParameterAsText(16)'''
+use_dinfinity = arcpy.GetParameterAsText(18)
 
 
 ### INTIATION OF MODEL ###
@@ -264,7 +273,11 @@ active_layer, inactive_layer = datapreparation.calculate_active_layer(soil_depth
 active_layer_GS_volumes, inactive_layer_GS_volumes = datapreparation.get_grain_volumes(GS_P_list, active_layer, inactive_layer) 
 # Calculating the number of days precipitation in the catchment per year
 day_pcp_yr, years_of_sim, total_day_month_precip, total_avg_month_precip = datapreparation.average_days_rainfall(model_start_date, precipitation_textfile)
-max_30min_rainfall_list = maxhalfhourrain.max_30min_rainfall(precipitation_hour_textfile, model_start_date) 
+
+# Calculate max 30 minute rainfall event if the user has provided the required data.
+if hourly_precipitation == True:
+    max_30min_rainfall_list = maxhalfhourrain.max_30min_rainfall(precipitation_hour_textfile, model_start_date) 
+
 # Create temporary locations to store numpy arrays on the computers hardrive
 arcpy.AddMessage("Temporary files will be located here " + str(numpy_array_location))
 arcpy.AddMessage("-------------------------")

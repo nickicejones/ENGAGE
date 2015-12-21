@@ -49,27 +49,24 @@ else:
 # Digital Terrain Model
 DTM = arcpy.GetParameterAsText(2)
 
-# River network to burn in river channels
-river_network = arcpy.GetParameterAsText(3)
-
 # Land Cover Data
-Land_cover_type = arcpy.GetParameterAsText(4)
-land_cover = arcpy.GetParameterAsText(5)
-natural_england_SPS = arcpy.GetParameterAsText(6) # optional
-roads = arcpy.GetParameterAsText(7) # optional
+Land_cover_type = arcpy.GetParameterAsText(3)
+land_cover = arcpy.GetParameterAsText(4)
+natural_england_SPS = arcpy.GetParameterAsText(5) # optional
+roads = arcpy.GetParameterAsText(6) # optional
 
 # Soil Data
-Soil_type = arcpy.GetParameterAsText(8)
-soil = arcpy.GetParameterAsText(9)
+Soil_type = arcpy.GetParameterAsText(7)
+soil = arcpy.GetParameterAsText(8)
 
 # Soil grain size Data
-soil_parent_material_50 = arcpy.GetParameterAsText(10) # shapefile of UK coverage
+soil_parent_material_50 = arcpy.GetParameterAsText(9) # shapefile of UK coverage
 
 # Soil depth Data
 # Uk soil parent material 
-advanced_superficial_deposit = arcpy.GetParameterAsText(11) # raster of superficial deposit depth
-soil_parent_material_1 = arcpy.GetParameterAsText(12) 
-orgC = arcpy.GetParameterAsText(13)
+advanced_superficial_deposit = arcpy.GetParameterAsText(10) # raster of superficial deposit depth
+soil_parent_material_1 = arcpy.GetParameterAsText(11) 
+orgC = arcpy.GetParameterAsText(12)
 
 
 ### Start of data preparation ###
@@ -78,10 +75,6 @@ DTM_fill, DTM_flow_direction, cell_size = DTM_prep.DTM_preparation(DTM)
 
 # Prepare the river catchment for clipping
 river_catchment_polygon = catchment_prep.catchment_preparation(river_catchment, cell_size)
-
-# Check if river network provided and clip it to catchment
-if river_network and river_network != '#':
-    river_network_clip = arcpy.Clip_analysis(river_network, river_catchment_polygon, "MODEL_river_network")
                       
 # Check if user is using FAO or Corine and if orgC is provided
 def check_BNG_needed(Soil_type, Land_cover_type, orgC):
@@ -96,7 +89,7 @@ def check_BNG_needed(Soil_type, Land_cover_type, orgC):
 
     return BNG
 
-BNG = check_BNG_needed(Soil_type, Land_cover_type, orgC)
+BNG = False #check_BNG_needed(Soil_type, Land_cover_type, orgC)
 
 # Check if files need to be converted to BNG
 DTM_BNG, soil_BNG, land_cover_BNG, river_catchment_BNG, orgC_BNG = BNG_check.convert_BNG(BNG, DTM_fill, soil, land_cover, orgC, river_catchment_polygon)
@@ -105,18 +98,19 @@ DTM_BNG, soil_BNG, land_cover_BNG, river_catchment_BNG, orgC_BNG = BNG_check.con
 catch_extent, buffer_catchment, buffer_extent = define_extents.calculate_catchment_extents(river_catchment_BNG)
 
 # Clip the DTM and return the cell size and bottom left corner
-DTM_clip, DTM_clip_np, DTM_cell_size, bottom_left_corner = DTM_prep.DTM_clip(DTM_BNG, catch_extent, river_catchment_BNG)
+DTM_clip, DTM_cell_size, bottom_left_corner = DTM_prep.DTM_clip(DTM_BNG, catch_extent, river_catchment_BNG)
+
+DTM_clip_np = arcpy.RasterToNumPyArray("MODEL_DTM", '#', '#', '#', -9999)
 
 # Clip the land cover to the river catchment
 land_cover_clipped = landcover_prep.land_cover_clip_analysis(land_cover, Land_cover_type, DTM_clip_np, DTM_cell_size, buffer_catchment, buffer_extent, 
-                                                             river_catchment_BNG, catch_extent, natural_england_SPS, roads)
+                                                             river_catchment_BNG, catch_extent, natural_england_SPS, roads, bottom_left_corner)
 
 # Clip the soil hydrology to the river catchment
 soil_clipped = soil_hydro_prep.soil_clip_analysis(soil_BNG, Soil_type, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent)
 
 # Calculate the distribuiton of grain sizes across the catchment
-soil_grain_calculation = grain_size_proportion.grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
-                                                                      buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent, bottom_left_corner)
+soil_grain_calculation = grain_size_proportion.grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent, bottom_left_corner)
 
 # Calculate the distribution of soil depth across the river catchment
 soil_depth_calculation = soil_depth_prep.soil_depth_calc(soil_parent_material_1, advanced_superficial_deposit, DTM_clip_np, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent, bottom_left_corner)
