@@ -309,7 +309,7 @@ rasterstonumpys.numpystocsv(list_of_numpys, list_of_numpys_strings) '''
 ### MAIN MODEL CODE ###
 arcpy.AddMessage("Model initiated")
  
-''' modelloop.model_loop(model_start_date, cell_size, bottom_left_corner, 
+modelloop.model_loop(model_start_date, cell_size, bottom_left_corner, 
                      calculate_sediment_transport, calculate_sediment_erosion_hillslope, use_dinfinity).start_precipition(river_catchment, DTM, region, 
                                                                           precipitation_textfile, baseflow_provided, day_pcp_yr, years_of_sim, 
                                                                           total_day_month_precip, total_avg_month_precip, max_30min_rainfall_list, 
@@ -319,5 +319,5 @@ arcpy.AddMessage("Model initiated")
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                                                                           numpy_array_location, 
                                                                           output_file_dict, output_format, 
-                                                                          output_excel_discharge, output_excel_sediment)'''
+                                                                          output_excel_discharge, output_excel_sediment)
                                                                                            
