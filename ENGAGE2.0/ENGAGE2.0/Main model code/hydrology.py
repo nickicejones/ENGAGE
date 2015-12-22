@@ -7,6 +7,7 @@ import time
 import os
 import subprocess
 import sys
+import numbers
 import numpy as np
 from arcpy.sa import *
 
@@ -23,11 +24,23 @@ class SCSCNQsurf(object):
             baseflow = precipitation_split[1]
             arcpy.AddMessage("Baseflow is " + str(baseflow))
             arcpy.AddMessage("-------------------------") 
-
+            
+            try:
+                precipitation = float(precipitation)
+                
+            except ValueError:
+                precipitation = 0
+                                        
         else:
             baseflow = 0
-            precipitation = precipitation
-            arcpy.AddMessage("Today precipitation is " + str(precipitation))
+
+            try:
+                precipitation = float(precipitation)
+                
+            except ValueError:
+                precipitation = 0
+
+        arcpy.AddMessage("Today precipitation is " + str(precipitation))
             
         return precipitation, baseflow
 
@@ -158,7 +171,7 @@ class SCSCNQsurf(object):
         if precipitation != 0 and precipitation_gauge_elevation != 0:
             arcpy.AddMessage("The precipiation is " + str(precipitation))              
             arcpy.AddMessage("The average number of days precipitation per year in the catchment is " + str(day_pcp_yr))
-            plaps = 0.5                
+            plaps = 5.8                
             precip_array = ((DTM - float(precipitation_gauge_elevation)) * (plaps / (day_pcp_yr * 1000))) + float(precipitation)
             precip_array[DTM == -9999] = -9999
             arcpy.AddMessage("Orographic preciptation calculated")

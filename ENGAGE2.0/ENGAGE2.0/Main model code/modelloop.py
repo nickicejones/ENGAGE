@@ -121,7 +121,7 @@ class model_loop(object):
                                 inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                                 numpy_array_location, 
                                 output_file_dict, output_format, 
-                                output_excel_discharge, output_excel_sediment):
+                                output_excel_discharge, output_excel_sediment, output_averages_temp):
                           
         # Check to see if the user wants to output discharge / sediment loss from the system
         discharge_spamwriter, sediment_spamwriter = rasterstonumpys.save_discharge_or_sediment_csv(output_excel_discharge, output_excel_sediment)
@@ -186,7 +186,7 @@ class model_loop(object):
                       
             # Calculate surface runoff and then convert to raster
             Q_surf_np = hydrology.SCSCNQsurf().SurfSCS(precipitation, Scurr, CN2s_d)
-
+            
             Q_surf = arcpy.NumPyArrayToRaster(Q_surf_np, self.bottom_left_corner, self.cell_size, self.cell_size, -9999)
                                                                     
             # Execute Flow accumulation to work out the discharge.
@@ -318,7 +318,7 @@ class model_loop(object):
 
             
             ### Check  what needs to be output from the model ###
-            self.week_day, self.month_day, self.year_day = rasterstonumpys.raster_outputs(self.week_day, self.month_day, self.year_day, self.current_date, self.first_loop, output_file_dict, output_format, self.bottom_left_corner, self.cell_size, Q_surf_np, Q_dis, depth_recking, precipitation, sediment_depth, net_sediment)
+            self.week_day, self.month_day, self.year_day = rasterstonumpys.raster_outputs(self.week_day, self.month_day, self.year_day, self.current_date, self.first_loop, output_file_dict, output_format, output_averages_temp, self.bottom_left_corner, self.cell_size, Q_surf_np, Q_dis, depth_recking, precipitation, sediment_depth, net_sediment)
         
                 
             ### VARIABLES / PARAMETERS THAT CHANGE AT END OF LOOP ###

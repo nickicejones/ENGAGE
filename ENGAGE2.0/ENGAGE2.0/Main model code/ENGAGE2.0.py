@@ -124,13 +124,14 @@ except LicenseError:
     arcpy.AddMessage("-------------------------")
 
 # Set a location to store the numpy array in a physical form
-numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp')
+#numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp') # Issues with this part of the model - temporary fix to get the user to select folder location
+numpy_array_location = arcpy.GetParameterAsText(0)
 
 # Create scratch geodatabase in the same temporary location
 # Execute CreateFileGDB
-arcpy.CreateFileGDB_management(numpy_array_location, "tempgb.gdb")
-arcpy.env.scratchWorkspace = numpy_array_location + "\tempgb.gdb"
-arcpy.AddMessage("Scratch workspace created in " + str(numpy_array_location))
+#arcpy.CreateFileGDB_management(numpy_array_location, "temp.gdb")
+#arcpy.env.scratchWorkspace = str(numpy_array_location) + "\temp.gdb"
+#arcpy.AddMessage("Scratch workspace created in " + str(numpy_array_location))
 
 '''### MODEL INPUTS - For StandAlone testing ###
 # Set Environmental Workspace
@@ -175,47 +176,47 @@ use_dinfinity = False'''
 
 ### MODEL INPUTS - For ArcGIS 10.1 ###
 # Set Environmental Workspace
-arcpy.env.workspace = arcpy.GetParameterAsText(0) 
+arcpy.env.workspace = arcpy.GetParameterAsText(1) 
 
 # Textfile with precipitation on each line and textfile with the baseflow on each line
-precipitation_textfile = arcpy.GetParameterAsText(1)
+precipitation_textfile = arcpy.GetParameterAsText(2)
 
 # Ask the user if they provided hourly rainfall
-hourly_precipitation = arcpy.GetParameterAsText(2)
+hourly_precipitation = arcpy.GetParameterAsText(3)
 
 if hourly_precipitation == True:
     precipitation_textfile = calculate_daily_precipitation.convert_precipitation(precipitation_hour_textfile)    
 
 # Option for the user to input baseflow  
-baseflow_textfile = arcpy.GetParameterAsText(3)
+baseflow_textfile = arcpy.GetParameterAsText(4)
 
 # Date of starting model operation
-model_start_date = arcpy.GetParameterAsText(4)
+model_start_date = arcpy.GetParameterAsText(5)
 # Region for the evapotranspiration calculations
-region = arcpy.GetParameterAsText(5)
+region = arcpy.GetParameterAsText(6)
 
 # Ask the user for the elevation of the precipiation guage (if they would like to use spatial precipitation)
-precipitation_gauge_elevation = float(arcpy.GetParameterAsText(6))      # Optional
+precipitation_gauge_elevation = float(arcpy.GetParameterAsText(7))      # Optional
 
 # Selection of what the model calculates
-calculate_sediment_transport = arcpy.GetParameterAsText(7)
-calculate_sediment_erosion_hillslope = arcpy.GetParameterAsText(8) 
+calculate_sediment_transport = arcpy.GetParameterAsText(8)
+calculate_sediment_erosion_hillslope = arcpy.GetParameterAsText(9) 
 
 # Select the outputs and frequency
-output_surface_runoff = arcpy.GetParameterAsText(9)                 # Surface Runoff
-output_discharge = arcpy.GetParameterAsText(10)                      # Discharge
-output_water_depth = arcpy.GetParameterAsText(11)                    # Depth
-output_spatial_precipitation = arcpy.GetParameterAsText(12)         # Spatial Precipitation 
-output_sediment_depth = arcpy.GetParameterAsText(13)                # Sediment Depth
-output_net_sediment_transport = arcpy.GetParameterAsText(14)        # Total erosion / depostion in each cell
-output_format = arcpy.GetParameterAsText(15)                        # Average or total for the above
+output_surface_runoff = arcpy.GetParameterAsText(10)                 # Surface Runoff
+output_discharge = arcpy.GetParameterAsText(11)                      # Discharge
+output_water_depth = arcpy.GetParameterAsText(12)                    # Depth
+output_spatial_precipitation = arcpy.GetParameterAsText(13)         # Spatial Precipitation 
+output_sediment_depth = arcpy.GetParameterAsText(14)                # Sediment Depth
+output_net_sediment_transport = arcpy.GetParameterAsText(15)        # Total erosion / depostion in each cell
+output_format = arcpy.GetParameterAsText(16)                        # Average or total for the above
 
 # This is a series of points along the river network at which a value is saved
-output_excel_discharge = arcpy.GetParameterAsText(16) 
-output_excel_sediment = arcpy.GetParameterAsText(17) 
+output_excel_discharge = arcpy.GetParameterAsText(17) 
+output_excel_sediment = arcpy.GetParameterAsText(18) 
 
 # Use Dinfinity flow directions
-use_dinfinity = arcpy.GetParameterAsText(18)
+use_dinfinity = arcpy.GetParameterAsText(19)
 
 
 ### INTIATION OF MODEL ###
@@ -274,9 +275,11 @@ active_layer_GS_volumes, inactive_layer_GS_volumes = datapreparation.get_grain_v
 # Calculating the number of days precipitation in the catchment per year
 day_pcp_yr, years_of_sim, total_day_month_precip, total_avg_month_precip = datapreparation.average_days_rainfall(model_start_date, precipitation_textfile)
 
-# Calculate max 30 minute rainfall event if the user has provided the required data.
+# Calculate max 30 minute rainfall event if the user has provided the required data. If not provided use empty list
 if hourly_precipitation == True:
     max_30min_rainfall_list = maxhalfhourrain.max_30min_rainfall(precipitation_hour_textfile, model_start_date) 
+else:
+    max_30min_rainfall_list = []
 
 # Create temporary locations to store numpy arrays on the computers hardrive
 arcpy.AddMessage("Temporary files will be located here " + str(numpy_array_location))
@@ -293,6 +296,10 @@ CULSE = Cfactor.get_Cfactor(model_inputs_list[0])
 
 arcpy.AddMessage("Time to complete model preparation is " + str(round(time.time() - start,2)) + "s. ")
 arcpy.AddMessage("-------------------------")
+
+# Section of the model to store the numpy averages
+output_averages_temp = datapreparation.temporary_average_numpys(numpy_array_location)
+
 
 ### CONVERT these to CSV files for data analysis only ### ~~~ TAKE OUT FOR FINAL VERSION
 '''model_inputs_list_strings = ["land_cover", "soil", "ASD_soil_depth", "BGS_soil_depth", "general_soil_depth", "orgC"]
@@ -319,5 +326,5 @@ modelloop.model_loop(model_start_date, cell_size, bottom_left_corner,
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                                                                           numpy_array_location, 
                                                                           output_file_dict, output_format, 
-                                                                          output_excel_discharge, output_excel_sediment)
+                                                                          output_excel_discharge, output_excel_sediment, output_averages_temp)
                                                                                            

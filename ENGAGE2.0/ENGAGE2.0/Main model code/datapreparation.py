@@ -437,6 +437,17 @@ def convert_to_boolean(trueorfalse):
     return trueorfalse
 
 
+# Function to create and store the temporary file locations on the harddrive of the computer
+def temporary_average_numpys(numpy_array_location):
+    # Create temporary file location for grain size proportions in the active layer
+    Q_surf_temp = numpy_array_location + '\Q_surf_temp.npy'
+    Discharge_temp = numpy_array_location + '\Discharge_temp.npy'
+    Water_depth_temp = numpy_array_location + '\Water_depth_temp.npy'
+    Spatial_precipiation_temp = numpy_array_location + '\Spatial_precipiation_temp.npy'
+    Sediment_depth_temp = numpy_array_location + '\Sediment_depth_temp.npy'
+    Net_sediment_temp = numpy_array_location + '\Net_sediment_temp.npy'
+    
+    output_averages_temp = [Q_surf_temp, Discharge_temp, Water_depth_temp, Spatial_precipiation_temp, Sediment_depth_temp, Net_sediment_temp]
 
-
+    return output_averages_temp
                         
