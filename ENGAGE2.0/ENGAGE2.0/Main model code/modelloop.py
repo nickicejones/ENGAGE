@@ -75,6 +75,7 @@ import csv
 import time
 from arcpy.sa import *
 from itertools import izip
+from multiprocessing import Process
 
 ### Import Script Files NJ created ###
 import hydrology
@@ -100,7 +101,9 @@ class model_loop(object):
         self.day_of_year = 0
         self.tomorrow_day = 0
         self.index = 0
-    
+        self.discharge_erosion_threshold = 0
+        self.depth_recking_threshold = 0
+            
     # Simple function to get the number of days precipitation in a month and the daily average precipitation
     def days_pcp_month(self, total_day_month_precip, total_avg_month_precip):
 
@@ -151,7 +154,7 @@ class model_loop(object):
             ### CHECK TO SEE IF THE SLOPE NEEDS TO BE CALCULATED ###            
             if recalculate_slope_flow == True and self.first_loop == False: 
                 arcpy.AddMessage("Recalculating variables due to degree of elevation change")
-                                                             
+                DTM = arcpy.NumPyArrayToRaster(DTM, self.bottom_left_corner, self.cell_size, self.cell_size, -9999)                                         
                 slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang = hydrology.SCSCNQsurf().check_slope_flow_directions(self.first_loop, self.use_dinfinity, self.day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location)   
                             
             if self.first_loop == True:
@@ -196,7 +199,8 @@ class model_loop(object):
             if self.use_dinfinity == True:
                 Q_dis = hydrology.SCSCNQsurf().FlowAccumulationDinf(ang, Q_dis, numpy_array_location)   
             else:
-                Q_dis = FlowAccumulation(flow_direction_raster, Q_dis)                                          
+                Q_dis = FlowAccumulation(flow_direction_raster, Q_dis)
+                                                          
             arcpy.AddMessage("Calculated discharge")   
             
             if baseflow_provided == True:
@@ -222,65 +226,82 @@ class model_loop(object):
 
             ###SEDIMENT TRANSPORT SECTION OF LOOP###                         
             if self.calculate_sediment_transport == True: 
-                arcpy.AddMessage("Starting to calculate sediment transport...")              
-                # Calculate d50, d84, Fs
-                d50, d84, Fs, active_layer_GS_P_list = sediment.sedimenttransport().d50_d84_Fs_grain(GS_list, active_layer_GS_P_temp)
-                                            
-                # Calculate depth using the recking parameters and the indexs of the cells with a depth greater than the threshold (cell_size / 1000)
-                depth_recking = sediment.sedimenttransport().depth_recking(Q_dis, slope, d84, self.cell_size)
-                            
-                # Calculate the timestep of the sediment transport using the maximum rate of entrainment in all the cells
-                sediment_time_step_seconds = sediment.sedimenttransport().SedimentEntrainmentQmax(slope, depth_recking, Fs, d50, 
-                                                                                                  self.cell_size, GS_list, active_layer_GS_P_list)
-            
-                if sediment_time_step_seconds >= 86400:
-                    sediment_time_step_seconds = 86400
+                arcpy.AddMessage("Starting to calculate sediment transport...") 
+                   
+                # Get the erosion values on the first loop
+                if self.first_loop == True:
+                    self.depth_recking_threshold, self.discharge_erosion_threshold = sediment.sedimenttransport().get_erosion_threshold_values(self.cell_size)
 
-                sediment_time_step_seconds = 86400 #*********************************NEED TO TURN OFF******************************#
-                ### Piece of code to record the timestep ###
-                arcpy.AddMessage("Sediment timestep for today is  " + str(sediment_time_step_seconds))
+                sufficient_discharge_calculate_erosion = np.any(Q_dis > self.discharge_erosion_threshold)
+
+                if sufficient_discharge_calculate_erosion == True:
+                    arcpy.AddMessage("Sufficient Discharge for Erosion Calculation to Begin")
+                          
+                    # Calculate d50, d84, Fs
+                    d50, d84, Fs, active_layer_GS_P_list = sediment.sedimenttransport().d50_d84_Fs_grain(GS_list, active_layer_GS_P_temp)
+                                            
+                    # Calculate depth using the recking parameters and the indexs of the cells with a depth greater than the threshold (cell_size / 1000)
+                    depth_recking = sediment.sedimenttransport().depth_recking(Q_dis, slope, d84, self.cell_size)
+                            
+                    # Calculate the timestep of the sediment transport using the maximum rate of entrainment in all the cells
+                    sediment_time_step_seconds = sediment.sedimenttransport().SedimentEntrainmentQmax(slope, depth_recking, Fs, d50, 
+                                                                                                      self.cell_size, GS_list, active_layer_GS_P_list, self.depth_recking_threshold, active_layer_V_temp)
+            
+                    if sediment_time_step_seconds >= 86400:
+                        sediment_time_step_seconds = 86400
+
+                    sediment_time_step_seconds = 86400 #*********************************NEED TO TURN OFF******************************#
+                    ### Piece of code to record the timestep ###
+                    arcpy.AddMessage("Sediment timestep for today is  " + str(sediment_time_step_seconds))
                 
                         
-                # Collect garbage
-                del d50, d84, Fs, active_layer_GS_P_list
-                collected = gc.collect()
-                arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
-                daily_save_date = str(self.current_date.strftime('%d_%m_%Y'))
+                    # Collect garbage
+                    del d50, d84, Fs, active_layer_GS_P_list
+                    collected = gc.collect()
+                    arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
+                    daily_save_date = str(self.current_date.strftime('%d_%m_%Y'))
             
-                # Check if sediment transport needs to be calculated based on the depth of water
-                calculate_sediment_transport_based_on_depth = np.any(depth_recking >= 0.1)
+                    # Check if sediment transport needs to be calculated based on the depth of water
+                    calculate_sediment_transport_based_on_depth = np.any(depth_recking > self.depth_recking_threshold)
                 
-                if calculate_sediment_transport_based_on_depth == True:         
-                    # Calculate sediment transport for each timestep based on the above calculation 
-                    inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = sediment.sedimenttransport().sediment_loop(sediment_time_step_seconds, GS_list, 
-                                                                                                                               Q_dis, slope,
-                                                                                                                               self.cell_size, flow_direction_np, 
-                                                                                                                               self.bottom_left_corner, daily_save_date, 
-                                                                                                                               active_layer_GS_P_temp, active_layer_V_temp, 
-                                                                                                                               inactive_layer_GS_P_temp, 
-                                                                                                                               inactive_layer_V_temp, inactive_layer, 
-                                                                                                                               DTM, DTM_MINUS_AL_IAL)
-                    sediment_depth = 0 # NEED TO ADD INTO CALCULATION
-                    net_sediment = 0 # NEED TO ADD INTO CALCULATION
-                    Sed_max = " "
+                    if calculate_sediment_transport_based_on_depth == True:   
+                        arcpy.AddMessage("Sufficient depth to calculate sediment transport")      
+                        # Calculate sediment transport for each timestep based on the above calculation 
+                        inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow, net_sediment = sediment.sedimenttransport().sediment_loop(sediment_time_step_seconds, GS_list, 
+                                                                                                                                   Q_dis, slope,
+                                                                                                                                   self.cell_size, flow_direction_np, 
+                                                                                                                                   self.bottom_left_corner, daily_save_date, 
+                                                                                                                                   active_layer_GS_P_temp, active_layer_V_temp, 
+                                                                                                                                   inactive_layer_GS_P_temp, 
+                                                                                                                                   inactive_layer_V_temp, inactive_layer, 
+                                                                                                                                   DTM, DTM_MINUS_AL_IAL, self.depth_recking_threshold)
+                        sediment_depth = DTM - DTM_MINUS_AL_IAL
+                        sediment_depth[Q_surf_np == -9999] = -9999
+                        Sed_max = " "
+
+                    elif calculate_sediment_transport_based_on_depth == False:
+                        recalculate_slope_flow = False
+                        sediment_depth = np.zeros_like(Q_surf_np)
+                        net_sediment = np.zeros_like(Q_surf_np)
+                        Sed_max = 0
+                        sediment_depth[Q_surf_np == -9999] = -9999
+                        net_sediment[Q_surf_np == -9999] = -9999
+                        arcpy.AddMessage("-------------------------") 
+                        arcpy.AddMessage("Sediment transport will not be calculated for this timestep due to insufficient river depth")
+                        arcpy.AddMessage("-------------------------") 
+
+                    # Check if the user would like to save sediment transport at the outlet
+                    rasterstonumpys.output_sediment_csv(self.current_date, sediment_spamwriter, Sed_max)
 
                 else:
                     recalculate_slope_flow = False
-                    sediment_depth = np.zeros_like(Q_surf_np)
-                    net_sediment = np.zeros_like(Q_surf_np)
-                    Sed_max = 0
-                    sediment_depth[Q_surf_np == -9999] = -9999
-                    net_sediment[Q_surf_np == -9999] = -9999
-                    arcpy.AddMessage("-------------------------") 
-                    arcpy.AddMessage("Sediment transport will not be calculated for this timestep due to insufficient river depth")
-                    arcpy.AddMessage("-------------------------") 
-
-                # Check if the user would like to save sediment transport at the outlet
-                rasterstonumpys.output_sediment_csv(self.current_date, sediment_spamwriter, Sed_max)
+                    sediment_depth = 0
+                    net_sediment = 0 
+                    depth_recking = 0
 
             else:
                 recalculate_slope_flow = False
-                sediment_depth = 0 
+                sediment_depth = 0
                 net_sediment = 0 
                 depth_recking = 0
 

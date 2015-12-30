@@ -147,10 +147,10 @@ class masswasting_sediment(object):
 
     def masswasting_loop(self, DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, bottom_left_corner, cell_size, flow_direction_np, 
                                                             active_layer_GS_P_temp, active_layer_V_temp, 
-                                                            inactive_layer_GS_P_temp, inactive_layer_V_temp):
+                                                            inactive_layer_GS_P_temp, inactive_layer_V_temp, recalculate_slope_flow):
 
         # First calculate the slope of the cells
-        arcpy.AddMessage("Checking is any cells have a slope greater than 45 degrees and sediment is available to be transported")
+        arcpy.AddMessage("Checking if any cells have a slope greater than 45 degrees and sediment available to be transported")
         np.set_printoptions(precision=4)
         slope = self.calculate_slope(DTM, bottom_left_corner, cell_size)
 
@@ -233,5 +233,9 @@ class masswasting_sediment(object):
             
             # Check if any of then are greater than 45 degrees
             conduct_masswasting, new_idx = self.get_cellsgreater_45degrees(slope, active_layer, inactive_layer)
+
+
+
+
             
         return DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow, active_layer, inactive_layer

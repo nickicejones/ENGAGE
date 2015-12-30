@@ -170,9 +170,9 @@ def raster_outputs(week_day, month_day, year_day, current_date, first_loop, outp
             if output_type == "Spatial_precipitation": 
                 convert_numpy_to_raster_single(precipitation, output_type, bottom_left_corner, cell_size, daily_save_date)
             if output_type == "Sediment_depth": 
-                convert_numpy_to_raster_single(Q_surf, output_type, bottom_left_corner, cell_size, daily_save_date) # Need to change output
+                convert_numpy_to_raster_single(sediment_depth, output_type, bottom_left_corner, cell_size, daily_save_date) # Need to change output
             if output_type ==  "Net_sediment": 
-                convert_numpy_to_raster_single(Q_surf, output_type, bottom_left_corner, cell_size, daily_save_date) # Need to change output
+                convert_numpy_to_raster_single(net_sediment, output_type, bottom_left_corner, cell_size, daily_save_date) # Need to change output
 
         ### What happens if the output is weekly ###
         if output_frequency == 'Weekly':                   
@@ -195,11 +195,11 @@ def raster_outputs(week_day, month_day, year_day, current_date, first_loop, outp
 
             if output_type == "Sediment_depth":
                 arcpy.AddMessage("Sediment depth added to weekly average")
-                sed_depth_avg = sed_depth_avg + Q_surf # need to change Q_surf
+                sed_depth_avg = sed_depth_avg + sediment_depth 
 
             if output_type == "Net_sediment":
                 arcpy.AddMessage("Net sediment added to weekly average")
-                sed_erosion_deposition_avg = sed_erosion_deposition_avg + Q_surf # need to change Q_surf
+                sed_erosion_deposition_avg = sed_erosion_deposition_avg + net_sediment
 
             if week_day == 7:
                 if output_format == 'Daily average':
@@ -312,11 +312,11 @@ def raster_outputs(week_day, month_day, year_day, current_date, first_loop, outp
 
             if output_type == "Sediment_depth":
                 arcpy.AddMessage("Sediment depth added to monthly average")
-                sed_depth_avg = sed_depth_avg + Q_surf # need to change Q_surf
+                sed_depth_avg = sed_depth_avg + sediment_depth 
 
             if output_type == "Net_sediment":
                 arcpy.AddMessage("Net sediment added to monthly average")
-                sed_erosion_deposition_avg = sed_erosion_deposition_avg + Q_surf # need to change Q_surf
+                sed_erosion_deposition_avg = sed_erosion_deposition_avg + net_sediment 
                     
             if tomorrow_day == 1:
                 if output_format == 'Daily average':
@@ -430,11 +430,11 @@ def raster_outputs(week_day, month_day, year_day, current_date, first_loop, outp
 
                 if output_type == "Sediment_depth":
                     arcpy.AddMessage("Sediment depth added to yearly average")
-                    sed_depth_avg = sed_depth_avg + Q_surf # need to change Q_surf
+                    sed_depth_avg = sed_depth_avg + sediment_depth 
 
                 if output_type == "Net_sediment":
                     arcpy.AddMessage("Net sediment added to yearly average")
-                    sed_erosion_deposition_avg = sed_erosion_deposition_avg + Q_surf # need to change Q_surf
+                    sed_erosion_deposition_avg = sed_erosion_deposition_avg + net_sediment 
                     
                 if tomorrow_day == 1 and tomorrow_month == 1:
                     if output_format == 'Daily average':

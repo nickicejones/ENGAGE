@@ -155,11 +155,11 @@ class sedimenttransport(object):
         return depth_recking
 
     # Calculate the sediment entrainment for the grainsizes and then use that to calculate the sediment timestep - checked 04/07/14
-    def SedimentEntrainmentQmax(self, slope, depth_recking, Fs, d50, cell_size, GS_list, GS_P_list):
+    def SedimentEntrainmentQmax(self, slope, depth_recking, Fs, d50, cell_size, GS_list, GS_P_list, depth_recking_threshold, active_layer_V_temp):
         
         start = time.time()
         
-        def sediment_entrainment_calculation(slope, depth_recking, Fs, d50, grain_size, grain_proportion, cell_size):
+        def sediment_entrainment_calculation(slope, depth_recking, Fs, d50, grain_size, grain_proportion, cell_size, GS_V):
 
             # Create a series of empty arrays
             sediment_entrainment = np.zeros_like(slope, dtype = float)     
@@ -170,7 +170,7 @@ class sedimenttransport(object):
             ToverTri = np.zeros_like(slope, dtype = float) 
             Wi = np.zeros_like(slope, dtype = float) 
                         
-            B = (depth_recking > 0.01)
+            B = (depth_recking > depth_recking_threshold)
 
             T[B] = slope[B] * depth_recking[B]
                                     
@@ -201,8 +201,22 @@ class sedimenttransport(object):
             sediment_entrainment[B] = (Wi[B] * grain_proportion[B] * np.power(shear_vel[B], 3)) / ((2.65 - 1) * 9.81)
 
             # Convert sediment to width of channel by multiplying by the cell size
-            sediment_entrainment[B] = sediment_entrainment[B] * cell_size
+            #sediment_entrainment[B] = sediment_entrainment[B] * cell_size
+            #sediment_entrainment[B] = sediment_entrainment[B] # checked CAESAR do not multiply by cell size
 
+            # Find out if any of the cells are greater than the availiable amount in the cell
+            C = (sediment_entrainment > GS_V)
+
+            # If true only transport the maximum amount in the cell
+            sediment_entrainment[C] = GS_V[C]
+            
+            sediment_entrainment[slope == -9999] = -9999 # Ensure no data cells remain no data
+            
+            # Add a check to see if the cell is trying to erode to much
+            #max_erosion = 0.04 * cell_size * cell_size
+            #C = (sediment_entrainment > max_erosion)
+            #sediment_entrainment[C] = max_erosion
+            
             sediment_entrainment[slope== -9999] = -9999 # Ensure no data cells remain no data
             
             return sediment_entrainment
@@ -217,9 +231,12 @@ class sedimenttransport(object):
         layer_height = 0.2
               
         # Iterate through the grain sizes and proportions calculating the transport
-        for grain_size, grain_proportion in izip(GS_list, GS_P_list):                                 
+        for grain_size, grain_proportion, GS_V_temp in izip(GS_list, GS_P_list, active_layer_V_temp):
+            # Load the grainsize volume
+            GS_V = np.load(GS_V_temp)
+                                            
             # Calculate sediment transport for that grainsize
-            sediment_entrainment = sediment_entrainment_calculation(slope, depth_recking, Fs, d50, grain_size, grain_proportion, cell_size)
+            sediment_entrainment = sediment_entrainment_calculation(slope, depth_recking, Fs, d50, grain_size, grain_proportion, cell_size, GS_V)
             
             arcpy.AddMessage("Calculated sediment transport for " + "_" + str(grain_size))
                             
@@ -239,7 +256,7 @@ class sedimenttransport(object):
         if sediment_time_step_seconds < 10:
             sediment_time_step_seconds = 10
                 
-        arcpy.AddMessage("The timestep based on these caluclations should be " + str(sediment_time_step_seconds) + " seconds")  
+        arcpy.AddMessage("The timestep based on these calculations should be " + str(sediment_time_step_seconds) + " seconds")  
         
         arcpy.AddMessage("Calculating maximum entrainment and sediment timestep " + str(round(time.time() - start,2)) + "s.") 
         arcpy.AddMessage(" ")
@@ -252,7 +269,7 @@ class sedimenttransport(object):
                                                            cell_size, flow_direction_np, bottom_left_corner, daily_save_date, 
                                                            active_layer_GS_P_temp, active_layer_V_temp, 
                                                            inactive_layer_GS_P_temp, inactive_layer_V_temp, inactive_layer,
-                                                           DTM, DTM_MINUS_AL_IAL):
+                                                           DTM, DTM_MINUS_AL_IAL, depth_recking_threshold):
                 
         def sediment_entrainment_calculation(slope, depth_recking, Fs, d50, GS, GS_P, GS_V, cell_size, sediment_time_step_seconds):
 
@@ -265,7 +282,7 @@ class sedimenttransport(object):
             ToverTri = np.zeros_like(slope, dtype = float) 
             Wi = np.zeros_like(slope, dtype = float) 
                         
-            B = (depth_recking > 0.01)
+            B = (depth_recking > depth_recking_threshold)
              
             T[B] = slope[B] * depth_recking[B]
                                    
@@ -296,8 +313,9 @@ class sedimenttransport(object):
             sediment_entrainment[B] = (Wi[B] * GS_P[B] * np.power(shear_vel[B], 3)) / ((2.65 - 1) * 9.81)
 
             # Convert sediment to width of channel by multiplying by the cell size
-            sediment_entrainment[B] = sediment_entrainment[B] * cell_size
+            # sediment_entrainment[B] = sediment_entrainment[B] * cell_size  # checked CAESAR do not multiply by cell size
             
+            # Calculate volume by multiplying by the sediment time step
             sediment_entrainment[B] *= sediment_time_step_seconds
 
             # Find out if any of the cells are greater than the availiable amount in the cell
@@ -308,17 +326,21 @@ class sedimenttransport(object):
             
             sediment_entrainment[slope == -9999] = -9999 # Ensure no data cells remain no data
             
+            # Add a check to see if the cell is trying to erode to much
+            max_erosion = 0.04 * cell_size * cell_size # in m3
+            C = (sediment_entrainment > max_erosion)
+            sediment_entrainment[C] = max_erosion
+
             return sediment_entrainment
 
         def move_sediment(depth_recking, sediment_entrainment_out, slope, flow_direction_np):
                         
             depth_mask = np.zeros_like(depth_recking, dtype = float)
-            depth_threshold = 0.01
-
+           
             # Get indices with great enough depth to intitate sediment transport
             # Check that the depth is great enough to intitate sediment transport in selected cells - might need changing though 
             # - this only gets the cells with great enough depth for sediment transport to occur and this will need to be recalcuclate for each timestep
-            np.putmask(depth_mask, depth_recking >= depth_threshold, depth_recking)
+            np.putmask(depth_mask, depth_recking > depth_recking_threshold, depth_recking)
       
             # Get the indices where the sediment transport is greater than 0 
             sort_idx = np.flatnonzero(depth_mask)
@@ -361,7 +383,7 @@ class sedimenttransport(object):
             
             return sediment_entrainment_in_fin
                         
-        total_change = np.zeros_like(slope, dtype = float)
+        net_sediment = np.zeros_like(slope, dtype = float)
 
         counter_transport = 1
         total_time = 0.0
@@ -410,6 +432,10 @@ class sedimenttransport(object):
                 counter_transport +=1
                 if counter_transport == 8:
                     counter_transport = 1
+
+                # Keep track of the total sediment being moved
+                net_sediment += sediment_entrainment_in
+                net_sediment -= sediment_entrainment_out
 
             # Collect garbage
             del d50, d84, Fs, depth_recking, sediment_entrainment_out, sediment_entrainment_in, new_grain_volume
@@ -464,8 +490,7 @@ class sedimenttransport(object):
             collected = gc.collect()
             arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
 
-        ### SECTION TO CHECK IF MASS WASTING NEEDS TO TAKE PLACE ###
-        
+        ### SECTION TO CHECK IF MASS WASTING NEEDS TO TAKE PLACE ###       
         DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow, active_layer, inactive_layer = masswasting.masswasting_sediment().masswasting_loop(DTM, DTM_MINUS_AL_IAL, 
                                                                                                                                           active_layer, inactive_layer,
                                                                                                                                           bottom_left_corner, cell_size,
@@ -473,10 +498,28 @@ class sedimenttransport(object):
                                                                                                                                           active_layer_GS_P_temp,
                                                                                                                                           active_layer_V_temp,
                                                                                                                                           inactive_layer_GS_P_temp, 
-                                                                                                                                          inactive_layer_V_temp)
-        return inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow
+                                                                                                                                          inactive_layer_V_temp, recalculate_slope_flow)
+        return inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow, net_sediment
                      
             ### Section to save rasters while testing model ###
             #rasterstonumpys.convert_numpy_to_raster_single(active_layer, "active_layer", bottom_left_corner, cell_size, "0")
             #rasterstonumpys.convert_numpy_to_raster_single(inactive_layer, "inactive_layer", bottom_left_corner, cell_size, "0")
-        
+
+    def get_erosion_threshold_values(self, cell_size):
+        # Need to set the depth and discharge thresholds
+        if cell_size <= 10:
+            depth_recking_threshold = 0.01
+            discharge_erosion_threshold = 0.01
+        elif cell_size > 10 and cell_size <= 25:
+            depth_recking_threshold = 0.0125
+            discharge_erosion_threshold = 0.125
+        elif cell_size > 25 and cell_size <= 50:
+            depth_recking_threshold = 0.025
+            discharge_erosion_threshold = 0.25
+        else: 
+            depth_recking_threshold = 0.01
+            discharge_erosion_threshold = 0.5
+
+        arcpy.AddMessage("The threshold for depth and discharge for erosion is set at " + str(discharge_erosion_threshold))
+
+        return depth_recking_threshold, discharge_erosion_threshold
