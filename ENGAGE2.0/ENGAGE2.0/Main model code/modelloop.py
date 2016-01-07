@@ -308,7 +308,7 @@ class model_loop(object):
             # Section of the loop to calculate peak runoff for the day
             if self.calculate_sediment_erosion_hillslope == True:
 
-                calculate_sediment_erosion_hillslope_based_on_surface_runoff = np.any(Q_surf_np > 0)
+                calculate_sediment_erosion_hillslope_based_on_surface_runoff = np.any(Q_surf_np > 0.00001)
 
                 if calculate_sediment_erosion_hillslope_based_on_surface_runoff == True:
                     # Adjustment factor is something that could be worked in at a later date.
@@ -332,6 +332,8 @@ class model_loop(object):
                     print q_peak
 
                     hillslope_sediment_erosion = MUSLE.hillslope_erosion_MUSLE(slope, self.cell_size, GS_list, active_layer_GS_P_temp).calculate_MUSLE(Q_surf_np, q_peak, orgC, CULSE)
+
+
                 else:
                     arcpy.AddMessage("-------------------------") 
                     arcpy.AddMessage("Insufficient surface runoff hillslope erosion will not be calculated")

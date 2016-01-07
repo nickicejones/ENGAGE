@@ -151,4 +151,5 @@ class hillslope_erosion_MUSLE(object):
                
         # Check no data cell
         hillslope_sediment_erosion[Q_surf_np == -9999] = -9999
+
         return hillslope_sediment_erosion
