@@ -315,6 +315,22 @@ def calculate_soil_depth(DTM, cell_size, numpy_array_location, land_cover, land_
 
         arcpy.AddMessage("Soil depths based CORINE land cover data calculated")
         arcpy.AddMessage("-------------------------")
+
+    elif land_cover_type == "COMBINE":
+        def get_soil_depths(a1):
+            if a1 > 0:
+                return COMBINE_SCS[a1]  
+            else:
+                return -9999
+
+        V_get_soil_depths = np.vectorize(get_soil_depths)
+        
+        land_cover_soil_depths = np.zeros_like(land_cover, dtype = np.int8)
+
+        land_cover_soil_depths = V_get_soil_depths(land_cover)
+
+        arcpy.AddMessage("Soil depths based on combined land cover data calculated")
+        arcpy.AddMessage("-------------------------")
         
     # This checks to see which parts should have no soil depth and converts the final soil depth based on that.
     B = (land_cover_soil_depths == 0)

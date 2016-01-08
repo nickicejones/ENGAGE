@@ -191,11 +191,10 @@ class model_loop(object):
             Q_surf_np = hydrology.SCSCNQsurf().SurfSCS(precipitation, Scurr, CN2s_d)
             
             Q_surf = arcpy.NumPyArrayToRaster(Q_surf_np, self.bottom_left_corner, self.cell_size, self.cell_size, -9999)
-                                                                    
+                                                                                
             # Execute Flow accumulation to work out the discharge.
             Q_dis = ((Q_surf / 1000) / 86400) * (self.cell_size * self.cell_size) # convert to metres (by dividing by 1000) and then to seconds by dividing by 86400 and finally to the area of the cell by multiplying by the area of the cell. 
             
-
             if self.use_dinfinity == True:
                 Q_dis = hydrology.SCSCNQsurf().FlowAccumulationDinf(ang, Q_dis, numpy_array_location)   
             else:
@@ -205,11 +204,13 @@ class model_loop(object):
             
             if baseflow_provided == True:
                 baseflow_raster = hydrology.SCSCNQsurf().BaseflowCalculation(baseflow, flow_accumulation)                                  
-                Q_dis = Q_dis + baseflow_raster
+                Q_dis += baseflow_raster
+                arcpy.Delete_management(baseflow_raster)
                                                 
-            Q_dis = arcpy.RasterToNumPyArray(Q_dis, '#','#','#', -9999)
-            
-            Q_max = np.amax(Q_dis)
+            Q_dis_np = arcpy.RasterToNumPyArray(Q_dis, '#','#','#', -9999)
+            arcpy.Delete_management(Q_dis)
+
+            Q_max = np.amax(Q_dis_np)
             arcpy.AddMessage("Discharge at the outlet for today is " + str(Q_max))
             arcpy.AddMessage(" ") 
 
@@ -320,7 +321,7 @@ class model_loop(object):
                     # Calculate the monthly average half hour fraction
                     average_half_hour_fraction = hydrology.SCSCNQsurf().average_half_hour_rainfall(years_of_sim, day_pcp_month, 
                                                                                     day_avg_pcp, max_30min_rainfall_list, 
-                                                                                    adjustment_factor, self.index, self.first_loop)
+                                                                                    adjustment_factor, self.index, self.index)
                     print average_half_hour_fraction
 
                     concentration_overland_flow = hydrology.SCSCNQsurf().time_concentration(depth_recking, flow_direction_raster, slope, mannings_n, self.cell_size)
@@ -341,12 +342,19 @@ class model_loop(object):
 
             
             ### Check  what needs to be output from the model ###
-            self.week_day, self.month_day, self.year_day = rasterstonumpys.raster_outputs(self.week_day, self.month_day, self.year_day, self.current_date, self.first_loop, output_file_dict, output_format, output_averages_temp, self.bottom_left_corner, self.cell_size, Q_surf_np, Q_dis, depth_recking, precipitation, sediment_depth, net_sediment)
+            self.week_day, self.month_day, self.year_day = rasterstonumpys.raster_outputs(self.week_day, self.month_day, self.year_day, self.current_date, self.first_loop, output_file_dict, output_format, output_averages_temp, self.bottom_left_corner, self.cell_size, Q_surf_np, Q_dis_np, depth_recking, precipitation, sediment_depth, net_sediment)
         
                 
             ### VARIABLES / PARAMETERS THAT CHANGE AT END OF LOOP ###
             ### Check if the DTM is a raster ###
             self.first_loop = False
+            
+
+            # Test using arcpy delete function
+            #arcpy.Delete_management(Q_dis)
+            #arcpy.Delete_management(Q_surf)
+            
+            #arcpy.Delete_management(precipitation)
 
             # Increment the date and day by 1
             self.current_date = self.current_date + datetime.timedelta(days=1)
@@ -355,6 +363,7 @@ class model_loop(object):
             self.day_of_year += 1
             arcpy.AddMessage("Time to complete today is " + str(round(time.time() - start,2)) + "s. Note that on day 1 and every 30 days the timestep will take longer.")
             arcpy.AddMessage("-------------------------") 
+            del Q_dis_np, Q_surf_np, precipitation, Scurr
             gc.collect()
 
 

@@ -185,7 +185,11 @@ precipitation_textfile = arcpy.GetParameterAsText(2)
 hourly_precipitation = arcpy.GetParameterAsText(3)
 
 if hourly_precipitation == True:
-    precipitation_textfile = calculate_daily_precipitation.convert_precipitation(precipitation_hour_textfile)    
+    hourly_precipitation_textfile = precipitation_textfile
+    daily_precipitation_textfile = calculate_daily_precipitation.convert_precipitation(precipitation_textfile)    
+
+else:
+    daily_precipitation_textfile = precipitation_textfile
 
 # Option for the user to input baseflow  
 baseflow_textfile = arcpy.GetParameterAsText(4)
@@ -273,20 +277,24 @@ active_layer, inactive_layer = datapreparation.calculate_active_layer(soil_depth
 # Active /  Inactive layer volumes for each grainsize
 active_layer_GS_volumes, inactive_layer_GS_volumes = datapreparation.get_grain_volumes(GS_P_list, active_layer, inactive_layer) 
 # Calculating the number of days precipitation in the catchment per year
-day_pcp_yr, years_of_sim, total_day_month_precip, total_avg_month_precip = datapreparation.average_days_rainfall(model_start_date, precipitation_textfile)
+day_pcp_yr, years_of_sim, total_day_month_precip, total_avg_month_precip = datapreparation.average_days_rainfall(model_start_date, daily_precipitation_textfile)
 
 # Calculate max 30 minute rainfall event if the user has provided the required data. If not provided use empty list
 if hourly_precipitation == True:
-    max_30min_rainfall_list = maxhalfhourrain.max_30min_rainfall(precipitation_hour_textfile, model_start_date) 
+    arcpy.AddMessage("Hourly Rainfall Record Detected...")
+    arcpy.AddMessage("-------------------------")
+    max_30min_rainfall_list = maxhalfhourrain.max_30min_rainfall(hourly_precipitation_textfile, model_start_date) 
 else:
-    max_30min_rainfall_list = []
+    arcpy.AddMessage("Daily Rainfall Record Detected...")
+    arcpy.AddMessage("-------------------------")
+    max_30min_rainfall_list = maxhalfhourrain.max_30min_rainfall_estimate_daily(daily_precipitation_textfile, model_start_date)
 
 # Create temporary locations to store numpy arrays on the computers hardrive
 arcpy.AddMessage("Temporary files will be located here " + str(numpy_array_location))
 arcpy.AddMessage("-------------------------")
 active_layer_GS_P_temp, active_layer_V_temp, inactive_layer_GS_P_temp, inactive_layer_V_temp = datapreparation.temporary_file_locations(numpy_array_location, GS_P_list, active_layer_GS_volumes, inactive_layer_GS_volumes)
 # Combine baseflow if provided
-precipitation_textfile, baseflow_provided = datapreparation.combined_precipitation(numpy_array_location, precipitation_textfile, baseflow_textfile)
+precipitation_textfile, baseflow_provided = datapreparation.combined_precipitation(numpy_array_location, daily_precipitation_textfile, baseflow_textfile)
 
 
 ### CONVERT LANDCOVER AND SOIL DATA TO CN2 NUMBERS, Mannings n and CUSLE (C factor) ### - CHECKED 12/11/14 NJ

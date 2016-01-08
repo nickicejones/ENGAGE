@@ -18,6 +18,9 @@ def delete_temp_files():
     for item in delete_list:
         if arcpy.Exists(item):
             arcpy.Delete_management(item)
+    if arcpy.Exists("MODEL_COMBINE_LC"):
+        arcpy.Delete_management("MODEL_Landcover_LCM")
+        arcpy.Delete_management("MODEL_LCM_shapefile")
    
     arcpy.AddMessage("Deleted temporary files")
     arcpy.AddMessage("-----------------------")

@@ -69,7 +69,7 @@ class SCSCNQsurf(object):
         start = time.time()
         
         # Old ArcGIS method but still used for the sediment transport aspect
-        DTM = Fill(DTM)
+        DTM_fill = Fill(DTM)
         flow_direction_raster = FlowDirection(DTM)
         arcpy.AddMessage("Flow direcion Calculated")
         arcpy.AddMessage("-------------------------")
@@ -78,13 +78,15 @@ class SCSCNQsurf(object):
         arcpy.AddMessage("-------------------------")
 
         # Convert fill, slope, flow direction to numpy array
-        DTM = arcpy.RasterToNumPyArray(DTM,'#','#','#', -9999)
-        slope = arcpy.RasterToNumPyArray(slope, '#','#','#', -9999)
+        DTM_np = arcpy.RasterToNumPyArray(DTM,'#','#','#', -9999)
+        slope_np = arcpy.RasterToNumPyArray(slope, '#','#','#', -9999)
         flow_direction_np = arcpy.RasterToNumPyArray(flow_direction_raster, '#','#','#', -9999)
+        arcpy.Delete_management(slope)
+        arcpy.Delete_management(DTM_fill)
 
-        np.radians(slope)
-        np.tan(slope)
-        slope[slope == 0] = 0.0001
+        np.radians(slope_np)
+        np.tan(slope_np)
+        slope_np[slope_np == 0] = 0.0001
 
         
         # Calculate flow accumulation
@@ -95,7 +97,7 @@ class SCSCNQsurf(object):
         arcpy.AddMessage("Calculating took " + str(round(time.time() - start,2)) + "s.")
         arcpy.AddMessage("-------------------------")
         
-        return slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation
+        return slope_np, DTM_np, flow_direction_np, flow_direction_raster, flow_accumulation
 
     # Function to convert the slope from a degrees to a fraction
     def calculate_slope_fraction_flow_direction_dinf(self, DTM, numpy_array_location):   
@@ -269,6 +271,8 @@ class SCSCNQsurf(object):
         arcpy.AddMessage("Calculating Qsurf old (Evapotranspiration not included) " + str(round(time.time() - start,2)) + "s.")
         arcpy.AddMessage("-------------------------")  
 
+        del Scurr_threshold, Scurr
+
         return Q_surf
           
     # Method to caluclate the retention parameter - correct checked 08/07/14
@@ -409,17 +413,25 @@ class SCSCNQsurf(object):
 
         # Calculate the baseflow
         baseflow_raster = (flow_accumulation / max_flow_accumulation) * baseflow
+
+        del max_flow_accumulation
  
         return baseflow_raster
 
 
-    def average_half_hour_rainfall(self, years_of_sim, day_pcp_month, day_avg_pcp, max_30min_rainfall_list, adjustment_factor, index, first_loop):
+    def average_half_hour_rainfall(self, years_of_sim, day_pcp_month, day_avg_pcp, max_30min_rainfall_list, adjustment_factor, index):
+        
+        # Catch statement incase person is simulating less than 1 month
+        if len(max_30min_rainfall_list) < 3:
+            R_smooth = max_30min_rainfall_list[index]
 
-        if first_loop == True:
-            R_smooth = (max_30min_rainfall_list[index] + max_30min_rainfall_list[index + 1]) / 2
+        # Catch statement for everything else
+        else:
+            if index == 0:
+                R_smooth = (max_30min_rainfall_list[index] + max_30min_rainfall_list[index + 1]) / 2
 
-        if first_loop == False:
-            R_smooth = max_30min_rainfall_list[index - 1] + max_30min_rainfall_list[index] + max_30min_rainfall_list[index + 1] / 3
+            if index != 0:
+                R_smooth = max_30min_rainfall_list[index - 1] + max_30min_rainfall_list[index] + max_30min_rainfall_list[index + 1] / 3
 
         average_half_hour_rainfall_fraction = adjustment_factor * (1 - math.exp(R_smooth / (day_avg_pcp * math.log((0.5 / (years_of_sim * day_pcp_month))))))
 
