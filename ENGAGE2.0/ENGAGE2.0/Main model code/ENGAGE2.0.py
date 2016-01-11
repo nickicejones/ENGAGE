@@ -123,9 +123,12 @@ except LicenseError:
     arcpy.AddMessage("Spatial Analyst license is unavailable, the model requires Spatial Analyst to operate")
     arcpy.AddMessage("-------------------------")
 
+
+'''### MODEL INPUTS - For StandAlone testing ###
+# Set Environmental Workspace
 # Set a location to store the numpy array in a physical form
 #numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp') # Issues with this part of the model - temporary fix to get the user to select folder location
-numpy_array_location = arcpy.GetParameterAsText(0)
+numpy_array_location = r'C:\Users\nickj\Desktop\Example Catchment Safe Testing\49003 - De Lank at De Lank\Other Materials'
 
 # Create scratch geodatabase in the same temporary location
 # Execute CreateFileGDB
@@ -133,30 +136,34 @@ numpy_array_location = arcpy.GetParameterAsText(0)
 #arcpy.env.scratchWorkspace = str(numpy_array_location) + "\temp.gdb"
 #arcpy.AddMessage("Scratch workspace created in " + str(numpy_array_location))
 
-'''### MODEL INPUTS - For StandAlone testing ###
 # Set Environmental Workspace
-arcpy.env.workspace =  r"D:\Soil depth test\New File Geodatabase.gdb" #r"D:\EngageTesting\SmallCatchment_1.gdb" # r"D:\SmallTesting\New File Geodatabase.gdb" r"D:\EngageTesting\SmallCatchment_1.gdb
+arcpy.env.workspace =  r"C:\Users\nickj\Desktop\Example Catchment Safe Testing\49003 - De Lank at De Lank\Other Materials\Processed_data_Test_2.gdb"
 
 # Textfile with precipitation on each line and textfile with the baseflow on each line
-precipitation_textfile = '#' #r"D:\Boydd at Bitton\rainfall.txt"
-precipitation_hour_textfile = r"D:\Boydd at Bitton\rainfall_hour.txt" #r"D:\EngageTesting\rainfall_hour.txt" #  # Going to have to work out the best way to do this! - maybe do the same option as with SWAT
-baseflow_textfile = '#' #r"D:\Boydd at Bitton\Baseflow.txt"
+precipitation_textfile = r'C:\Users\nickj\Desktop\Example Catchment Safe Testing\49003 - De Lank at De Lank\Rainfall Gauge\Jan 2012 Rainfall.txt'
+hourly_precipitation = False
+baseflow_textfile = r'C:\Users\nickj\Desktop\Example Catchment Safe Testing\49003 - De Lank at De Lank\Discharge Gauge (Baseflow)\Discharge Jan 2012.txt'
 
 # Check if the user has provided daily rainfall or only hourly.
-if precipitation_textfile and precipitation_textfile == '#':
-    precipitation_textfile = calculate_daily_precipitation.convert_precipitation(precipitation_hour_textfile)
+if hourly_precipitation == True:
+    hourly_precipitation_textfile = precipitation_textfile
+    daily_precipitation_textfile = calculate_daily_precipitation.convert_precipitation(precipitation_textfile)    
+
+else:
+    daily_precipitation_textfile = precipitation_textfile
 
 # Date of starting model operation
-model_start_date = "01/09/1998"
+model_start_date = "01/01/2012"
 # Region for the evapotranspiration calculations
-region = "Midlands"
+region = "England SW/ Wales S"
 
 # Ask the user for the elevation of the precipiation guage (if they would like to use spatial precipitation)
-precipitation_gauge_elevation = float("100.1")      # Optional
+precipitation_gauge_elevation = float("221")      # Optional
 
 # Selection of what the model calculates
-calculate_sediment_erosion_hillslope = True
 calculate_sediment_transport = True
+calculate_sediment_erosion_hillslope = False
+
 
 # Select the outputs and frequency
 output_surface_runoff = "Daily"                # Surface Runoff
@@ -165,7 +172,7 @@ output_water_depth = "No output"                    # Depth
 output_spatial_precipitation = "No output"          # Spatial Precipitation 
 output_sediment_depth = "No output"                # Sediment Depth
 output_net_sediment_transport = "No output"         # Total erosion / depostion in each cell
-output_format = "Daily average"                      # Average or total for the above
+output_format = "Total"                      # Average or total for the above
 
 # This is a output that is saved at the pour point (mouth of the river)
 output_excel_discharge = '#' # r"D:\Boydd at Bitton"
@@ -175,6 +182,10 @@ output_excel_sediment = '#' # r"D:\Boydd at Bitton"
 use_dinfinity = False'''
 
 ### MODEL INPUTS - For ArcGIS 10.1 ###
+# Set a location to store the numpy array in a physical form
+#numpy_array_location = tempfile.mkdtemp(suffix='numpy', prefix='tmp') # Issues with this part of the model - temporary fix to get the user to select folder location
+numpy_array_location = arcpy.GetParameterAsText(0)
+
 # Set Environmental Workspace
 arcpy.env.workspace = arcpy.GetParameterAsText(1) 
 

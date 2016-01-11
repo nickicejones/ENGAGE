@@ -207,10 +207,9 @@ class model_loop(object):
                 Q_dis += baseflow_raster
                 arcpy.Delete_management(baseflow_raster)
                                                 
-            Q_dis_np = arcpy.RasterToNumPyArray(Q_dis, '#','#','#', -9999)
-            arcpy.Delete_management(Q_dis)
-
-            Q_max = np.amax(Q_dis_np)
+            Q_dis = arcpy.RasterToNumPyArray(Q_dis, '#','#','#', -9999)
+            
+            Q_max = np.amax(Q_dis)
             arcpy.AddMessage("Discharge at the outlet for today is " + str(Q_max))
             arcpy.AddMessage(" ") 
 
@@ -238,7 +237,7 @@ class model_loop(object):
                 if sufficient_discharge_calculate_erosion == True:
                     arcpy.AddMessage("Sufficient Discharge for Erosion Calculation to Begin")
                           
-                    # Calculate d50, d84, Fs
+                    '''# Calculate d50, d84, Fs
                     d50, d84, Fs, active_layer_GS_P_list = sediment.sedimenttransport().d50_d84_Fs_grain(GS_list, active_layer_GS_P_temp)
                                             
                     # Calculate depth using the recking parameters and the indexs of the cells with a depth greater than the threshold (cell_size / 1000)
@@ -260,15 +259,18 @@ class model_loop(object):
                     del d50, d84, Fs, active_layer_GS_P_list
                     collected = gc.collect()
                     arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
-                    daily_save_date = str(self.current_date.strftime('%d_%m_%Y'))
+                    
             
                     # Check if sediment transport needs to be calculated based on the depth of water
-                    calculate_sediment_transport_based_on_depth = np.any(depth_recking > self.depth_recking_threshold)
-                
+                    calculate_sediment_transport_based_on_depth = np.any(depth_recking > self.depth_recking_threshold)'''
+
+                    calculate_sediment_transport_based_on_depth = True
+                    daily_save_date = str(self.current_date.strftime('%d_%m_%Y'))
+
                     if calculate_sediment_transport_based_on_depth == True:   
                         arcpy.AddMessage("Sufficient depth to calculate sediment transport")      
                         # Calculate sediment transport for each timestep based on the above calculation 
-                        inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow, net_sediment = sediment.sedimenttransport().sediment_loop(sediment_time_step_seconds, GS_list, 
+                        inactive_layer, DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow, net_sediment, depth_recking = sediment.sedimenttransport().sediment_loop(GS_list, 
                                                                                                                                    Q_dis, slope,
                                                                                                                                    self.cell_size, flow_direction_np, 
                                                                                                                                    self.bottom_left_corner, daily_save_date, 
@@ -321,28 +323,30 @@ class model_loop(object):
                     # Calculate the monthly average half hour fraction
                     average_half_hour_fraction = hydrology.SCSCNQsurf().average_half_hour_rainfall(years_of_sim, day_pcp_month, 
                                                                                     day_avg_pcp, max_30min_rainfall_list, 
-                                                                                    adjustment_factor, self.index, self.index)
-                    print average_half_hour_fraction
-
+                                                                                    adjustment_factor, self.index)
+                    
+                    # Calculate Concetration Overland Flow
                     concentration_overland_flow = hydrology.SCSCNQsurf().time_concentration(depth_recking, flow_direction_raster, slope, mannings_n, self.cell_size)
-
-                    print concentration_overland_flow
-
+                       
+                    # Calculate Q peak and hru area                 
                     q_peak, hru_area = hydrology.SCSCNQsurf().peak_flow(depth_recking, Q_surf_np, concentration_overland_flow, flow_accumulation, average_half_hour_fraction, self.cell_size)
-
-                    print q_peak
-
+                           
+                    # Calculate sediment erosion using MULSE             
                     hillslope_sediment_erosion = MUSLE.hillslope_erosion_MUSLE(slope, self.cell_size, GS_list, active_layer_GS_P_temp).calculate_MUSLE(Q_surf_np, q_peak, orgC, CULSE)
 
 
                 else:
+                    hillslope_sediment_erosion = 0
                     arcpy.AddMessage("-------------------------") 
                     arcpy.AddMessage("Insufficient surface runoff hillslope erosion will not be calculated")
                     arcpy.AddMessage("-------------------------") 
 
+            else:
+                hillslope_sediment_erosion = 0
+
             
             ### Check  what needs to be output from the model ###
-            self.week_day, self.month_day, self.year_day = rasterstonumpys.raster_outputs(self.week_day, self.month_day, self.year_day, self.current_date, self.first_loop, output_file_dict, output_format, output_averages_temp, self.bottom_left_corner, self.cell_size, Q_surf_np, Q_dis_np, depth_recking, precipitation, sediment_depth, net_sediment)
+            self.week_day, self.month_day, self.year_day = rasterstonumpys.raster_outputs(self.week_day, self.month_day, self.year_day, self.current_date, self.first_loop, output_file_dict, output_format, output_averages_temp, self.bottom_left_corner, self.cell_size, Q_surf_np, Q_dis, depth_recking, precipitation, hillslope_sediment_erosion, net_sediment)
         
                 
             ### VARIABLES / PARAMETERS THAT CHANGE AT END OF LOOP ###
@@ -363,7 +367,7 @@ class model_loop(object):
             self.day_of_year += 1
             arcpy.AddMessage("Time to complete today is " + str(round(time.time() - start,2)) + "s. Note that on day 1 and every 30 days the timestep will take longer.")
             arcpy.AddMessage("-------------------------") 
-            del Q_dis_np, Q_surf_np, precipitation, Scurr
+            del Q_dis, Q_surf_np, precipitation, Scurr
             gc.collect()
 
 

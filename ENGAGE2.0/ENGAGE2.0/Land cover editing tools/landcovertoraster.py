@@ -1,4 +1,4 @@
-# Import the required modules
+﻿# Import the required modules
 import arcpy
 
 # Set the environmental workspace
@@ -37,5 +37,5 @@ elif arcpy.Exists("MODEL_SPS_shapefile"):
     land_cover_type = 'COMBINE'
     arcpy.AddMessage("Natural England SPS and LCM 2007 combined land cover data detected")
     arcpy.AddMessage("-------------------------")
-    land_cover_raster = arcpy.FeatureToRaster_conversion(land_cover, "grid_code", "MODEL_COMBINE_LC_Altered", cell_size)
+    land_cover_raster = arcpy.FeatureToRaster_conversion(land_cover, "gridcode", "MODEL_COMBINE_LC_Altered", cell_size)
     arcpy.AddMessage("Land cover converted to raster")

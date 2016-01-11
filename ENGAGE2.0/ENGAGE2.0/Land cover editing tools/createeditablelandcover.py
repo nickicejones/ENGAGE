@@ -1,11 +1,18 @@
-# Import the required modules
+﻿# Import the required modules
 import arcpy
+from arcpy import env
+
+# Set the environmental workspace
+arcpy.env.workspace = arcpy.GetParameterAsText(0)
 
 # Overwrite pre-existing files
 arcpy.env.overwriteOutput = True
 
-# Set the environmental workspace
-arcpy.env.workspace = arcpy.GetParameterAsText(0)
+# get the map document
+mxd = arcpy.mapping.MapDocument("CURRENT")
+
+# get the data frame
+df = arcpy.mapping.ListDataFrames(mxd,"*")[0]
 
 if arcpy.Exists("MODEL_Landcover_LCM"):
     land_cover = "MODEL_Landcover_LCM"
@@ -35,7 +42,14 @@ elif land_cover_type == "CORINE 2006":
 
 elif land_cover_type == 'COMBINE':
     land_cover = "MODEL_COMBINE_LC"
-    land_cover_shapefile = arcpy.RasterToPolygon_conversion(land_cover, "MODEL_SPS_shapefile", "NO_SIMPLIFY")
+    land_cover_shapefile = arcpy.RasterToPolygon_conversion(land_cover, "MODEL_COMBINE_shapefile", "NO_SIMPLIFY")
+    land_cover_shapefile = "MODEL_COMBINE_shapefile"
     arcpy.AddMessage("Land cover converted to shapefile for editing")
+
+# create a new layer
+newlayer = arcpy.mapping.Layer(land_cover_shapefile)
+
+# add the layer to the map at the bottom of the TOC in data frame 0
+arcpy.mapping.AddLayer(df, newlayer, "TOP")
 
 arcpy.AddMessage("You can now find the shapefile of the landcover in your workspace ready for editing")
