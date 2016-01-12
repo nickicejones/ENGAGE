@@ -84,6 +84,7 @@ import numpy as np
 import tempfile
 import time
 import gc
+from itertools import izip
 
 ### Import Script Files NJ created ###
 import datapreparation
@@ -287,6 +288,7 @@ gc.collect()
 active_layer, inactive_layer = datapreparation.calculate_active_layer(soil_depth, cell_size) 
 # Active /  Inactive layer volumes for each grainsize
 active_layer_GS_volumes, inactive_layer_GS_volumes = datapreparation.get_grain_volumes(GS_P_list, active_layer, inactive_layer) 
+
 # Calculating the number of days precipitation in the catchment per year
 day_pcp_yr, years_of_sim, total_day_month_precip, total_avg_month_precip = datapreparation.average_days_rainfall(model_start_date, daily_precipitation_textfile)
 
@@ -331,7 +333,6 @@ list_of_numpys = [active_layer, inactive_layer, CN2_d, DTM_np, CULSE, soil_depth
 list_of_numpys_strings = ["active_layer", "inactive_layer", "CN2_d", "DTM", "CULSE", "soil_depth"]
 rasterstonumpys.numpystocsv(list_of_numpys, list_of_numpys_strings) '''
 
-
 ### MAIN MODEL CODE ###
 arcpy.AddMessage("Model initiated")
  
@@ -347,3 +348,16 @@ modelloop.model_loop(model_start_date, cell_size, bottom_left_corner,
                                                                           output_file_dict, output_format, 
                                                                           output_excel_discharge, output_excel_sediment, output_averages_temp)
                                                                                            
+'''grain_counter = 1
+
+# Check active layer depths
+for GS_P_temp, GS_V_temp in izip(active_layer_GS_P_temp, active_layer_V_temp):
+    GS_P = np.load(GS_P_temp)
+    GS_V = np.load(GS_V_temp)
+    arcpy.AddMessage("Loaded grain volume") 
+    # Save the rasters of GP, GS_V
+    raster = arcpy.NumPyArrayToRaster(GS_P, bottom_left_corner, cell_size, cell_size, -9999)
+    raster.save("GS_P" + "_" + str(grain_counter))  
+    raster = arcpy.NumPyArrayToRaster(GS_V, bottom_left_corner, cell_size, cell_size, -9999)
+    raster.save("GS_V" + "_" + str(grain_counter)) 
+    grain_counter += 1'''

@@ -277,8 +277,16 @@ class sedimenttransport(object):
                                                            active_layer_GS_P_temp, active_layer_V_temp, 
                                                            inactive_layer_GS_P_temp, inactive_layer_V_temp, inactive_layer,
                                                            DTM, DTM_MINUS_AL_IAL, depth_recking_threshold):
-                
-        def sediment_entrainment_calculation(slope, depth_recking, Fs, d50, GS, GS_P, GS_V, cell_size, sediment_time_step_seconds):
+        # NJ checked 12/01/2016 - happy it is calculating expected        
+        def sediment_entrainment_calculation(slope, Q_dis, depth_recking, Fs, d50, GS, GS_P, GS_V, cell_size, sediment_time_step_seconds, save_date):
+
+            # Save the rasters of GP, GS_V
+            raster = arcpy.NumPyArrayToRaster(GS_P, bottom_left_corner, cell_size, cell_size, -9999)
+            raster.save("GS_P" + "_" + str(save_date))  
+            raster = arcpy.NumPyArrayToRaster(GS_V, bottom_left_corner, cell_size, cell_size, -9999)
+            raster.save("GS_V" + "_" + str(save_date))  
+            raster = arcpy.NumPyArrayToRaster(slope, bottom_left_corner, cell_size, cell_size, -9999)
+            raster.save("slope" + "_" + str(save_date)) 
 
             # Create a series of empty arrays
             Q_max = 0
@@ -290,7 +298,7 @@ class sedimenttransport(object):
             ToverTri = np.zeros_like(slope, dtype = float) 
             Wi = np.zeros_like(slope, dtype = float) 
                         
-            B = (depth_recking > depth_recking_threshold)
+            B = (Q_dis > depth_recking_threshold)
              
             T[B] = slope[B] * depth_recking[B]
                                    
@@ -319,48 +327,55 @@ class sedimenttransport(object):
             Wi[C] = 14 * np.power(1 - (0.894 / np.power(ToverTri[C], 0.5)), 4.5)
             
             sediment_entrainment[B] = (Wi[B] * GS_P[B] * np.power(shear_vel[B], 3)) / ((2.65 - 1) * 9.81)
+            
+            raster = arcpy.NumPyArrayToRaster(sediment_entrainment, bottom_left_corner, cell_size, cell_size, -9999)
+            raster.save("sediment_out" + "_" + str(save_date))   
+
 
             # Convert sediment to width of channel by multiplying by the cell size
             # sediment_entrainment[B] = sediment_entrainment[B] * cell_size  # checked CAESAR do not multiply by cell size
             sediment_entrainment[B] *= sediment_time_step_seconds
+            raster = arcpy.NumPyArrayToRaster(sediment_entrainment, bottom_left_corner, cell_size, cell_size, -9999)
+            raster.save("sediment_out_timestep" + "_" + str(save_date))  
                        
             # Find out if any of the cells are greater than the availiable amount in the cell
             C = (sediment_entrainment > GS_V)
 
             # If true only transport the maximum amount in the cell
             sediment_entrainment[C] = GS_V[C]
-            
-            sediment_entrainment[slope == -9999] = -9999 # Ensure no data cells remain no data
-            
+
+            raster = arcpy.NumPyArrayToRaster(sediment_entrainment, bottom_left_corner, cell_size, cell_size, -9999)
+            raster.save("sediment_out_avail" + "_" + str(save_date))  
+                        
             # Add a check to see if the cell is trying to erode to much
             max_erosion = np.ones_like(slope, dtype = float) 
             max_erosion_value = 0.0057 * cell_size * cell_size # in m3
             max_erosion *= max_erosion_value
             
-            C = (sediment_entrainment > max_erosion)
-            sediment_entrainment[C] = max_erosion[C]
-
+            D = (sediment_entrainment > max_erosion)
+            sediment_entrainment[D] = max_erosion[D]
+                        
             Q_max = np.amax(sediment_entrainment)
-
-            del max_erosion, C, B, T, Trs50, Tri, shear_vel, ToverTri, Wi
-            gc.collect()
 
             return sediment_entrainment, Q_max
 
-        def move_sediment(depth_recking, sediment_entrainment_out, slope, flow_direction_np):
+        def move_sediment(Q_dis, sediment_entrainment_out, slope, flow_direction_np, save_date):
                         
-            depth_mask = np.zeros_like(depth_recking, dtype = float)
+            Q_dis_mask = np.zeros_like(Q_dis, dtype = float)
            
             # Get indices with great enough depth to intitate sediment transport
             # Check that the depth is great enough to intitate sediment transport in selected cells - might need changing though 
             # - this only gets the cells with great enough depth for sediment transport to occur and this will need to be recalcuclate for each timestep
-            np.putmask(depth_mask, depth_recking > depth_recking_threshold, depth_recking)
+            np.putmask(Q_dis_mask, Q_dis > depth_recking_threshold, Q_dis)
+
+            raster = arcpy.NumPyArrayToRaster(Q_dis_mask, bottom_left_corner, cell_size, cell_size, -9999)
+            raster.save("Q_dis_mask" + "_" + str(save_date)) 
       
             # Get the indices where the sediment transport is greater than 0 
-            sort_idx = np.flatnonzero(depth_mask)
+            sort_idx = np.flatnonzero(Q_dis_mask)
 
             # Now return those indices as a list
-            new_idx = zip(*np.unravel_index(sort_idx[::-1], depth_recking.shape))
+            new_idx = zip(*np.unravel_index(sort_idx[::-1], Q_dis.shape))
 
             # Get the rows and columns of the slope file
             nrows, ncols = slope.shape
@@ -399,9 +414,9 @@ class sedimenttransport(object):
                         
         net_sediment = np.zeros_like(slope, dtype = float)
 
-        sediment_time_step_seconds = 1
+        sediment_time_step_seconds = 2
         counter_transport = 1
-        total_time = 0.0
+        total_time = 86399 # current time
         layer_height = 0.2 # metres - need to convert to volume at some point
         
         
@@ -415,30 +430,49 @@ class sedimenttransport(object):
 
             # Calcualte the depth recking and index of active cells in this timestep
             depth_recking = self.depth_recking(Q_dis, slope, d84, cell_size)
+
+
             
             # Iterate through the grain sizes and proportions calculating the transport
             for GS, GS_P, GS_V_temp in izip(GS_list, active_layer_GS_P, active_layer_V_temp):
-                                
+
+                save_date = str(int(total_time)) + "_" + str(counter_transport)       
+                         
                 GS_V = np.load(GS_V_temp)
                 arcpy.AddMessage("Loaded grain volume")                
                                       
                 # Calculate sediment transport out for that grainsize              
-                sediment_entrainment_out, Q_max = sediment_entrainment_calculation(slope, depth_recking, Fs, d50, GS, GS_P, GS_V, cell_size, sediment_time_step_seconds)
+                sediment_entrainment_out, Q_max = sediment_entrainment_calculation(slope, Q_dis, depth_recking, Fs, d50, GS, GS_P, GS_V, cell_size, sediment_time_step_seconds, save_date)
+                sediment_entrainment_out[DTM == -9999] = -9999
+
+                # Save a raster for the amount of sediment being moved out
+                raster = arcpy.NumPyArrayToRaster(sediment_entrainment_out, bottom_left_corner, cell_size, cell_size, -9999)
+                raster.save("sediment_out_final" + "_" + str(save_date)) 
 
                 # Calculate Q_max for this timestep
-                Q_max_accumulation += Q_max                                                            
+                Q_max_accumulation += Q_max  
+                                                                         
                 arcpy.AddMessage("Calculated sediment transport for " + "_" + str(GS))
-                
-           
+                           
                 # Calculate sediment transport in for that grainsize
-                sediment_entrainment_in = move_sediment(depth_recking, sediment_entrainment_out, slope, flow_direction_np)
+                sediment_entrainment_in = move_sediment(Q_dis, sediment_entrainment_out, slope, flow_direction_np, save_date)
+                sediment_entrainment_in[DTM == -9999] = -9999
                 arcpy.AddMessage("Transported sediment for grain size " + "_" + str(GS))
                 
+                # Save a raster for the amount of sediment coming in
+                raster = arcpy.NumPyArrayToRaster(sediment_entrainment_in, bottom_left_corner, cell_size, cell_size, -9999)
+                raster.save("sediment_in_final" + "_" + str(save_date)) 
+
+
                 # Calculate the change in sediment volume
                 new_grain_volume = GS_V - sediment_entrainment_out + sediment_entrainment_in               
                 np.save(GS_V_temp, new_grain_volume)
                 arcpy.AddMessage("Calculated sediment transport for grain size " + str(counter_transport))
-                               
+
+                # Save a raster for the updated grain depth
+                raster = arcpy.NumPyArrayToRaster(new_grain_volume, bottom_left_corner, cell_size, cell_size, -9999)
+                raster.save("Updated_grain_volume" + "_" + str(save_date)) 
+                             
                 # Update the total volume
                 total_volume += new_grain_volume
 
@@ -450,25 +484,23 @@ class sedimenttransport(object):
                 # Keep track of the total sediment being moved
                 net_sediment += sediment_entrainment_in
                 net_sediment -= sediment_entrainment_out
-                net_sediment[DTM == -9999] = -9999       
+                net_sediment[DTM == -9999] = -9999  
+                
+                # Save a raster for the net sediment that is a running total which changes as the model progresses.
+                raster = arcpy.NumPyArrayToRaster(net_sediment, bottom_left_corner, cell_size, cell_size, -9999)
+                raster.save("net_sediment_running" + "_" + str(save_date))      
                         
-                '''# Bit for checking the sediment part of the model is working correctly
+                # Bit for checking the sediment part of the model is working correctly
                 # Get rid of nodata cells
-                net_single_sediment = np.zeros_like(net_sediment, dtype = float)
+                net_single_sediment = np.zeros_like(slope, dtype = float)
                 net_single_sediment += sediment_entrainment_in 
                 net_single_sediment -= sediment_entrainment_out
-
-                #net_single_sediment[DTM == -9999] = -9999
+                net_single_sediment[DTM == -9999] = -9999
                 
-                sediment_entrainment_in[DTM == -9999] = -9999
-                sediment_entrainment_out[DTM == -9999] = -9999
-
-                ### Save layers this is for testing only ###
-                save_date = str(int(total_time)) + "_" + str(counter_transport)
-                list_of_numpys = {"sediment_entrainment_out": sediment_entrainment_out, "sediment_entrainment_in": sediment_entrainment_in, "net_sediment":net_sediment, "net_single_sediment":net_single_sediment}
-                rasterstonumpys.convert_numpy_to_raster_dict(list_of_numpys, bottom_left_corner, cell_size, save_date)'''
-            
-
+                # Save a raster for the net sediment for each individual layer.
+                raster = arcpy.NumPyArrayToRaster(net_single_sediment, bottom_left_corner, cell_size, cell_size, -9999)
+                raster.save("net_sediment_single" + "_" + str(save_date))      
+                      
 
             # Collect garbage
             del d50, d84, Fs, sediment_entrainment_out, sediment_entrainment_in, new_grain_volume
@@ -481,8 +513,7 @@ class sedimenttransport(object):
             for GS_P_temp, GS_V_temp in izip(active_layer_GS_P_temp, active_layer_V_temp):
                 GS_V = np.load(GS_V_temp)                               
                 GS_P = GS_V / total_volume
-                
-                
+               
 
                 arcpy.AddMessage("Calculated new proportion for grainsize " + str(counter_proportion)) 
                 
@@ -525,7 +556,7 @@ class sedimenttransport(object):
             arcpy.AddMessage("The timestep based on these calculations should be " + str(sediment_time_step_seconds) + " seconds")  
 
             if sediment_time_step_seconds < 450:
-                sediment_time_step_seconds = 450 # This is the value that can be edited.
+                sediment_time_step_seconds = 86399 # This is the value that can be edited.
 
             ### Check if elevations need to be recalculated ###
             DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = elevation_adjustment.update_DTM_elevations(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size)
@@ -533,9 +564,9 @@ class sedimenttransport(object):
             inactive_layer *= (cell_size*cell_size)
             active_layer *= (cell_size*cell_size)
 
-            '''### Save layers this is for testing only ###
+            ### Save layers this is for testing only ###
             save_date = int(total_time)
-            list_of_numpys = {"active_layer": active_layer, "inactive_layer": inactive_layer}
+            '''list_of_numpys = {"active_layer": active_layer, "inactive_layer": inactive_layer}
             rasterstonumpys.convert_numpy_to_raster_dict(list_of_numpys, bottom_left_corner, cell_size, save_date)'''
         
 
