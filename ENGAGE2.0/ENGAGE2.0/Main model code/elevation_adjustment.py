@@ -51,5 +51,9 @@ def update_DTM_elevations(DTM_previous, DTM_MINUS_AL_IAL, active_layer, inactive
 
     else:
         recalculate_slope_flow = False
+
+    # Convert active and inactive back to volumes by multiplying by the cell size
+    inactive_layer *= (cell_size*cell_size)
+    active_layer *= (cell_size*cell_size)
         
     return DTM_current, DTM_MINUS_AL_IAL, recalculate_slope_flow
