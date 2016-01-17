@@ -331,10 +331,7 @@ class sedimenttransport(object):
             Wi[C] = 14 * np.power(1 - (0.894 / np.power(ToverTri[C], 0.5)), 4.5)
             
             sediment_entrainment[B] = (Wi[B] * GS_P[B] * np.power(shear_vel[B], 3)) / ((2.65 - 1) * 9.81)
-            
-            # Check what is the most sediment being entrained at that grainsize
-            Q_max = np.amax(sediment_entrainment)
-            
+                                               
             '''
             # Save raw sediment entrainment
             raster = arcpy.NumPyArrayToRaster(sediment_entrainment, bottom_left_corner, cell_size, cell_size, -9999)
@@ -370,6 +367,9 @@ class sedimenttransport(object):
             # If any of the cells are trying to erode too much limit the cells erosion
             D = (sediment_entrainment > max_erosion)
             sediment_entrainment[D] = max_erosion[D]
+
+            # Check what is the most sediment being entrained at that grainsize
+            Q_max = np.amax(sediment_entrainment)
                         
             return sediment_entrainment, Q_max
 
@@ -468,6 +468,8 @@ class sedimenttransport(object):
 
                 # Calculate Q_max for this timestep
                 Q_max_accumulation += Q_max
+
+                arcpy.AddMessage("Q_max accumulation is " + str(Q_max_accumulation))
 
                 '''
                 if counter_transport == 1 and loop_counter <= 50:
@@ -592,12 +594,11 @@ class sedimenttransport(object):
 
             
             if sediment_time_step_seconds < 450:
-                sediment_time_step_seconds = 450 # This is the value that can be edited.
+                sediment_time_step_seconds = 864 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
             
 
 
             
-
             ### Check if elevations need to be recalculated ###
             #DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = elevation_adjustment.update_DTM_elevations(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size)
             
