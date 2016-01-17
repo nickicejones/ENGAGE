@@ -594,7 +594,7 @@ class sedimenttransport(object):
 
             
             if sediment_time_step_seconds < 450:
-                sediment_time_step_seconds = 864 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
+                sediment_time_step_seconds = 1728 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
             
 
 
