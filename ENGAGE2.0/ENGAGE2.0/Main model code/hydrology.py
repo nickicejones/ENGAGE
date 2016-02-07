@@ -10,10 +10,15 @@ import sys
 import numbers
 import numpy as np
 from arcpy.sa import *
+import masswasting
 
 # Create a Hydrology class to store all the calculations required to calculate
 # daily hydrology.
 class SCSCNQsurf(object):
+
+    def __init__(self, bottom_left_corner, cell_size):
+        self.bottom_left_corner = bottom_left_corner
+        self.cell_size = cell_size
 
     def check_baseflow(self, precipitation, baseflow_provided):
         if baseflow_provided == True: 
@@ -44,60 +49,57 @@ class SCSCNQsurf(object):
             
         return precipitation, baseflow
 
+    # Function to check what method are we using to calculate the flow directions in the model
     def check_slope_flow_directions(self, first_loop, use_dinfinity, day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location):
-                 
-        arcpy.AddMessage("Recalculating elevation, slope and flow directions")
-        arcpy.AddMessage("-------------------------") 
-        if use_dinfinity == True:
-            slope, DTM, flow_direction_np, flow_direction_raster, ang = SCSCNQsurf().calculate_slope_fraction_flow_direction_dinf(DTM, numpy_array_location)
-            flow_accumulation = 0
 
+        # Check to see if we want to use dinfinity        
+        if use_dinfinity == True:
+            slope, DTM, flow_direction_np, flow_direction_raster, ang = self.calculate_slope_fraction_flow_direction_dinf(DTM, numpy_array_location)
+            flow_accumulation = 0
+        
+        # Otherwise we will use D8    
         else:
             ang = 0
-            slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation = SCSCNQsurf().calculate_slope_fraction_flow_direction_d8(DTM, baseflow_provided)
+            slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation = self.calculate_slope_fraction_flow_direction_d8(DTM, baseflow_provided)
                                  
         arcpy.AddMessage("New elevation, slope and flow directions calculated")
         arcpy.AddMessage("-------------------------") 
 
         # Calculate CN1_numbers and CN3_numbers adjusted for antecedent conditions
-        CN2s_d, CN1s_d, CN3s_d = SCSCNQsurf().combineSCSCN(CN2_d, slope)      
+        CN2s_d, CN1s_d, CN3s_d = self.combineSCSCN(CN2_d, slope)      
                             
         return slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang  
             
     # Function to convert the slope from a degrees to a fraction d8 methodology
-    def calculate_slope_fraction_flow_direction_d8(self, DTM, baseflow_provided):   
+    def calculate_slope_fraction_flow_direction_d8(self, DTM, baseflow_provided):  
+
+        # Start the timer 
         start = time.time()
         
         # Old ArcGIS method but still used for the sediment transport aspect
         DTM_fill = Fill(DTM)
-        flow_direction_raster = FlowDirection(DTM)
+        flow_direction_raster = FlowDirection(DTM_fill)
         arcpy.AddMessage("Flow direcion Calculated")
         arcpy.AddMessage("-------------------------")
-        slope = Slope(DTM, "DEGREE")
-        arcpy.AddMessage("Slope calculated")
-        arcpy.AddMessage("-------------------------")
-
+                      
+        # Calculate slope using the steepest decent method this returns slope as a fraction rather than degrees or radians
+        slope = masswasting.masswasting_sediment().calculate_slope_fraction_raster_in(DTM_fill, self.bottom_left_corner, self.cell_size)
+                          
         # Convert fill, slope, flow direction to numpy array
-        DTM_np = arcpy.RasterToNumPyArray(DTM,'#','#','#', -9999)
-        slope_np = arcpy.RasterToNumPyArray(slope, '#','#','#', -9999)
-        flow_direction_np = arcpy.RasterToNumPyArray(flow_direction_raster, '#','#','#', -9999)
-        arcpy.Delete_management(slope)
+        DTM = arcpy.RasterToNumPyArray(DTM_fill, '#', '#', '#', -9999)        
+        flow_direction_np = arcpy.RasterToNumPyArray(flow_direction_raster, '#','#','#', -9999)        
         arcpy.Delete_management(DTM_fill)
-
-        np.radians(slope_np)
-        np.tan(slope_np)
-        slope_np[slope_np == 0] = 0.0001
-
-        
+                              
         # Calculate flow accumulation
         flow_accumulation = FlowAccumulation(flow_direction_raster)
         arcpy.AddMessage("Calculated flow accumulation")
         arcpy.AddMessage("-------------------------") 
 
+        # Check how the long the whole process took
         arcpy.AddMessage("Calculating took " + str(round(time.time() - start,2)) + "s.")
         arcpy.AddMessage("-------------------------")
         
-        return slope_np, DTM_np, flow_direction_np, flow_direction_raster, flow_accumulation
+        return slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation
 
     # Function to convert the slope from a degrees to a fraction
     def calculate_slope_fraction_flow_direction_dinf(self, DTM, numpy_array_location):   

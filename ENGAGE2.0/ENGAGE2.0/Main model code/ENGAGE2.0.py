@@ -234,7 +234,6 @@ output_excel_sediment = arcpy.GetParameterAsText(18)
 # Use Dinfinity flow directions
 use_dinfinity = arcpy.GetParameterAsText(19)
 
-
 ### INTIATION OF MODEL ###
 # Create a dict of the output rasters
 output_file_dict = datapreparation.output_raster_types(output_surface_runoff, 

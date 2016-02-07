@@ -68,6 +68,8 @@ advanced_superficial_deposit = arcpy.GetParameterAsText(10) # raster of superfic
 soil_parent_material_1 = arcpy.GetParameterAsText(11) 
 orgC = arcpy.GetParameterAsText(12)
 
+# Q50 exceedance which is used to determine which grainsizes are present in the channel
+Q50_exceedance = arcpy.GetParameterAsText(13)
 
 ### Start of data preparation ###
 # Prepare the DTM.
@@ -110,7 +112,7 @@ land_cover_clipped = landcover_prep.land_cover_clip_analysis(land_cover, Land_co
 soil_clipped = soil_hydro_prep.soil_clip_analysis(soil_BNG, Soil_type, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent)
 
 # Calculate the distribuiton of grain sizes across the catchment
-soil_grain_calculation = grain_size_proportion.grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent, bottom_left_corner)
+soil_grain_calculation = grain_size_proportion.grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent, bottom_left_corner, Q50_exceedance)
 
 # Calculate the distribution of soil depth across the river catchment
 soil_depth_calculation = soil_depth_prep.soil_depth_calc(soil_parent_material_1, advanced_superficial_deposit, DTM_clip_np, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_BNG, catch_extent, bottom_left_corner)

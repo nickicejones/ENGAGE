@@ -436,6 +436,7 @@ class sedimenttransport(object):
         total_time = 0 # current time
         layer_height = 0.2 # metres - need to convert to volume at some point
         loop_counter = 0
+        save_date = '0'
         
         while total_time < 86400:
             loop_counter += 1
@@ -446,9 +447,13 @@ class sedimenttransport(object):
             # Calculate the d50, d84, Fs for this timestep
             d50, d84, Fs, active_layer_GS_P = self.d50_d84_Fs_grain(GS_list, active_layer_GS_P_temp)
 
+            # If this is not the first loop then slope needs to be recalculated for the cells
+            if loop_counter > 1 and loop_counter % 10 == 0:
+                slope = masswasting.masswasting_sediment().calculate_slope_fraction(DTM, bottom_left_corner, cell_size, save_date)
+                slope[flow_direction_np == -9999] = -9999
             # Calcualte the depth recking and index of active cells in this timestep
             depth_recking = self.depth_recking(Q_dis, slope, d84, cell_size)
-
+            
                         
             # Iterate through the grain sizes and proportions calculating the transport
             for GS, GS_P, GS_V_temp in izip(GS_list, active_layer_GS_P, active_layer_V_temp):
@@ -459,7 +464,7 @@ class sedimenttransport(object):
                                       
                 # Calculate sediment transport out for that grainsize              
                 sediment_entrainment_out, Q_max = sediment_entrainment_calculation(slope, Q_dis, depth_recking, Fs, d50, GS, GS_P, GS_V, cell_size, sediment_time_step_seconds, save_date)
-                sediment_entrainment_out[DTM == -9999] = -9999
+                sediment_entrainment_out[flow_direction_np == -9999] = -9999
                 arcpy.AddMessage("Calculated sediment entrainment for " + "_" + str(GS))
 
                 # Don't use the sediment transport for GS one in the sediment time loop calculation
@@ -480,7 +485,7 @@ class sedimenttransport(object):
                                            
                 # Calculate sediment transport in for that grainsize
                 sediment_entrainment_in = move_sediment(Q_dis, sediment_entrainment_out, slope, flow_direction_np, save_date)
-                sediment_entrainment_in[DTM == -9999] = -9999
+                sediment_entrainment_in[flow_direction_np == -9999] = -9999
                 arcpy.AddMessage("Transported sediment for grain size " + "_" + str(GS))
                 
                 '''
@@ -515,7 +520,7 @@ class sedimenttransport(object):
                 # Keep track of the total sediment being moved
                 net_sediment += sediment_entrainment_in
                 net_sediment -= sediment_entrainment_out
-                net_sediment[DTM == -9999] = -9999 
+                net_sediment[flow_direction_np == -9999] = -9999 
                 
                 ''' 
                 
@@ -556,7 +561,7 @@ class sedimenttransport(object):
                 
                 # Check for nodata and nan values.
                 GS_P[total_volume == 0] = 0
-                GS_P[slope == -9999] = -9999 
+                GS_P[flow_direction_np == -9999] = -9999 
                 np.save(GS_P_temp, GS_P) 
                                 
                 del GS_V, GS_P
@@ -569,7 +574,7 @@ class sedimenttransport(object):
             collected = gc.collect()
             arcpy.AddMessage("Garbage collector: collected %d objects." % (collected))      
                 
-            total_volume[slope == -9999] = -9999   
+            total_volume[flow_direction_np == -9999] = -9999   
              
               
                         
@@ -594,18 +599,18 @@ class sedimenttransport(object):
 
             
             if sediment_time_step_seconds < 450:
-                sediment_time_step_seconds = 1728 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
+                sediment_time_step_seconds = 300 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
             
 
 
             
             ### Check if elevations need to be recalculated ###
-            #DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = elevation_adjustment.update_DTM_elevations(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size)
-            
-            
+            DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = elevation_adjustment.update_DTM_elevations(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size)
+            DTM[flow_direction_np == -9999] = -9999
+            DTM_MINUS_AL_IAL[flow_direction_np == -9999] = -9999
 
             ### Save layers this is for testing only ###
-            save_date = int(total_time)
+            #save_date = int(total_time)
             '''list_of_numpys = {"active_layer": active_layer, "inactive_layer": inactive_layer}
             rasterstonumpys.convert_numpy_to_raster_dict(list_of_numpys, bottom_left_corner, cell_size, save_date)'''
         
@@ -616,14 +621,14 @@ class sedimenttransport(object):
             arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
 
         ### SECTION TO CHECK IF MASS WASTING NEEDS TO TAKE PLACE ###       
-        '''DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow, active_layer, inactive_layer = masswasting.masswasting_sediment().masswasting_loop(DTM, DTM_MINUS_AL_IAL, 
+        DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow, active_layer, inactive_layer = masswasting.masswasting_sediment().masswasting_loop(DTM, DTM_MINUS_AL_IAL, 
                                                                                                                                           active_layer, inactive_layer,
                                                                                                                                           bottom_left_corner, cell_size,
                                                                                                                                           flow_direction_np,
                                                                                                                                         active_layer_GS_P_temp,
                                                                                                                                           active_layer_V_temp,
                                                                                                                                           inactive_layer_GS_P_temp, 
-                                                                                                                                          inactive_layer_V_temp, recalculate_slope_flow)'''
+                                                                                                                                          inactive_layer_V_temp, recalculate_slope_flow)
         
         recalculate_slope_flow = False     
         DTM = DTM  

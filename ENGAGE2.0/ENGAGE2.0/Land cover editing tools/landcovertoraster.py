@@ -21,7 +21,7 @@ if arcpy.Exists("MODEL_LCM_shapefile"):
     land_cover_type = 'LCM 2007'
     arcpy.AddMessage("LCM 2007 land cover data detected")
     arcpy.AddMessage("-------------------------")
-    land_cover_raster = arcpy.FeatureToRaster_conversion(land_cover, "grid_code", "MODEL_Landcover_LCM_Altered", cell_size)
+    land_cover_raster = arcpy.FeatureToRaster_conversion(land_cover, "gridcode", "MODEL_Landcover_LCM_Altered", cell_size)
     arcpy.AddMessage("Land cover converted to raster")
 
 elif arcpy.Exists("MODEL_CORINE_shapefile"):
@@ -29,11 +29,11 @@ elif arcpy.Exists("MODEL_CORINE_shapefile"):
     land_cover_type = 'CORINE 2006'
     arcpy.AddMessage("CORINE 2006 land cover data detected")
     arcpy.AddMessage("-------------------------")
-    land_cover_raster = arcpy.FeatureToRaster_conversion(land_cover, "grid_code", "MODEL_Landcover_CORINE_Altered", cell_size)
+    land_cover_raster = arcpy.FeatureToRaster_conversion(land_cover, "gridcode", "MODEL_Landcover_CORINE_Altered", cell_size)
     arcpy.AddMessage("Land cover converted to raster")
 
-elif arcpy.Exists("MODEL_SPS_shapefile"):
-    land_cover = "MODEL_SPS_shapefile"
+elif arcpy.Exists("MODEL_COMBINE_shapefile"):
+    land_cover = "MODEL_COMBINE_shapefile"
     land_cover_type = 'COMBINE'
     arcpy.AddMessage("Natural England SPS and LCM 2007 combined land cover data detected")
     arcpy.AddMessage("-------------------------")

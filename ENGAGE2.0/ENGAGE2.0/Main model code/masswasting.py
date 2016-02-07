@@ -28,18 +28,19 @@ import elevation_adjustment
 class masswasting_sediment(object):
 ### A function to calculate the lowest cell in a neighbour hood. This is using tanX = Opposite (Height difference) / Adjacent (Cell width) ###
     
-    def calculate_slope(self, DTM, bottom_left_corner,cell_size):
+    def calculate_slope_degrees(self, DTM, bottom_left_corner, cell_size, flow_direction_np, save_date):
 
-        DTM = arcpy.NumPyArrayToRaster(DTM, bottom_left_corner, cell_size, cell_size, -9999)
+        DTM[flow_direction_np == -9999] = -9999
+        DTM_ras = arcpy.NumPyArrayToRaster(DTM, bottom_left_corner, cell_size, cell_size, -9999)
 
         # Set local variables
         nbr = NbrRectangle(3, 3, "CELL")
 
         # Execute BlockStatistics to find the minimum surrounding cell
-        lowest_cell = FocalStatistics(DTM, nbr, "MINIMUM", "DATA")
+        lowest_cell = FocalStatistics(DTM_ras, nbr, "MINIMUM", "DATA")
 
         # Calculate the difference between the DTM and the lowest surrounding cell
-        height_difference = DTM - lowest_cell  
+        height_difference = DTM_ras - lowest_cell  
         
         # Calculate the slope between cells
         # First calculate opposite over adjacent
@@ -47,11 +48,17 @@ class masswasting_sediment(object):
         
         # Then use inverse tan to calculate the slope
         slope = ATan(height_difference) * (180/np.pi)
+        slope.save("slope" + save_date)
 
         # Convert slope to numpy to check if any cells are greater than 45 degrees
-        slope = arcpy.RasterToNumPyArray(slope, '#', '#', '#', -9999)    
+        slope_np = arcpy.RasterToNumPyArray(slope, '#', '#', '#', -9999)    
         
-        return slope
+        # Clean up after DTM
+        arcpy.Delete_management(DTM_ras)
+        arcpy.Delete_management(lowest_cell)
+        del slope, height_difference, DTM_ras
+        
+        return slope_np
 
     def get_cellsgreater_45degrees(self, slope, active_layer, inactive_layer):
 
@@ -148,11 +155,16 @@ class masswasting_sediment(object):
     def masswasting_loop(self, DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, bottom_left_corner, cell_size, flow_direction_np, 
                                                             active_layer_GS_P_temp, active_layer_V_temp, 
                                                             inactive_layer_GS_P_temp, inactive_layer_V_temp, recalculate_slope_flow):
+        
+        # Couple of counters which are useful for logic checking
+        mass_loop_counter = 0 
+        save_date = "0"
 
         # First calculate the slope of the cells
         arcpy.AddMessage("Checking if any cells have a slope greater than 45 degrees and sediment available to be transported")
         np.set_printoptions(precision=4)
-        slope = self.calculate_slope(DTM, bottom_left_corner, cell_size)
+        DTM[flow_direction_np == -9999] = -9999
+        slope = self.calculate_slope_degrees(DTM, bottom_left_corner, cell_size, flow_direction_np, save_date)
 
         # Check if any of then are greater than 45 degrees
         conduct_masswasting, new_idx = self.get_cellsgreater_45degrees(slope, active_layer, inactive_layer)
@@ -160,6 +172,8 @@ class masswasting_sediment(object):
         grain_size_counter = 1
         while conduct_masswasting == True:
             
+            mass_loop_counter += 1
+            arcpy.AddMessage("Starting loop " + str(mass_loop_counter))
 
             total_volume = np.zeros_like(slope, dtype = float)
             for active_layer_proportion_temp, active_layer_volume_temp in izip(active_layer_GS_P_temp, active_layer_V_temp):
@@ -201,7 +215,7 @@ class masswasting_sediment(object):
                 
                 # Check for nodata and nan values and save to disk
                 active_layer_proportion[total_volume == 0] = 0
-                active_layer_proportion[slope == -9999] = -9999 
+                active_layer_proportion[flow_direction_np == -9999] = -9999 
                 np.save(active_layer_proportion_temp, active_layer_proportion) 
 
                 # Update the counter
@@ -228,14 +242,89 @@ class masswasting_sediment(object):
             
             inactive_layer *= (cell_size*cell_size)
             active_layer *= (cell_size*cell_size)
-                        
-            slope = self.calculate_slope(DTM, bottom_left_corner, cell_size)
-            
+
+            DTM[flow_direction_np == -9999] = -9999      
+            slope = self.calculate_slope_degrees(DTM, bottom_left_corner, cell_size, flow_direction_np, save_date)
+            save_date = str(mass_loop_counter)
+
             # Check if any of then are greater than 45 degrees
             conduct_masswasting, new_idx = self.get_cellsgreater_45degrees(slope, active_layer, inactive_layer)
-
-
-
-
-            
+          
         return DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow, active_layer, inactive_layer
+
+    def calculate_slope_fraction_raster_in(self, DTM, bottom_left_corner, cell_size):
+                
+        # Set local variables
+        nbr = NbrRectangle(3, 3, "CELL")
+
+        # Execute BlockStatistics to find the minimum surrounding cell
+        lowest_cell = FocalStatistics(DTM, nbr, "MINIMUM", "DATA")
+
+        # Calculate the difference between the DTM and the lowest surrounding cell
+        height_difference = DTM - lowest_cell  
+        
+        # Calculate the slope between cells
+        # First calculate opposite over adjacent
+        height_difference /= cell_size
+        
+        # Then use inverse tan to calculate the slope
+        slope = ATan(height_difference) * (180/np.pi)
+
+        # Convert slope to numpy to check if any cells are greater than 45 degrees
+        slope = arcpy.RasterToNumPyArray(slope, '#', '#', '#', -9999)    
+
+        # Convert slope to fraction of slope rather than degrees or radians
+        np.radians(slope)
+        np.tan(slope)
+
+        # Catch statement for areas with 0 slope
+        slope[slope == 0] = 0.0001 
+        arcpy.AddMessage("Slope calculated")
+        arcpy.AddMessage("-------------------------")
+
+        return slope
+
+    def calculate_slope_fraction(self, DTM, bottom_left_corner, cell_size, save_date):
+
+        # Convert the DTM to a raster
+        DTM_ras = arcpy.NumPyArrayToRaster(DTM, bottom_left_corner, cell_size, cell_size, -9999)
+        #DTM_ras.save("ele_" + save_date)
+
+        # Set local variables
+        nbr = NbrRectangle(3, 3, "CELL")
+
+        # Execute BlockStatistics to find the minimum surrounding cell
+        lowest_cell = FocalStatistics(DTM_ras, nbr, "MINIMUM", "DATA")
+
+        # Calculate the difference between the DTM and the lowest surrounding cell
+        height_difference = DTM_ras - lowest_cell  
+        
+        # Calculate the slope between cells
+        # First calculate opposite over adjacent
+        height_difference /= cell_size
+        
+        # Then use inverse tan to calculate the slope
+        slope = ATan(height_difference) * (180/np.pi)
+
+        ### SAVE A COPY OF THE SLOPE and DTM FOR TESTING PURPOSE ONLY ### 
+        #slope.save("slope" + save_date)
+
+        # Convert slope to numpy to check if any cells are greater than 45 degrees
+        slope_np = arcpy.RasterToNumPyArray(slope, '#', '#', '#', -9999)    
+
+        # Convert slope to fraction of slope rather than degrees or radians
+        np.radians(slope_np)
+        np.tan(slope_np)
+
+        # Clean up after DTM
+        arcpy.Delete_management(DTM_ras)
+        arcpy.Delete_management(lowest_cell)
+        del slope, DTM_ras, height_difference
+
+        # Catch statement for areas with 0 or negative slope
+        slope_np[slope_np == 0] = 0.0001 
+        slope_np[slope_np < 0] = 0.0001 
+        arcpy.AddMessage("Slope calculated")
+        arcpy.AddMessage("-------------------------")
+
+        return slope_np

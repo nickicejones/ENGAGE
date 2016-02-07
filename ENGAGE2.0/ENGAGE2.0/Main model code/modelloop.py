@@ -73,6 +73,7 @@ import numpy as np
 import gc
 import csv
 import time
+
 from arcpy.sa import *
 from itertools import izip
 from multiprocessing import Process
@@ -84,6 +85,7 @@ import sediment
 import rasterstonumpys
 import elevation_adjustment
 import MUSLE
+import masswasting
 
 class model_loop(object):
   
@@ -148,19 +150,20 @@ class model_loop(object):
             self.day_of_year = int(self.current_date.strftime('%j'))
                                                 
             ### CHECK TO SEE IF BASEFLOW NEEDS TO BE SEPERATED ###
-            precipitation, baseflow = hydrology.SCSCNQsurf().check_baseflow(precipitation, baseflow_provided)
+            precipitation, baseflow = hydrology.SCSCNQsurf(self.bottom_left_corner, self.cell_size).check_baseflow(precipitation, baseflow_provided)
             
 
             ### CHECK TO SEE IF THE SLOPE NEEDS TO BE CALCULATED ###            
             if recalculate_slope_flow == True and self.first_loop == False: 
                 arcpy.AddMessage("Recalculating variables due to degree of elevation change")
                 DTM = arcpy.NumPyArrayToRaster(DTM, self.bottom_left_corner, self.cell_size, self.cell_size, -9999)                                         
-                slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang = hydrology.SCSCNQsurf().check_slope_flow_directions(self.first_loop, self.use_dinfinity, self.day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location)   
+                slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang = hydrology.SCSCNQsurf(self.bottom_left_corner, self.cell_size).check_slope_flow_directions(self.first_loop, self.use_dinfinity, self.day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location)   
                             
             if self.first_loop == True:
                 arcpy.AddMessage("Calculating variables for the first loop")
                                                
-                slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang = hydrology.SCSCNQsurf().check_slope_flow_directions(self.first_loop, self.use_dinfinity, self.day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location)  
+                slope, DTM, flow_direction_np, flow_direction_raster, flow_accumulation, CN2s_d, CN1s_d, CN3s_d, ang = hydrology.SCSCNQsurf(self.bottom_left_corner, self.cell_size).check_slope_flow_directions(self.first_loop, self.use_dinfinity, self.day_of_year, CN2_d, DTM, baseflow_provided, numpy_array_location)  
+                
                 DTM_MINUS_AL_IAL = elevation_adjustment.get_DTM_AL_IAL(DTM, active_layer, inactive_layer, self.cell_size) 
                 # change the inactive layer to m3
                 inactive_layer *= (self.cell_size*self.cell_size) 
@@ -168,10 +171,10 @@ class model_loop(object):
                                                                           
             ##### HYDROLOGY SECTION OF LOOP #####
             # Calculate the daily precipitation in each grid cell
-            precipitation = hydrology.SCSCNQsurf().spatial_uniform_spatial_precip(precipitation, DTM, day_pcp_yr, precipitation_gauge_elevation)
+            precipitation = hydrology.SCSCNQsurf(self.bottom_left_corner, self.cell_size).spatial_uniform_spatial_precip(precipitation, DTM, day_pcp_yr, precipitation_gauge_elevation)
             
             # Calculate the surface runoff in each grid cell (Not fatoring in antecedent conditions
-            Q_surf = hydrology.SCSCNQsurf().OldQsurf(precipitation, CN2s_d)    
+            Q_surf = hydrology.SCSCNQsurf(self.bottom_left_corner, self.cell_size).OldQsurf(precipitation, CN2s_d)    
             
             # Calculate the mean, max and min temperatures. The latitude and feed those into the evapotranspiration calculation ~~~~~~##### GOT HERE #####~~~~~~#
             mean_temp, max_temp, min_temp = evapotranspiration.Evapotranspiration().MinMaxMeanTemp(region, self.current_date)
@@ -185,10 +188,10 @@ class model_loop(object):
                 Sprev = np.zeros_like(DTM)
 
             # Calculate the retention parameter (Antecedent Conditions and Evapotranspiration)
-            Scurr = hydrology.SCSCNQsurf().RententionParameter(precipitation, CN1s_d, CN2_d, CN2s_d, ETo, Sprev, Q_surf, self.first_loop)
+            Scurr = hydrology.SCSCNQsurf(self.bottom_left_corner, self.cell_size).RententionParameter(precipitation, CN1s_d, CN2_d, CN2s_d, ETo, Sprev, Q_surf, self.first_loop)
                       
             # Calculate surface runoff and then convert to raster
-            Q_surf_np = hydrology.SCSCNQsurf().SurfSCS(precipitation, Scurr, CN2s_d)
+            Q_surf_np = hydrology.SCSCNQsurf(self.bottom_left_corner, self.cell_size).SurfSCS(precipitation, Scurr, CN2s_d)
             
             Q_surf = arcpy.NumPyArrayToRaster(Q_surf_np, self.bottom_left_corner, self.cell_size, self.cell_size, -9999)
                                                                                 
@@ -196,14 +199,14 @@ class model_loop(object):
             Q_dis = ((Q_surf / 1000) / 86400) * (self.cell_size * self.cell_size) # convert to metres (by dividing by 1000) and then to seconds by dividing by 86400 and finally to the area of the cell by multiplying by the area of the cell. 
             
             if self.use_dinfinity == True:
-                Q_dis = hydrology.SCSCNQsurf().FlowAccumulationDinf(ang, Q_dis, numpy_array_location)   
+                Q_dis = hydrology.SCSCNQsurf(self.bottom_left_corner, self.cell_size).FlowAccumulationDinf(ang, Q_dis, numpy_array_location)   
             else:
                 Q_dis = FlowAccumulation(flow_direction_raster, Q_dis)
                                                           
             arcpy.AddMessage("Calculated discharge")   
             
             if baseflow_provided == True:
-                baseflow_raster = hydrology.SCSCNQsurf().BaseflowCalculation(baseflow, flow_accumulation)                                  
+                baseflow_raster = hydrology.SCSCNQsurf(self.bottom_left_corner, self.cell_size).BaseflowCalculation(baseflow, flow_accumulation)                                  
                 Q_dis += baseflow_raster
                 arcpy.Delete_management(baseflow_raster)
                                                 
@@ -236,34 +239,7 @@ class model_loop(object):
 
                 if sufficient_discharge_calculate_erosion == True:
                     arcpy.AddMessage("Sufficient Discharge for Erosion Calculation to Begin")
-                          
-                    '''# Calculate d50, d84, Fs
-                    d50, d84, Fs, active_layer_GS_P_list = sediment.sedimenttransport().d50_d84_Fs_grain(GS_list, active_layer_GS_P_temp)
-                                            
-                    # Calculate depth using the recking parameters and the indexs of the cells with a depth greater than the threshold (cell_size / 1000)
-                    depth_recking = sediment.sedimenttransport().depth_recking(Q_dis, slope, d84, self.cell_size)
-                            
-                    # Calculate the timestep of the sediment transport using the maximum rate of entrainment in all the cells
-                    sediment_time_step_seconds = sediment.sedimenttransport().SedimentEntrainmentQmax(slope, depth_recking, Fs, d50, 
-                                                                                                      self.cell_size, GS_list, active_layer_GS_P_list, self.depth_recking_threshold, active_layer_V_temp)
-            
-                    if sediment_time_step_seconds >= 86400:
-                        sediment_time_step_seconds = 86400
-
-                    sediment_time_step_seconds = 86400 #*********************************NEED TO TURN OFF******************************#
-                    ### Piece of code to record the timestep ###
-                    arcpy.AddMessage("Sediment timestep for today is  " + str(sediment_time_step_seconds))
-                
-                        
-                    # Collect garbage
-                    del d50, d84, Fs, active_layer_GS_P_list
-                    collected = gc.collect()
-                    arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 
-                    
-            
-                    # Check if sediment transport needs to be calculated based on the depth of water
-                    calculate_sediment_transport_based_on_depth = np.any(depth_recking > self.depth_recking_threshold)'''
-
+   
                     calculate_sediment_transport_based_on_depth = True
                     daily_save_date = str(self.current_date.strftime('%d_%m_%Y'))
 
@@ -278,6 +254,7 @@ class model_loop(object):
                                                                                                                                    inactive_layer_GS_P_temp, 
                                                                                                                                    inactive_layer_V_temp, inactive_layer, 
                                                                                                                                    DTM, DTM_MINUS_AL_IAL, self.depth_recking_threshold)
+                                                                                                                                                        
                         sediment_depth = DTM - DTM_MINUS_AL_IAL
                         sediment_depth[Q_surf_np == -9999] = -9999
                         Sed_max = " "
