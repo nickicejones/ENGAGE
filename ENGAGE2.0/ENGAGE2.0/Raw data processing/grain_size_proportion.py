@@ -12,11 +12,24 @@ import arcpy
 import numpy as np
 import grainsize_lookup
 from arcpy.sa import *
-import sediment
 import masswasting
+from itertools import izip
 
 # Calculate the distibution of the grainsizes across the catchment
 def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, buffer_catchment, buffer_extent, river_catchment_polygon, catch_extent, bottom_left_corner, Q50_exceedance):
+    # 9 proportions of grainsizes that are listed below - defaults are listed on the right
+    g_pro_1 = float(arcpy.GetParameterAsText(14)) #0.1
+    g_pro_2 = float(arcpy.GetParameterAsText(15)) #0.35
+    g_pro_3 = float(arcpy.GetParameterAsText(16)) #0.15
+    g_pro_4 = float(arcpy.GetParameterAsText(17)) #0.15
+    g_pro_5 = float(arcpy.GetParameterAsText(18)) #0.15
+    g_pro_6 = float(arcpy.GetParameterAsText(19)) #0.05
+    g_pro_7 = float(arcpy.GetParameterAsText(20)) #0.05
+        
+    # Create a list of the proportions
+    grain_proportions = [g_pro_1, g_pro_2, g_pro_3, g_pro_4, g_pro_5, g_pro_6, g_pro_7]
+    
+    
     # Process the soil grain size data if provided so it is ready to go into the model
     if soil_parent_material_50 and soil_parent_material_50 != "#":
         # Check the soil parent type
@@ -201,17 +214,7 @@ def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
     else:
     
         arcpy.AddMessage("No spatially distributed information provided. Therefore uniform distributions will be created")
-        # 9 proportions of grainsizes that are listed below - defaults are listed on the right
-        g_pro_1 = float(arcpy.GetParameterAsText(14)) #0.1
-        g_pro_2 = float(arcpy.GetParameterAsText(15)) #0.35
-        g_pro_3 = float(arcpy.GetParameterAsText(16)) #0.15
-        g_pro_4 = float(arcpy.GetParameterAsText(17)) #0.15
-        g_pro_5 = float(arcpy.GetParameterAsText(18)) #0.15
-        g_pro_6 = float(arcpy.GetParameterAsText(19)) #0.05
-        g_pro_7 = float(arcpy.GetParameterAsText(20)) #0.05
         
-        # Create a list of the proportions
-        grain_proportions = [g_pro_1, g_pro_2, g_pro_3, g_pro_4, g_pro_5, g_pro_6, g_pro_7]
         total_pro = 0.0
 
         for grain_pro in grain_proportions:
@@ -287,95 +290,257 @@ def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
         #g_pro_10_raster = arcpy.NumPyArrayToRaster(g_pro_10_array, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
         #g_pro_10_raster.save("MODEL_GS10")
         grain_pro_array_list = [g_pro_1_array, g_pro_2_array, g_pro_3_array, g_pro_4_array, g_pro_5_array, g_pro_6_array, g_pro_7_array] 
-        arcpy.AddMessage("Converted grain proportions to arrays")   
-        
-    # Part 2 - checking the river cells as the flow conditions will not allow that type of sediment to build up in those cells
-    # Need to check which cells contain soil and which should be river bedrock
-    arcpy.AddMessage("Checking the river grain size proportions based on critcal shear stress")
+        arcpy.AddMessage("Converted grain proportions to arrays")  
+         
+    if soil_parent_material_50 and soil_parent_material_50 != "#":   
+        # Part 2 - checking the river cells as the flow conditions will not allow that type of sediment to build up in those cells
+        # Need to check which cells contain soil and which should be river bedrock
+        arcpy.AddMessage("Checking the river grain size proportions based on critcal shear stress")
 
-    # Convert the DTM back to a raster for this part of the script
-    DTM = arcpy.NumPyArrayToRaster(DTM_clip_np, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        # Convert the DTM back to a raster for this part of the script
+        DTM = arcpy.NumPyArrayToRaster(DTM_clip_np, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
 
-    # Do the various ArcGIS processing to calculate flow accumulation values
-    filled_dtm = Fill(DTM)
-    arcpy.AddMessage("Filled DTM")
-    flow_directions = FlowDirection(filled_dtm)
-    arcpy.AddMessage("Calculated flow directions")
-    flow_accumulation = FlowAccumulation(flow_directions)
-    arcpy.AddMessage("Accumulated flow")
+        # Do the various ArcGIS processing to calculate flow accumulation values
+        filled_dtm = Fill(DTM)
+        arcpy.AddMessage("Filled DTM")
+        flow_directions = FlowDirection(filled_dtm)
+        arcpy.AddMessage("Calculated flow directions")
+        flow_accumulation = FlowAccumulation(flow_directions)
+        arcpy.AddMessage("Accumulated flow")
 
-    # Calculate the cell of highest flow accumulation
-    max_flow_accumulation = arcpy.GetRasterProperties_management(flow_accumulation, "MAXIMUM")
-    max_flow_accumulation = float(max_flow_accumulation.getOutput(0)) 
-    arcpy.AddMessage("The max flow accumulation is " + str(max_flow_accumulation))
+        # Calculate the cell of highest flow accumulation
+        max_flow_accumulation = arcpy.GetRasterProperties_management(flow_accumulation, "MAXIMUM")
+        max_flow_accumulation = float(max_flow_accumulation.getOutput(0)) 
+        arcpy.AddMessage("The max flow accumulation is " + str(max_flow_accumulation))
 
-    # Calculate the discharge in each cell based on the discharge
-    Q_50_exceedence_raster = (flow_accumulation / max_flow_accumulation) * float(Q50_exceedance)
-    Q_50_exceedence_np = arcpy.RasterToNumPyArray(Q_50_exceedence_raster, '#', '#', '#', -9999)
-    arcpy.AddMessage("Discharge in each cell for 50% exceedence calculated")
+        # Calculate the discharge in each cell based on the discharge
+        Q_50_exceedence_raster = (flow_accumulation / max_flow_accumulation) * float(Q50_exceedance)
+        #Q_50_exceedence_raster.save("Q50_raster")
+        Q_50_exceedence_np = arcpy.RasterToNumPyArray(Q_50_exceedence_raster, '#', '#', '#', -9999)
+        arcpy.AddMessage("Discharge in each cell for 50% exceedence calculated")
+
+        '''
    
-    # Need to calculate slope (used in calculating depth)
-    slope = masswasting.masswasting_sediment().calculate_slope_fraction(DTM, bottom_left_corner, cell_size, save_date)
-    slope[DTM == -9999] = -9999
-    arcpy.AddMessage("Slope calculated")
+        # Need to calculate slope (used in calculating depth)
+        save_date = "1"
+        slope = masswasting.masswasting_sediment().calculate_slope_fraction(filled_dtm, bottom_left_corner, DTM_cell_size, save_date)  
+        slope[DTM_clip_np == -9999] = -9999
+        slope_raster = arcpy.NumPyArrayToRaster(slope, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        slope_raster.save("Slope")
+        arcpy.AddMessage("Slope calculated")
       
-    # Get the d84 for calculating depth
-    def V_get_grain84(GS_P_list):
-            
-        # create the cumulative sum buffer (empty at this point)
-        csum = np.zeros_like(GS_P_list[0], dtype = float)
-        # create the counter for number of samples needed to reach .84
-        cnt = np.zeros(GS_P_list[0].shape, dtype='uint8')
-
-        # iterate through the images:
-        for grain_proportion in GS_P_list:
-            # add the image into the cumulative sum buffer
-            csum += grain_proportion
-            # add 1 to the counter if the sum of a pixel is < .5
-            cnt += csum < .84
-
-        # now cnt has a number for each pixel:
-        # 0: the first image >= .5
-        # ...
-        # 9: all images together < .5
-
-        return graintable[cnt]
-                
-    d84 = V_get_grain84(grain_pro_array_list)
-    d84[GS_P_list[0] == -9999] = -9999
-    arcpy.AddMessage("D84 calculated")
-
-    # Calculate the depth recking
-    depth_recking = self.depth_recking(Q_50_exceedence_raster, slope, d84, DTM_cell_size)
-    arcpy.AddMessage("Depth calculated")
-
-    # Calculate shear stress
-    # Create a series of empty arrays
-    T = np.zeros_like(slope, dtype = float) 
-           
-    #Shear Stress
-    T = slope * depth_recking                                  
-    T *= 1000 * 9.81         
-
-    # Assumung a shields parameter of 0.06 then to get the maximum particle that can be entrained in each cell given Q50
-    T /= 971.19
-
-    # Get the indices for the cells that sediment transport would be calculated
-    Q_dis_mask = np.zeros_like(slope, dtype = float)
-           
-    # Get indices with great enough discharge to intitate sediment transport
-    Q_dis_threshold = 0.01
-    # Check that the depth is great enough to intitate sediment transport in selected cells - might need changing though 
-    # - this only gets the cells with great enough depth for sediment transport to occur and this will need to be recalcuclate for each timestep
-    np.putmask(Q_dis_mask, Q_50_exceedence_np > Q_dis_threshold, Q_dis)
-      
-    # Get the indices where the sediment transport is greater than 0 
-    sort_idx = np.flatnonzero(Q_dis_mask)
-
-    # Now return those indices as a list
-    new_idx = zip(*np.unravel_index(sort_idx[::-1], Q_dis.shape))
-
-    for i, j in new_idx:
+        # 7 Grainsizes - for input into the model
+        GS_1 = 0.0000156        # Clay - Grain size 1
+        GS_2 = 0.000354         # Sand - Grain size 2 
+        GS_3 = 0.004            # Fine Gravel - Grain size 3
+        GS_4 = 0.0113           # Medium Gravel - Grain size 4
+        GS_5 = 0.032            # Coarse Gravel - Grain size 5
+        GS_6 = 0.128            # Cobble - Grain size 6
+        GS_7 = 0.256            # Boulder - Grain size 7
+        GS_list = [GS_1, GS_2, GS_3, GS_4, GS_5, GS_6, GS_7]
     
+
+        # Add the no data value to the grain size list
+        no_data = -9999
+        if no_data not in GS_list:  
+            arcpy.AddMessage("-------------------------")  
+            arcpy.AddMessage("No data not found in list")  
+            arcpy.AddMessage("Added no data (-9999) to list")  
+            arcpy.AddMessage("-------------------------")         
+            GS_list.append(-9999)
+        else:
+            arcpy.AddMessage("-------------------------") 
+            arcpy.AddMessage("No data value found in list")
+            arcpy.AddMessage("-------------------------") 
+
+        graintable = np.array(GS_list)
+
+        # Get the d84 for calculating depth
+        def V_get_grain84(GS_P_list):
+            
+            # create the cumulative sum buffer (empty at this point)
+            csum = np.zeros_like(GS_P_list[0], dtype = float)
+            # create the counter for number of samples needed to reach .84
+            cnt = np.zeros(GS_P_list[0].shape, dtype='uint8')
+
+            # iterate through the images:
+            for grain_proportion in GS_P_list:
+                # add the image into the cumulative sum buffer
+                csum += grain_proportion
+                # add 1 to the counter if the sum of a pixel is < .5
+                cnt += csum < .84
+
+            # now cnt has a number for each pixel:
+            # 0: the first image >= .5
+            # ...
+            # 9: all images together < .5
+
+            return graintable[cnt]
+        
+        
+        d84 = V_get_grain84(grain_pro_array_list)
+        d84[DTM_clip_np == -9999] = -9999
+        d84_raster = arcpy.NumPyArrayToRaster(d84, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        d84_raster.save("d84")
+        arcpy.AddMessage("D84 calculated")
+
+        # Calculate the recking parameter in order to work out the depth - it requires, slope, d84 and unit width discharge. - checked 04/07/14
+        def depth_recking(Q_dis, slope, d84, cell_size):
+                               
+            q_dis = Q_dis / cell_size
+                                      
+            pre_slope = 9.81 * slope
+
+            sqrt = np.sqrt(pre_slope)
+
+            recking_parameter = np.zeros_like(slope, dtype= float)
+            recking_parameter = q_dis / (np.sqrt(pre_slope * d84**3))
+            recking_parameter[slope == -9999] = -9999
+
+            depth_100 = d84**0.1
+            depth_100 *= q_dis**0.6
+            depth_100 /= pre_slope**0.3
+            depth_100 *= 1/3.2 
+
+        
+            q_dis **=0.46
+            pre_slope **= 0.23
+
+            depth_1 = d84**0.31
+            depth_1 *= q_dis
+            depth_1 /= pre_slope
+            depth_1 *= 1/1.6
+                     
+            depth_recking = np.zeros_like(slope, dtype = float)
+
+            np.putmask(depth_recking, recking_parameter >= 100, depth_100)
+            np.putmask(depth_recking, recking_parameter < 100, depth_1)
+        
+            depth_recking[DTM_clip_np == -9999] = -9999
+                      
+            return depth_recking
+
+        # Calculate the depth recking
+        depth_recking_np = depth_recking(Q_50_exceedence_np, slope, d84, DTM_cell_size)
+        depth_recking_np[DTM_clip_np == -9999] = -9999
+        depth_recking_raster = arcpy.NumPyArrayToRaster(depth_recking_np, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        depth_recking_raster.save("depth_recking")
+        arcpy.AddMessage("Depth calculated")
+
+        # Calculate shear stress
+        # Create a series of empty arrays
+        T = np.zeros_like(slope, dtype = float) 
+           
+        #Shear Stress
+        T = slope * depth_recking_np                                  
+        T *= 1000 * 9.81         
+        T[DTM_clip_np == -9999] = -9999
+        T_shear_stress = arcpy.NumPyArrayToRaster(T, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        T_shear_stress.save("T_shear_stress")
+
+        # Assumung a shields parameter of 0.06 then to get the maximum particle that can be entrained in each cell given Q50
+        T /= 971.19
+        T[DTM_clip_np == -9999] = -9999
+        max_sediment_D = arcpy.NumPyArrayToRaster(T, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        max_sediment_D.save("max_sediment_D")
+        '''
+
+        # Get the indices for the cells that sediment transport would be calculated
+        Q_dis_mask = np.zeros_like(Q_50_exceedence_np, dtype = float)
+           
+        # Get indices with great enough discharge to intitate sediment transport
+        Q_dis_threshold = 0.01
+
+        # Check that the depth is great enough to intitate sediment transport in selected cells - might need changing though 
+        # - this only gets the cells with great enough depth for sediment transport to occur and this will need to be recalcuclate for each timestep
+        np.putmask(Q_dis_mask, Q_50_exceedence_np > Q_dis_threshold, Q_50_exceedence_np)
+      
+        # Get the indices where the sediment transport is greater than 0 
+        sort_idx = np.flatnonzero(Q_dis_mask)
+
+        # Now return those indices as a list
+        new_idx = zip(*np.unravel_index(sort_idx[::-1], Q_50_exceedence_np.shape))
+
+        for i, j in new_idx:
+            for grain_proportion, grain_proportion_array in izip(grain_proportions, grain_pro_array_list):
+                grain_proportion_array[i, j] = grain_proportion
+   
+        # Create the float arrays for the different proportions using the   
+        g_pro_1_float_ras = arcpy.NumPyArrayToRaster(g_pro_1_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_1_float_ras.save("MODEL_GS1") # save the raster
+   
+        g_pro_2_float_ras = arcpy.NumPyArrayToRaster(g_pro_2_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_2_float_ras.save("MODEL_GS2")
+    
+        g_pro_3_float_ras = arcpy.NumPyArrayToRaster(g_pro_3_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_3_float_ras.save("MODEL_GS3") # save the raster
+   
+        g_pro_4_float_ras = arcpy.NumPyArrayToRaster(g_pro_4_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_4_float_ras.save("MODEL_GS4") # save the raster
+ 
+        g_pro_5_float_ras = arcpy.NumPyArrayToRaster(g_pro_5_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_5_float_ras.save("MODEL_GS5") # save the raster
+   
+        g_pro_6_float_ras = arcpy.NumPyArrayToRaster(g_pro_6_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_6_float_ras.save("MODEL_GS6") # save the raster
+   
+        g_pro_7_float_ras = arcpy.NumPyArrayToRaster(g_pro_7_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_7_float_ras.save("MODEL_GS7") # save the 
+
+        '''
+        # Get the d84 for calculating depth
+        def V_get_grain84(GS_P_list):
+            
+            # create the cumulative sum buffer (empty at this point)
+            csum = np.zeros_like(GS_P_list[0], dtype = float)
+            # create the counter for number of samples needed to reach .84
+            cnt = np.zeros(GS_P_list[0].shape, dtype='uint8')
+
+            # iterate through the images:
+            for grain_proportion in GS_P_list:
+                # add the image into the cumulative sum buffer
+                csum += grain_proportion
+                # add 1 to the counter if the sum of a pixel is < .5
+                cnt += csum < .84
+
+            # now cnt has a number for each pixel:
+            # 0: the first image >= .5
+            # ...
+            # 9: all images together < .5
+
+            return graintable[cnt]
+        
+        
+        d84 = V_get_grain84(grain_pro_array_list)
+        d84[DTM_clip_np == -9999] = -9999
+        d84_raster = arcpy.NumPyArrayToRaster(d84, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        d84_raster.save("d84")
+        arcpy.AddMessage("D84 calculated")
+
+        # Calculate the depth recking
+        depth_recking_np = depth_recking(Q_50_exceedence_np, slope, d84, DTM_cell_size)
+        depth_recking_np[DTM_clip_np == -9999] = -9999
+        depth_recking_raster = arcpy.NumPyArrayToRaster(depth_recking_np, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        depth_recking_raster.save("depth_recking_2")
+        arcpy.AddMessage("Depth calculated")
+
+        # Calculate shear stress
+        # Create a series of empty arrays
+        T = np.zeros_like(slope, dtype = float) 
+           
+        #Shear Stress
+        T = slope * depth_recking_np                                  
+        T *= 1000 * 9.81         
+        T[DTM_clip_np == -9999] = -9999
+        T_shear_stress = arcpy.NumPyArrayToRaster(T, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        T_shear_stress.save("T_shear_stress_2")
+
+        # Assumung a shields parameter of 0.06 then to get the maximum particle that can be entrained in each cell given Q50
+        T /= 971.19
+        T[DTM_clip_np == -9999] = -9999
+        max_sediment_D = arcpy.NumPyArrayToRaster(T, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        max_sediment_D.save("max_sediment_D_2")
+        '''
+
     arcpy.AddMessage("Grainsizes calculated")
     arcpy.AddMessage("-------------------------")

@@ -448,7 +448,12 @@ class sedimenttransport(object):
             d50, d84, Fs, active_layer_GS_P = self.d50_d84_Fs_grain(GS_list, active_layer_GS_P_temp)
 
             # If this is not the first loop then slope needs to be recalculated for the cells
-            if loop_counter > 1 and loop_counter % 10 == 0:
+            if loop_counter < 10:
+                slope = masswasting.masswasting_sediment().calculate_slope_fraction(DTM, bottom_left_corner, cell_size, save_date)
+                slope[flow_direction_np == -9999] = -9999
+
+            # If this is not the first loop then slope needs to be recalculated for the cells
+            elif loop_counter > 10 and loop_counter % 10 == 0:
                 slope = masswasting.masswasting_sediment().calculate_slope_fraction(DTM, bottom_left_corner, cell_size, save_date)
                 slope[flow_direction_np == -9999] = -9999
             # Calcualte the depth recking and index of active cells in this timestep

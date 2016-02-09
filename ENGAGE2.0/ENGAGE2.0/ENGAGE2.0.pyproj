@@ -6,7 +6,7 @@
     <ProjectGuid>d3e4578b-7ada-4f45-a40a-d07d8a0e8e69</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <StartupFile>Main model code\ENGAGE2.0.py</StartupFile>
-    <SearchPath>base flow\</SearchPath>
+    <SearchPath>base flow\;Main model code\;Land cover editing tools\;Raw data processing\</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>ENGAGE2.0</Name>
@@ -120,6 +120,7 @@
     <Compile Include="Raw data processing\delete_unused_array.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Raw data processing\masswasting.py" />
     <Compile Include="Raw data processing\orgC_prep.py">
       <SubType>Code</SubType>
     </Compile>
