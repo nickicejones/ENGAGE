@@ -448,7 +448,7 @@ class sedimenttransport(object):
             d50, d84, Fs, active_layer_GS_P = self.d50_d84_Fs_grain(GS_list, active_layer_GS_P_temp)
 
             # If this is not the first loop then slope needs to be recalculated for the cells
-            if loop_counter < 10:
+            if loop_counter < 30:
                 slope = masswasting.masswasting_sediment().calculate_slope_fraction(DTM, bottom_left_corner, cell_size, save_date)
                 slope[flow_direction_np == -9999] = -9999
 
@@ -603,8 +603,8 @@ class sedimenttransport(object):
             arcpy.AddMessage("The timestep based on these calculations should be " + str(sediment_time_step_seconds) + " seconds")  
 
             
-            if sediment_time_step_seconds < 450:
-                sediment_time_step_seconds = 300 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
+            #if sediment_time_step_seconds < 450:
+                #sediment_time_step_seconds = 300 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
             
 
 
