@@ -126,7 +126,7 @@ class model_loop(object):
                                 inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                                 numpy_array_location, 
                                 output_file_dict, output_format, 
-                                output_excel_discharge, output_excel_sediment, output_averages_temp):
+                                output_excel_discharge, output_excel_sediment, output_averages_temp, DTM_temp, slope_temp):
                           
         # Check to see if the user wants to output discharge / sediment loss from the system
         discharge_spamwriter, sediment_spamwriter = rasterstonumpys.save_discharge_or_sediment_csv(output_excel_discharge, output_excel_sediment)
@@ -253,7 +253,7 @@ class model_loop(object):
                                                                                                                                    active_layer_GS_P_temp, active_layer_V_temp, 
                                                                                                                                    inactive_layer_GS_P_temp, 
                                                                                                                                    inactive_layer_V_temp, inactive_layer, 
-                                                                                                                                   DTM, DTM_MINUS_AL_IAL, self.depth_recking_threshold)
+                                                                                                                                   DTM, DTM_MINUS_AL_IAL, self.depth_recking_threshold, DTM_temp, slope_temp)
                                                                                                                                                         
                         sediment_depth = DTM - DTM_MINUS_AL_IAL
                         sediment_depth[Q_surf_np == -9999] = -9999

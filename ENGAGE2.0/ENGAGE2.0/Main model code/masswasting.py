@@ -319,12 +319,14 @@ class masswasting_sediment(object):
         # Clean up after DTM
         arcpy.Delete_management(DTM_ras)
         arcpy.Delete_management(lowest_cell)
-        del slope, DTM_ras, height_difference
+        
+        del slope, DTM_ras, height_difference, lowest_cell
+        gc.collect() 
 
         # Catch statement for areas with 0 or negative slope
-        slope_np[slope_np == 0] = 0.0001 
-        slope_np[slope_np < 0] = 0.0001 
+        slope_np[slope_np == 0] = 0.000001 
+        slope_np[slope_np < 0] = 0.000001 
         arcpy.AddMessage("Slope calculated")
         arcpy.AddMessage("-------------------------")
-
+                
         return slope_np

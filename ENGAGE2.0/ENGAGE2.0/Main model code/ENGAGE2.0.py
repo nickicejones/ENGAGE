@@ -319,6 +319,7 @@ arcpy.AddMessage("-------------------------")
 
 # Section of the model to store the numpy averages
 output_averages_temp = datapreparation.temporary_average_numpys(numpy_array_location)
+DTM_temp, slope_temp = datapreparation.temporary_numpys_DTM_slope(numpy_array_location)
 
 
 ### CONVERT these to CSV files for data analysis only ### ~~~ TAKE OUT FOR FINAL VERSION
@@ -345,7 +346,7 @@ modelloop.model_loop(model_start_date, cell_size, bottom_left_corner,
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                                                                           numpy_array_location, 
                                                                           output_file_dict, output_format, 
-                                                                          output_excel_discharge, output_excel_sediment, output_averages_temp)
+                                                                          output_excel_discharge, output_excel_sediment, output_averages_temp, DTM_temp, slope_temp)
                                                                                            
 '''grain_counter = 1
 

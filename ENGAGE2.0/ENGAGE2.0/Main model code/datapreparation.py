@@ -450,4 +450,12 @@ def temporary_average_numpys(numpy_array_location):
     output_averages_temp = [Q_surf_temp, Discharge_temp, Water_depth_temp, Spatial_precipiation_temp, Sediment_depth_temp, Net_sediment_temp]
 
     return output_averages_temp
-                        
+ 
+
+# Function to convert some rasters to temporary numpy arrays
+def temporary_numpys_DTM_slope(numpy_array_location):
+    DTM_temp = numpy_array_location + '\DTM_temp.npy'
+    slope_temp = numpy_array_location + '\slope_temp.npy'
+
+    return DTM_temp, slope_temp
+                           

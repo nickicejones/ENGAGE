@@ -57,6 +57,12 @@
     <Compile Include="Main model code\Cfactor.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Main model code\module1.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="subslope.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main model code\MUSLE.py">
       <SubType>Code</SubType>
     </Compile>

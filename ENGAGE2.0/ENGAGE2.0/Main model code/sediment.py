@@ -6,8 +6,8 @@ import time
 import arcpy
 from itertools import izip
 import gc
-
-
+import os
+from subprocess import check_output
 
 # User created scripts
 import rasterstonumpys
@@ -276,7 +276,7 @@ class sedimenttransport(object):
                                                            cell_size, flow_direction_np, bottom_left_corner, daily_save_date, 
                                                            active_layer_GS_P_temp, active_layer_V_temp, 
                                                            inactive_layer_GS_P_temp, inactive_layer_V_temp, inactive_layer,
-                                                           DTM, DTM_MINUS_AL_IAL, depth_recking_threshold):
+                                                           DTM, DTM_MINUS_AL_IAL, depth_recking_threshold, DTM_temp, slope_temp):
         # NJ checked 12/01/2016 - happy it is calculating expected        
         def sediment_entrainment_calculation(slope, Q_dis, depth_recking, Fs, d50, GS, GS_P, GS_V, cell_size, sediment_time_step_seconds, save_date):
             '''
@@ -447,15 +447,32 @@ class sedimenttransport(object):
             # Calculate the d50, d84, Fs for this timestep
             d50, d84, Fs, active_layer_GS_P = self.d50_d84_Fs_grain(GS_list, active_layer_GS_P_temp)
 
+            # Save the DTM and slope from previous timestep to temp locations
+            np.save(DTM_temp, DTM)
+            np.save(slope_temp, slope)
+
             # If this is not the first loop then slope needs to be recalculated for the cells
-            if loop_counter < 30:
+            '''if loop_counter < 30:
                 slope = masswasting.masswasting_sediment().calculate_slope_fraction(DTM, bottom_left_corner, cell_size, save_date)
                 slope[flow_direction_np == -9999] = -9999
 
             # If this is not the first loop then slope needs to be recalculated for the cells
-            elif loop_counter > 10 and loop_counter % 10 == 0:
+            elif loop_counter > 30 and loop_counter % 10 == 0:
                 slope = masswasting.masswasting_sediment().calculate_slope_fraction(DTM, bottom_left_corner, cell_size, save_date)
-                slope[flow_direction_np == -9999] = -9999
+                slope[flow_direction_np == -9999] = -9999'''
+
+            #slope = masswasting.masswasting_sediment().calculate_slope_fraction(DTM, bottom_left_corner, bottom_left_corner, save_date)
+            #slope[flow_direction_np == -9999] = -9999
+
+            full_path = os.path.abspath('subslope.py')
+            cmd = "python " + str(full_path) + " " + str(arcpy.env.workspace) + " " + str(DTM_temp) + " " +  str(slope_temp) + " " + str(bottom_left_corner) + " " + str(cell_size) 
+            arcpy.AddMessage("Passing the following message to a sub process to prevent the build up of memory" + cmd)
+            output = check_output(cmd)
+            arcpy.AddMessage(str(output))
+
+            # Now load in the newly calculated slope
+            slope = np.load(slope_temp)
+
             # Calcualte the depth recking and index of active cells in this timestep
             depth_recking = self.depth_recking(Q_dis, slope, d84, cell_size)
             
@@ -603,12 +620,10 @@ class sedimenttransport(object):
             arcpy.AddMessage("The timestep based on these calculations should be " + str(sediment_time_step_seconds) + " seconds")  
 
             
-            #if sediment_time_step_seconds < 450:
-                #sediment_time_step_seconds = 300 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
+            if sediment_time_step_seconds < 450:
+                sediment_time_step_seconds = 86399 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
             
-
-
-            
+           
             ### Check if elevations need to be recalculated ###
             DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = elevation_adjustment.update_DTM_elevations(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size)
             DTM[flow_direction_np == -9999] = -9999
