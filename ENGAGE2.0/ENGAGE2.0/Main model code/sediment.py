@@ -276,7 +276,7 @@ class sedimenttransport(object):
                                                            cell_size, flow_direction_np, bottom_left_corner, daily_save_date, 
                                                            active_layer_GS_P_temp, active_layer_V_temp, 
                                                            inactive_layer_GS_P_temp, inactive_layer_V_temp, inactive_layer,
-                                                           DTM, DTM_MINUS_AL_IAL, depth_recking_threshold, DTM_temp, slope_temp, extent_xmin, extent_ymin):
+                                                           DTM, DTM_MINUS_AL_IAL, depth_recking_threshold, DTM_temp, slope_temp, extent_xmin, extent_ymin, workspace):
         # NJ checked 12/01/2016 - happy it is calculating expected        
         def sediment_entrainment_calculation(slope, Q_dis, depth_recking, Fs, d50, GS, GS_P, GS_V, cell_size, sediment_time_step_seconds, save_date):
             '''
@@ -435,9 +435,9 @@ class sedimenttransport(object):
         counter_transport = 1
         total_time = 0 # current time
         layer_height = 0.2 # metres - need to convert to volume at some point
-        loop_counter = 0
-        save_date = '0'
-        full_path = os.path.abspath('subslope.py')
+        loop_counter = 0       
+        cell_size_string = str(cell_size)
+        save_date = str(int(total_time + sediment_time_step_seconds)) + "_" + str(counter_transport)  
 
         while total_time < 86400:
             loop_counter += 1
@@ -467,14 +467,15 @@ class sedimenttransport(object):
             #slope[flow_direction_np == -9999] = -9999
 
             # Start the timer for the model preparation
-            start = time.time()
-            
-            output = check_output(['python', full_path, arcpy.env.workspace, DTM_temp, slope_temp, extent_xmin, extent_ymin, cell_size])
-
-            arcpy.AddMessage("Time to complete slope in subprocess is " + str(round(time.time() - start,2)) + "s. ")
+            arcpy.AddMessage("Spawning subprocess to calculate slope")       
+            output = check_output(['python', r'C:\Users\nickj\Documents\ENGAGE\ENGAGE2.0\ENGAGE2.0\subslope.py', workspace, DTM_temp, slope_temp, extent_xmin, extent_ymin, cell_size_string])
+            arcpy.AddMessage("Completed subprocess to calculate slope")       
 
             # Now load in the newly calculated slope
             slope = np.load(slope_temp)
+            raster = arcpy.NumPyArrayToRaster(slope, bottom_left_corner, cell_size, cell_size, -9999)
+            raster.save("slope_single" + "_" + str(save_date))     
+
 
             # Calcualte the depth recking and index of active cells in this timestep
             depth_recking = self.depth_recking(Q_dis, slope, d84, cell_size)
@@ -482,7 +483,6 @@ class sedimenttransport(object):
                         
             # Iterate through the grain sizes and proportions calculating the transport
             for GS, GS_P, GS_V_temp in izip(GS_list, active_layer_GS_P, active_layer_V_temp):
-
                 save_date = str(int(total_time + sediment_time_step_seconds)) + "_" + str(counter_transport)                         
                 GS_V = np.load(GS_V_temp)
                 arcpy.AddMessage("Loaded grain volume")                
@@ -624,7 +624,7 @@ class sedimenttransport(object):
 
             
             if sediment_time_step_seconds < 450:
-                sediment_time_step_seconds = 86399 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
+                sediment_time_step_seconds = 20000 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
             
            
             ### Check if elevations need to be recalculated ###

@@ -188,7 +188,8 @@ use_dinfinity = False'''
 numpy_array_location = arcpy.GetParameterAsText(0)
 
 # Set Environmental Workspace
-arcpy.env.workspace = arcpy.GetParameterAsText(1) 
+workspace = arcpy.GetParameterAsText(1) 
+arcpy.env.workspace = workspace
 
 # Textfile with precipitation on each line and textfile with the baseflow on each line
 precipitation_textfile = arcpy.GetParameterAsText(2)
@@ -351,7 +352,7 @@ modelloop.model_loop(model_start_date, cell_size, bottom_left_corner,
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                                                                           numpy_array_location, 
                                                                           output_file_dict, output_format, 
-                                                                          output_excel_discharge, output_excel_sediment, output_averages_temp, DTM_temp, slope_temp, extent_xmin, extent_ymin)
+                                                                          output_excel_discharge, output_excel_sediment, output_averages_temp, DTM_temp, slope_temp, extent_xmin, extent_ymin, workspace)
                                                                                            
 '''grain_counter = 1
 
