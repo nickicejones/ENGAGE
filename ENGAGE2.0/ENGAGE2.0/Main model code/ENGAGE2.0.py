@@ -321,6 +321,11 @@ arcpy.AddMessage("-------------------------")
 output_averages_temp = datapreparation.temporary_average_numpys(numpy_array_location)
 DTM_temp, slope_temp = datapreparation.temporary_numpys_DTM_slope(numpy_array_location)
 
+# Calculate the x and y extents for the slope subprocess
+extent_xmin_result = arcpy.GetRasterProperties_management(DTM, "LEFT")
+extent_xmin = extent_xmin_result.getOutput(0)
+extent_ymin_result = arcpy.GetRasterProperties_management(DTM, "BOTTOM")
+extent_ymin = extent_ymin_result.getOutput(0)
 
 ### CONVERT these to CSV files for data analysis only ### ~~~ TAKE OUT FOR FINAL VERSION
 '''model_inputs_list_strings = ["land_cover", "soil", "ASD_soil_depth", "BGS_soil_depth", "general_soil_depth", "orgC"]
@@ -346,7 +351,7 @@ modelloop.model_loop(model_start_date, cell_size, bottom_left_corner,
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                                                                           numpy_array_location, 
                                                                           output_file_dict, output_format, 
-                                                                          output_excel_discharge, output_excel_sediment, output_averages_temp, DTM_temp, slope_temp)
+                                                                          output_excel_discharge, output_excel_sediment, output_averages_temp, DTM_temp, slope_temp, extent_xmin, extent_ymin)
                                                                                            
 '''grain_counter = 1
 

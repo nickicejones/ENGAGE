@@ -276,7 +276,7 @@ class sedimenttransport(object):
                                                            cell_size, flow_direction_np, bottom_left_corner, daily_save_date, 
                                                            active_layer_GS_P_temp, active_layer_V_temp, 
                                                            inactive_layer_GS_P_temp, inactive_layer_V_temp, inactive_layer,
-                                                           DTM, DTM_MINUS_AL_IAL, depth_recking_threshold, DTM_temp, slope_temp):
+                                                           DTM, DTM_MINUS_AL_IAL, depth_recking_threshold, DTM_temp, slope_temp, extent_xmin, extent_ymin):
         # NJ checked 12/01/2016 - happy it is calculating expected        
         def sediment_entrainment_calculation(slope, Q_dis, depth_recking, Fs, d50, GS, GS_P, GS_V, cell_size, sediment_time_step_seconds, save_date):
             '''
@@ -437,7 +437,8 @@ class sedimenttransport(object):
         layer_height = 0.2 # metres - need to convert to volume at some point
         loop_counter = 0
         save_date = '0'
-        
+        full_path = os.path.abspath('subslope.py')
+
         while total_time < 86400:
             loop_counter += 1
             arcpy.AddMessage("Time of day = " + str(total_time) + "s.")
@@ -447,9 +448,10 @@ class sedimenttransport(object):
             # Calculate the d50, d84, Fs for this timestep
             d50, d84, Fs, active_layer_GS_P = self.d50_d84_Fs_grain(GS_list, active_layer_GS_P_temp)
 
-            # Save the DTM and slope from previous timestep to temp locations
+            # Save the DTM and if the first loop need to save the slope to temp locations
             np.save(DTM_temp, DTM)
-            np.save(slope_temp, slope)
+            if loop_counter == 1:
+                np.save(slope_temp, slope)
 
             # If this is not the first loop then slope needs to be recalculated for the cells
             '''if loop_counter < 30:
@@ -464,11 +466,12 @@ class sedimenttransport(object):
             #slope = masswasting.masswasting_sediment().calculate_slope_fraction(DTM, bottom_left_corner, bottom_left_corner, save_date)
             #slope[flow_direction_np == -9999] = -9999
 
-            full_path = os.path.abspath('subslope.py')
-            cmd = "python " + str(full_path) + " " + str(arcpy.env.workspace) + " " + str(DTM_temp) + " " +  str(slope_temp) + " " + str(bottom_left_corner) + " " + str(cell_size) 
-            arcpy.AddMessage("Passing the following message to a sub process to prevent the build up of memory" + cmd)
-            output = check_output(cmd)
-            arcpy.AddMessage(str(output))
+            # Start the timer for the model preparation
+            start = time.time()
+            
+            output = check_output(['python', full_path, arcpy.env.workspace, DTM_temp, slope_temp, extent_xmin, extent_ymin, cell_size])
+
+            arcpy.AddMessage("Time to complete slope in subprocess is " + str(round(time.time() - start,2)) + "s. ")
 
             # Now load in the newly calculated slope
             slope = np.load(slope_temp)
