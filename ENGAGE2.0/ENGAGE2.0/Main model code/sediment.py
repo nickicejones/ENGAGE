@@ -450,6 +450,7 @@ class sedimenttransport(object):
 
             # Save the DTM and if the first loop need to save the slope to temp locations
             np.save(DTM_temp, DTM)
+
             if loop_counter == 1:
                 np.save(slope_temp, slope)
 
@@ -473,9 +474,10 @@ class sedimenttransport(object):
 
             # Now load in the newly calculated slope
             slope = np.load(slope_temp)
-            raster = arcpy.NumPyArrayToRaster(slope, bottom_left_corner, cell_size, cell_size, -9999)
-            raster.save("slope_single" + "_" + str(save_date))     
 
+            '''if loop_counter % 5:
+                raster = arcpy.NumPyArrayToRaster(slope, bottom_left_corner, cell_size, cell_size, -9999)
+                raster.save("slope_single" + "_" + str(save_date))   '''  
 
             # Calcualte the depth recking and index of active cells in this timestep
             depth_recking = self.depth_recking(Q_dis, slope, d84, cell_size)
@@ -624,7 +626,7 @@ class sedimenttransport(object):
 
             
             if sediment_time_step_seconds < 450:
-                sediment_time_step_seconds = 20000 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
+                sediment_time_step_seconds = 450 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
             
            
             ### Check if elevations need to be recalculated ###

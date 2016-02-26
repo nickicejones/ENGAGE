@@ -318,8 +318,6 @@ def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
         #Q_50_exceedence_raster.save("Q50_raster")
         Q_50_exceedence_np = arcpy.RasterToNumPyArray(Q_50_exceedence_raster, '#', '#', '#', -9999)
         arcpy.AddMessage("Discharge in each cell for 50% exceedence calculated")
-
-        '''
    
         # Need to calculate slope (used in calculating depth)
         save_date = "1"
@@ -328,7 +326,28 @@ def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
         slope_raster = arcpy.NumPyArrayToRaster(slope, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
         slope_raster.save("Slope")
         arcpy.AddMessage("Slope calculated")
-      
+        
+        # Calculate stream power for each cell in the raster
+        stream_power = 1000 * 9.81 
+        stream_power *= Q_50_exceedence_np
+        stream_power *= slope
+        stream_power /= DTM_cell_size
+        stream_power[DTM_clip_np == -9999] = -9999
+        stream_power_raster = arcpy.NumPyArrayToRaster(stream_power, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        stream_power_raster.save("stream_power")
+        arcpy.AddMessage("Stream power calculated")
+
+        # Calcate the minimum grainsize
+        grain_size_minimum = stream_power / 6512.22545
+        grain_size_minimum = np.power(grain_size_minimum, 2)
+        grain_size_minimum = np.power(grain_size_minimum, 1./3.)
+        grain_size_minimum[DTM_clip_np == -9999] = -9999
+        grain_size_minimum_raster = arcpy.NumPyArrayToRaster(grain_size_minimum, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        grain_size_minimum_raster.save("grain_size_minimum")
+        arcpy.AddMessage("Grain Size Minimum calculated")
+
+
+        '''
         # 7 Grainsizes - for input into the model
         GS_1 = 0.0000156        # Clay - Grain size 1
         GS_2 = 0.000354         # Sand - Grain size 2 
@@ -339,7 +358,6 @@ def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
         GS_7 = 0.256            # Boulder - Grain size 7
         GS_list = [GS_1, GS_2, GS_3, GS_4, GS_5, GS_6, GS_7]
     
-
         # Add the no data value to the grain size list
         no_data = -9999
         if no_data not in GS_list:  
@@ -355,6 +373,8 @@ def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
 
         graintable = np.array(GS_list)
 
+
+        
         # Get the d84 for calculating depth
         def V_get_grain84(GS_P_list):
             
