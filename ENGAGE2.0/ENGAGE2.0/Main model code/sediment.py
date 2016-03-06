@@ -7,7 +7,7 @@ import arcpy
 from itertools import izip
 import gc
 import os
-from subprocess import check_output
+import subprocess
 
 # User created scripts
 import rasterstonumpys
@@ -276,7 +276,7 @@ class sedimenttransport(object):
                                                            cell_size, flow_direction_np, bottom_left_corner, daily_save_date, 
                                                            active_layer_GS_P_temp, active_layer_V_temp, 
                                                            inactive_layer_GS_P_temp, inactive_layer_V_temp, inactive_layer,
-                                                           DTM, DTM_MINUS_AL_IAL, depth_recking_threshold, DTM_temp, slope_temp, extent_xmin, extent_ymin, workspace):
+                                                           DTM, DTM_MINUS_AL_IAL, depth_recking_threshold, DTM_temp, slope_sub_path, slope_temp, extent_xmin, extent_ymin, workspace):
         # NJ checked 12/01/2016 - happy it is calculating expected        
         def sediment_entrainment_calculation(slope, Q_dis, depth_recking, Fs, d50, GS, GS_P, GS_V, cell_size, sediment_time_step_seconds, save_date):
             '''
@@ -468,8 +468,12 @@ class sedimenttransport(object):
             #slope[flow_direction_np == -9999] = -9999
 
             # Start the timer for the model preparation
-            arcpy.AddMessage("Spawning subprocess to calculate slope")       
-            output = check_output(['python', r'C:\Users\nickj\Documents\ENGAGE\ENGAGE2.0\ENGAGE2.0\subslope.py', workspace, DTM_temp, slope_temp, extent_xmin, extent_ymin, cell_size_string])
+            arcpy.AddMessage("Spawning subprocess to calculate slope") 
+            startupinfo = None           
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            VAL = subprocess.check_output(['python', slope_sub_path, workspace, DTM_temp, slope_temp, extent_xmin, extent_ymin, cell_size_string], shell=False, startupinfo=startupinfo).decode()
+            #output = check_output(['python', r'C:\Users\nickj\Documents\ENGAGE\ENGAGE2.0\ENGAGE2.0\subslope.py', workspace, DTM_temp, slope_temp, extent_xmin, extent_ymin, cell_size_string], shell=False)
             arcpy.AddMessage("Completed subprocess to calculate slope")       
 
             # Now load in the newly calculated slope
@@ -625,10 +629,9 @@ class sedimenttransport(object):
             arcpy.AddMessage("The timestep based on these calculations should be " + str(sediment_time_step_seconds) + " seconds")  
 
             
-            if sediment_time_step_seconds < 450:
-                sediment_time_step_seconds = 450 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
+            #if sediment_time_step_seconds < 450:
+                #sediment_time_step_seconds = 450 # This is the value that can be edited - currently doing maxium of 100 timesteps per day
             
-           
             ### Check if elevations need to be recalculated ###
             DTM, DTM_MINUS_AL_IAL, recalculate_slope_flow = elevation_adjustment.update_DTM_elevations(DTM, DTM_MINUS_AL_IAL, active_layer, inactive_layer, cell_size)
             DTM[flow_direction_np == -9999] = -9999
@@ -638,9 +641,7 @@ class sedimenttransport(object):
             #save_date = int(total_time)
             '''list_of_numpys = {"active_layer": active_layer, "inactive_layer": inactive_layer}
             rasterstonumpys.convert_numpy_to_raster_dict(list_of_numpys, bottom_left_corner, cell_size, save_date)'''
-        
-
-            
+                
             # Collect garbage
             collected = gc.collect()
             arcpy.AddMessage("Garbage collector: collected %d objects." % (collected)) 

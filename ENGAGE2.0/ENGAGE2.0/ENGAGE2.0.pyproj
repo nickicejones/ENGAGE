@@ -60,7 +60,7 @@
     <Compile Include="Main model code\module1.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="subslope.py">
+    <Compile Include="Main model code\subslope.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Main model code\MUSLE.py">

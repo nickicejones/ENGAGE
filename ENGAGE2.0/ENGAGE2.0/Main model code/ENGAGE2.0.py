@@ -83,6 +83,8 @@ from arcpy import env
 import numpy as np
 import tempfile
 import time
+import os
+import sys
 import gc
 from itertools import izip
 
@@ -342,6 +344,14 @@ rasterstonumpys.numpystocsv(list_of_numpys, list_of_numpys_strings) '''
 ### MAIN MODEL CODE ###
 arcpy.AddMessage("Model initiated")
  
+# Lets find the slopes location on my computer
+def find(name, path):
+    for root, dirs, files in os.walk(path):
+        if name in files:
+            return os.path.join(root, name)
+
+slope_sub_path = find('subslope.py', sys.path[0])
+
 modelloop.model_loop(model_start_date, cell_size, bottom_left_corner, 
                      calculate_sediment_transport, calculate_sediment_erosion_hillslope, use_dinfinity).start_precipition(river_catchment, DTM, region, 
                                                                           precipitation_textfile, baseflow_provided, day_pcp_yr, years_of_sim, 
@@ -351,8 +361,8 @@ modelloop.model_loop(model_start_date, cell_size, bottom_left_corner,
                                                                           active_layer_GS_P_temp, active_layer_V_temp, 
                                                                           inactive_layer_GS_P_temp, inactive_layer_V_temp, 
                                                                           numpy_array_location, 
-                                                                          output_file_dict, output_format, 
-                                                                          output_excel_discharge, output_excel_sediment, output_averages_temp, DTM_temp, slope_temp, extent_xmin, extent_ymin, workspace)
+                                                                          output_file_dict, output_format,
+                                                                          output_excel_discharge, output_excel_sediment, output_averages_temp, DTM_temp, slope_sub_path, slope_temp, extent_xmin, extent_ymin, workspace)
                                                                                            
 '''grain_counter = 1
 

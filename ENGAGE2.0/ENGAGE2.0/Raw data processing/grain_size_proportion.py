@@ -294,7 +294,6 @@ def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
          
     if soil_parent_material_50 and soil_parent_material_50 != "#":   
         # Part 2 - checking the river cells as the flow conditions will not allow that type of sediment to build up in those cells
-        # Need to check which cells contain soil and which should be river bedrock
         arcpy.AddMessage("Checking the river grain size proportions based on critcal shear stress")
 
         # Convert the DTM back to a raster for this part of the script
@@ -323,8 +322,8 @@ def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
         save_date = "1"
         slope = masswasting.masswasting_sediment().calculate_slope_fraction(filled_dtm, bottom_left_corner, DTM_cell_size, save_date)  
         slope[DTM_clip_np == -9999] = -9999
-        slope_raster = arcpy.NumPyArrayToRaster(slope, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        slope_raster.save("Slope")
+        #slope_raster = arcpy.NumPyArrayToRaster(slope, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        #slope_raster.save("Slope")
         arcpy.AddMessage("Slope calculated")
         
         # Calculate stream power for each cell in the raster
@@ -333,8 +332,8 @@ def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
         stream_power *= slope
         stream_power /= DTM_cell_size
         stream_power[DTM_clip_np == -9999] = -9999
-        stream_power_raster = arcpy.NumPyArrayToRaster(stream_power, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        stream_power_raster.save("stream_power")
+        #stream_power_raster = arcpy.NumPyArrayToRaster(stream_power, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        #stream_power_raster.save("stream_power")
         arcpy.AddMessage("Stream power calculated")
 
         # Calcate the minimum grainsize
@@ -342,10 +341,87 @@ def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
         grain_size_minimum = np.power(grain_size_minimum, 2)
         grain_size_minimum = np.power(grain_size_minimum, 1./3.)
         grain_size_minimum[DTM_clip_np == -9999] = -9999
-        grain_size_minimum_raster = arcpy.NumPyArrayToRaster(grain_size_minimum, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        grain_size_minimum_raster.save("grain_size_minimum")
+        #grain_size_minimum_raster = arcpy.NumPyArrayToRaster(grain_size_minimum, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        #grain_size_minimum_raster.save("grain_size_minimum")
         arcpy.AddMessage("Grain Size Minimum calculated")
+        # Get the indices for the cells that sediment transport would be calculated
+        Q_dis_mask = np.zeros_like(Q_50_exceedence_np, dtype = float)
+           
+        # Get indices with great enough discharge to intitate sediment transport
+        Q_dis_threshold = 0.01
 
+        # Check that the depth is great enough to intitate sediment transport in selected cells - might need changing though 
+        # - this only gets the cells with great enough depth for sediment transport to occur and this will need to be recalcuclate for each timestep
+        np.putmask(Q_dis_mask, Q_50_exceedence_np > Q_dis_threshold, Q_50_exceedence_np)
+      
+        # Get the indices where the sediment transport is greater than 0 
+        sort_idx = np.flatnonzero(Q_dis_mask)
+
+        # Now return those indices as a list
+        new_idx = zip(*np.unravel_index(sort_idx[::-1], Q_50_exceedence_np.shape))
+
+        # List of the grain proportions with minimim size grainsizes
+        mgs_gs1 = [0.15, 0.35, 0.15, 0.1, 0.1, 0.075, 0.075]
+        mgs_gs2 = [0.1, 0.15, 0.35,	0.15, 0.1, 0.075, 0.075]
+        mgs_gs3 = [0.075, 0.1,	0.15, 0.35,	0.15, 0.1, 0.075]
+        mgs_gs4 = [0.0, 0.075, 0.1, 0.15, 0.425, 0.15, 0.1]
+        mgs_gs5 = [0.0, 0.0, 0.075, 0.1, 0.2, 0.425, 0.2]
+        mgs_gs6 = [0.0, 0.0, 0.0, 0.075, 0.1, 0.3, 0.525]
+        mgs_gs7 = [0.0, 0.0, 0.0, 0.075, 0.1, 0.3, 0.525]
+        
+        # Iterate through the river cells replacing the distr
+        for i, j in new_idx:
+            # Check which grainsize you are working with
+            # GS_1 = 0.0000156 - Clay - Grain size 1
+            # GS_2 = 0.000354 - Sand - Grain size 2
+            # GS_3 = 0.004 - Fine Gravel - Grain size 3
+            # GS_4 = 0.0113 - Medium Gravel - Grain size 4
+            # GS_5 = 0.032 - Coarse Gravel - Grain size 5
+            # GS_6 = 0.128 - Cobble - Grain size 6
+            # GS_7 = 0.256
+            if grain_size_minimum[i, j] >= 0 and grain_size_minimum[i, j] <= 0.0000156:
+                for grain_proportion, grain_proportion_array in izip(mgs_gs1, grain_pro_array_list):
+                    grain_proportion_array[i, j] = grain_proportion
+            elif grain_size_minimum[i, j] > 0.0000156 and grain_size_minimum[i, j] <= 0.000354:
+                for grain_proportion, grain_proportion_array in izip(mgs_gs2, grain_pro_array_list):
+                    grain_proportion_array[i, j] = grain_proportion
+            elif grain_size_minimum[i, j] >= 0.000354 and grain_size_minimum[i, j] <= 0.004:
+                for grain_proportion, grain_proportion_array in izip(mgs_gs3, grain_pro_array_list):
+                    grain_proportion_array[i, j] = grain_proportion
+            elif grain_size_minimum[i, j] >= 0.004 and grain_size_minimum[i, j] <= 0.0113:
+                for grain_proportion, grain_proportion_array in izip(mgs_gs4, grain_pro_array_list):
+                    grain_proportion_array[i, j] = grain_proportion
+            elif grain_size_minimum[i, j] >= 0.0113 and grain_size_minimum[i, j] <= 0.032:
+                for grain_proportion, grain_proportion_array in izip(mgs_gs5, grain_pro_array_list):
+                    grain_proportion_array[i, j] = grain_proportion
+            elif grain_size_minimum[i, j] >= 0.032 and grain_size_minimum[i, j] <= 0.128:
+                for grain_proportion, grain_proportion_array in izip(mgs_gs6, grain_pro_array_list):
+                    grain_proportion_array[i, j] = grain_proportion
+            else:
+                for grain_proportion, grain_proportion_array in izip(mgs_gs7, grain_pro_array_list):
+                    grain_proportion_array[i, j] = grain_proportion
+
+        # Create the float arrays for the different proportions using the   
+        g_pro_1_float_ras = arcpy.NumPyArrayToRaster(g_pro_1_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_1_float_ras.save("MODEL_GS1") # save the raster
+   
+        g_pro_2_float_ras = arcpy.NumPyArrayToRaster(g_pro_2_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_2_float_ras.save("MODEL_GS2")
+    
+        g_pro_3_float_ras = arcpy.NumPyArrayToRaster(g_pro_3_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_3_float_ras.save("MODEL_GS3") # save the raster
+   
+        g_pro_4_float_ras = arcpy.NumPyArrayToRaster(g_pro_4_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_4_float_ras.save("MODEL_GS4") # save the raster
+ 
+        g_pro_5_float_ras = arcpy.NumPyArrayToRaster(g_pro_5_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_5_float_ras.save("MODEL_GS5") # save the raster
+   
+        g_pro_6_float_ras = arcpy.NumPyArrayToRaster(g_pro_6_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_6_float_ras.save("MODEL_GS6") # save the raster
+   
+        g_pro_7_float_ras = arcpy.NumPyArrayToRaster(g_pro_7_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
+        g_pro_7_float_ras.save("MODEL_GS7") # save the 
 
         '''
         # 7 Grainsizes - for input into the model
@@ -463,51 +539,7 @@ def grain_size_calculation(soil_parent_material_50, DTM_clip_np, DTM_cell_size, 
         T[DTM_clip_np == -9999] = -9999
         max_sediment_D = arcpy.NumPyArrayToRaster(T, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
         max_sediment_D.save("max_sediment_D")
-        '''
 
-        # Get the indices for the cells that sediment transport would be calculated
-        Q_dis_mask = np.zeros_like(Q_50_exceedence_np, dtype = float)
-           
-        # Get indices with great enough discharge to intitate sediment transport
-        Q_dis_threshold = 0.01
-
-        # Check that the depth is great enough to intitate sediment transport in selected cells - might need changing though 
-        # - this only gets the cells with great enough depth for sediment transport to occur and this will need to be recalcuclate for each timestep
-        np.putmask(Q_dis_mask, Q_50_exceedence_np > Q_dis_threshold, Q_50_exceedence_np)
-      
-        # Get the indices where the sediment transport is greater than 0 
-        sort_idx = np.flatnonzero(Q_dis_mask)
-
-        # Now return those indices as a list
-        new_idx = zip(*np.unravel_index(sort_idx[::-1], Q_50_exceedence_np.shape))
-
-        for i, j in new_idx:
-            for grain_proportion, grain_proportion_array in izip(grain_proportions, grain_pro_array_list):
-                grain_proportion_array[i, j] = grain_proportion
-   
-        # Create the float arrays for the different proportions using the   
-        g_pro_1_float_ras = arcpy.NumPyArrayToRaster(g_pro_1_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        g_pro_1_float_ras.save("MODEL_GS1") # save the raster
-   
-        g_pro_2_float_ras = arcpy.NumPyArrayToRaster(g_pro_2_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        g_pro_2_float_ras.save("MODEL_GS2")
-    
-        g_pro_3_float_ras = arcpy.NumPyArrayToRaster(g_pro_3_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        g_pro_3_float_ras.save("MODEL_GS3") # save the raster
-   
-        g_pro_4_float_ras = arcpy.NumPyArrayToRaster(g_pro_4_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        g_pro_4_float_ras.save("MODEL_GS4") # save the raster
- 
-        g_pro_5_float_ras = arcpy.NumPyArrayToRaster(g_pro_5_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        g_pro_5_float_ras.save("MODEL_GS5") # save the raster
-   
-        g_pro_6_float_ras = arcpy.NumPyArrayToRaster(g_pro_6_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        g_pro_6_float_ras.save("MODEL_GS6") # save the raster
-   
-        g_pro_7_float_ras = arcpy.NumPyArrayToRaster(g_pro_7_float, bottom_left_corner, DTM_cell_size, DTM_cell_size, -9999)
-        g_pro_7_float_ras.save("MODEL_GS7") # save the 
-
-        '''
         # Get the d84 for calculating depth
         def V_get_grain84(GS_P_list):
             
