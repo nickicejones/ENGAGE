@@ -469,12 +469,22 @@ class sedimenttransport(object):
 
             # Start the timer for the model preparation
             arcpy.AddMessage("Spawning subprocess to calculate slope") 
-            startupinfo = None           
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            VAL = subprocess.check_output(['python', slope_sub_path, workspace, DTM_temp, slope_temp, extent_xmin, extent_ymin, cell_size_string], shell=False, startupinfo=startupinfo).decode()
-            #output = check_output(['python', r'C:\Users\nickj\Documents\ENGAGE\ENGAGE2.0\ENGAGE2.0\subslope.py', workspace, DTM_temp, slope_temp, extent_xmin, extent_ymin, cell_size_string], shell=False)
-            arcpy.AddMessage("Completed subprocess to calculate slope")       
+            # If this is not the first loop then slope needs to be recalculated for the cells
+            if loop_counter < 30:               
+                startupinfo = None           
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                VAL = subprocess.check_output(['python', slope_sub_path, workspace, DTM_temp, slope_temp, extent_xmin, extent_ymin, cell_size_string], shell=False, startupinfo=startupinfo).decode()
+                #output = check_output(['python', r'C:\Users\nickj\Documents\ENGAGE\ENGAGE2.0\ENGAGE2.0\subslope.py', workspace, DTM_temp, slope_temp, extent_xmin, extent_ymin, cell_size_string], shell=False)
+                arcpy.AddMessage("Completed subprocess to calculate slope")       
+
+            elif loop_counter > 30 and loop_counter % 10 == 0:
+                startupinfo = None           
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                VAL = subprocess.check_output(['python', slope_sub_path, workspace, DTM_temp, slope_temp, extent_xmin, extent_ymin, cell_size_string], shell=False, startupinfo=startupinfo).decode()
+                #output = check_output(['python', r'C:\Users\nickj\Documents\ENGAGE\ENGAGE2.0\ENGAGE2.0\subslope.py', workspace, DTM_temp, slope_temp, extent_xmin, extent_ymin, cell_size_string], shell=False)
+                arcpy.AddMessage("Completed subprocess to calculate slope")       
 
             # Now load in the newly calculated slope
             slope = np.load(slope_temp)
